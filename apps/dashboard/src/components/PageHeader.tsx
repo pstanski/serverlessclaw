@@ -1,8 +1,7 @@
 'use client';
 
 import React from 'react';
-import Typography from '@/components/ui/Typography';
-import { useTranslations } from '@/components/Providers/TranslationsProvider';
+import { Typography, useTranslations } from '@claw/ui';
 
 interface PageHeaderProps {
   titleKey: string;
