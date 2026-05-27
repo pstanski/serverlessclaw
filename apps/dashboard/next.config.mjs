@@ -36,8 +36,8 @@ const nextConfig = {
   output: 'standalone',
   transpilePackages: [
     '@serverlessclaw/core',
-    '@serverlessclaw/ui',
-    '@serverlessclaw/hooks',
+    '@claw/ui',
+    '@claw/hooks',
     ...(process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS
       ? [process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS.split('/')[0]]
       : []),
