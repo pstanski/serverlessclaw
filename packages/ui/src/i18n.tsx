@@ -18,6 +18,11 @@ export const TranslationsContext = createContext<TranslationsContextType | undef
 export const useTranslations = () => {
   const context = useContext(TranslationsContext);
   if (!context) {
+    if (typeof window !== 'undefined') {
+      console.warn(
+        '[i18n] TranslationsContext not found, using fallback. This usually means multiple copies of @claw/ui are present or the provider is missing.'
+      );
+    }
     // Return a default context for tests or cases where provider is missing
     return {
       t: (key: string) => key,

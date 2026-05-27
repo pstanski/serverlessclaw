@@ -98,12 +98,12 @@ const nextConfig = {
         // Resolve to ./src/extensions/project
         extensionDir = path.resolve(__dirname, process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS, '..');
       } else {
-        // Resolve to package root
+        // Resolve to package root (go up from src/index.ts to package root)
         extensionDir = path.resolve(
           __dirname,
           '../../../',
           process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS,
-          '../../..'
+          '../..'
         );
       }
     }
@@ -125,6 +125,7 @@ const nextConfig = {
 
     console.log('[NextConfig] resolved extensionPath:', extensionPath);
     console.log('[NextConfig] resolved messagesEnPath:', messagesEnPath);
+    console.log('[NextConfig] messagesEnPath exists:', fs.existsSync(messagesEnPath));
     console.log('[NextConfig] resolved jobsConfigPath:', jobsConfigPath);
 
     // Ensure cross-package resolution works for workspace packages

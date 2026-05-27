@@ -16,6 +16,17 @@ export type TranslationKey = keyof Messages;
 const mergedEn = { ...en, ...extEn };
 const mergedCn = { ...cn, ...extCn };
 
+if (typeof window !== 'undefined') {
+  logger.info(
+    `[i18n] Merged translations. Keys count: en=${Object.keys(mergedEn).length}, cn=${Object.keys(mergedCn).length}`
+  );
+  if (extEn && Object.keys(extEn).length > 0) {
+    logger.info(`[i18n] Extension translations detected: ${Object.keys(extEn).join(', ')}`);
+  } else {
+    logger.warn('[i18n] No extension translations found in extEn');
+  }
+}
+
 const STORAGE_KEY = 'clawcenter_locale';
 
 /**
