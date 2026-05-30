@@ -46,9 +46,8 @@ export enum Permission {
 
   // Mission & Action permissions
   MISSION_COMMAND = 'mission:command',
-  ACTION_DISPATCH = 'action:dispatch',
-  ACTION_FINANCIAL = 'action:financial',
   ACTION_INFRA = 'action:infra',
+  ACTION_FINANCIAL = 'action:financial',
 }
 
 /**
@@ -59,7 +58,6 @@ export enum AgentRole {
   WORKER = 'WORKER',
   CRITIC = 'CRITIC',
   RESEARCHER = 'RESEARCHER',
-  TRADER = 'TRADER',
   OPERATOR = 'OPERATOR',
   SYSTEM = 'SYSTEM',
 }

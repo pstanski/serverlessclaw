@@ -45,25 +45,25 @@ describe('Agent Role RBAC Enforcement', () => {
 
   it('allows tool execution when agent has the required role', async () => {
     const tool = {
-      name: 'market_bid',
-      requiredPermissions: [Permission.ACTION_FINANCIAL],
+      name: 'dispatch_logistics',
+      requiredPermissions: [Permission.AGENT_VIEW],
     } as any;
 
     const toolCall = {
       id: 'call-1',
-      function: { name: 'market_bid', arguments: '{}' },
+      function: { name: 'dispatch_logistics', arguments: '{}' },
     } as any;
 
     const execContext = {
-      agentId: 'trader-agent',
+      agentId: 'operator-agent',
       userId: 'user-1',
       workspaceId: 'ws-1',
       agentConfig: { evolutionMode: EvolutionMode.HITL },
     } as any;
 
     vi.mocked(AgentRegistry.getAgentConfig).mockResolvedValue({
-      id: 'trader-agent',
-      roles: [AgentRole.TRADER],
+      id: 'operator-agent',
+      roles: [AgentRole.OPERATOR],
       safetyTier: SafetyTier.PROD,
     } as any);
 
@@ -75,7 +75,7 @@ describe('Agent Role RBAC Enforcement', () => {
   it('blocks tool execution when agent lacks the required role', async () => {
     const tool = {
       name: 'market_bid',
-      requiredPermissions: [Permission.ACTION_FINANCIAL],
+      requiredPermissions: [Permission.AGENT_CONTROL],
     } as any;
 
     const toolCall = {
@@ -92,7 +92,7 @@ describe('Agent Role RBAC Enforcement', () => {
 
     vi.mocked(AgentRegistry.getAgentConfig).mockResolvedValue({
       id: 'worker-agent',
-      roles: [AgentRole.WORKER], // Worker role doesn't have ACTION_FINANCIAL
+      roles: [AgentRole.WORKER], // Worker role doesn't have AGENT_CONTROL
       safetyTier: SafetyTier.PROD,
     } as any);
 
@@ -105,7 +105,7 @@ describe('Agent Role RBAC Enforcement', () => {
   it('defaults to WORKER role if none specified in config', async () => {
     const tool = {
       name: 'dispatch_resource',
-      requiredPermissions: [Permission.ACTION_DISPATCH],
+      requiredPermissions: [Permission.TASK_CREATE],
     } as any;
 
     const toolCall = {

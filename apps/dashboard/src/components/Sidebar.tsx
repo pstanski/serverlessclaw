@@ -106,7 +106,7 @@ export default function Sidebar() {
       label: t('CHAT_DIRECT'),
       subtitle: t('CHAT_SUBTITLE'),
       icon: MessageSquare,
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.MEMBER, UserRole.TRADER],
+      requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.MEMBER],
     },
     {
       href: ROUTES.TRACE,
@@ -114,7 +114,7 @@ export default function Sidebar() {
       subtitle: t('TRACE_SUBTITLE'),
       icon: Activity,
       activePaths: [ROUTES.TRACE, '/trace'],
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER],
+      requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.MEMBER, UserRole.VIEWER],
     },
     {
       href: ROUTES.PIPELINE,
@@ -159,7 +159,7 @@ export default function Sidebar() {
       label: t('TUNING'),
       subtitle: t('TUNING_SUBTITLE'),
       icon: Database,
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.TRADER],
+      requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.MEMBER],
     },
     {
       href: ROUTES.MEMORY,

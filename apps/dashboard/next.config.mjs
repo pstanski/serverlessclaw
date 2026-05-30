@@ -7,7 +7,49 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 
-// Manually load .env.local to guarantee environment variables are available during early config evaluation
+// 1. Resolve Extension Bridge early to avoid race conditions with Next.js/Webpack
+let messagesEnPath = path.resolve(__dirname, './messages/en.json');
+let messagesCnPath = path.resolve(__dirname, './messages/cn.json');
+let jobsConfigPath = path.resolve(__dirname, './jobs.config.json');
+
+if (process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS) {
+  const rawPath = process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS;
+  let fullPath = '';
+
+  if (path.isAbsolute(rawPath)) {
+    fullPath = rawPath;
+  } else if (rawPath.includes('src/extensions/project') || process.env.SST_RESOURCE_App) {
+    // SST build environment
+    fullPath = path.resolve(__dirname, './src/extensions/project/index.tsx');
+  } else {
+    // local development
+    fullPath = path.resolve(__dirname, '../../../', rawPath);
+  }
+
+  // Ensure absolute path is correctly formatted for the bridge file
+  const importPath = fullPath.includes('src/extensions/project')
+    ? './project/index'
+    : fullPath.replace(/\.tsx?$/, '');
+
+  // Overwrite the active extension file to point to the desired workspace extension
+  const activePath = path.resolve(__dirname, './src/extensions/active.tsx');
+  const activeContent = `import * as ext from '${importPath}';\nexport const init = ext.init;\nexport const initServer = (ext as any).initServer;\n`;
+  fs.writeFileSync(activePath, activeContent);
+
+  const extensionDir = path.dirname(fullPath);
+
+  if (fs.existsSync(path.join(extensionDir, 'messages/en.json'))) {
+    messagesEnPath = path.join(extensionDir, 'messages/en.json');
+  }
+  if (fs.existsSync(path.join(extensionDir, 'messages/cn.json'))) {
+    messagesCnPath = path.join(extensionDir, 'messages/cn.json');
+  }
+  if (fs.existsSync(path.join(extensionDir, 'jobs.config.json'))) {
+    jobsConfigPath = path.join(extensionDir, 'jobs.config.json');
+  }
+}
+
+// 2. Manually load .env.local to guarantee environment variables are available during early config evaluation
 try {
   const envLocalPath = path.resolve(__dirname, '.env.local');
   if (fs.existsSync(envLocalPath)) {
@@ -36,10 +78,24 @@ const nextConfig = {
   output: 'standalone',
   transpilePackages: [
     '@serverlessclaw/core',
+<<<<<<< HEAD
     '@claw/ui',
     '@claw/hooks',
+=======
+    '@serverlessclaw/ui',
+    '@serverlessclaw/hooks',
+    '@claw/core',
+    '@claw/ui',
+    '@goldex/core',
+    '@goldex/dashboard',
+>>>>>>> 165144aee8ce2ec3ead17d68207b60fc0128febf
     ...(process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS
-      ? [process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS.split('/')[0]]
+      ? [
+          process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS.split('/')[0],
+          process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS.split('/')[1]
+            ? `${process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS.split('/')[0]}/${process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS.split('/')[1]}`
+            : null,
+        ].filter(Boolean)
       : []),
   ].filter((pkg) => {
     try {
@@ -79,65 +135,82 @@ const nextConfig = {
       test: /\.md$/,
       use: 'raw-loader',
     });
-    // Resolve extension bridge dynamically based on the active local workspace extension
-    let extensionPath = path.resolve(__dirname, './src/extensions/index.ts');
-    if (process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS) {
-      if (process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS.startsWith('.')) {
-        extensionPath = path.resolve(__dirname, process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS);
-      } else {
-        extensionPath = path.resolve(
-          __dirname,
-          '../../../' + process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS
-        );
-      }
+
+
+    // Ensure cross-package resolution works for workspace packages
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'virtual-messages-en': messagesEnPath,
+      'virtual-messages-cn': messagesCnPath,
+      'virtual-jobs-config': jobsConfigPath,
+      '@serverlessclaw/core': path.resolve(__dirname, '../../packages/core/lib/index.ts'),
+      '@serverlessclaw/core/lib': path.resolve(__dirname, '../../packages/core/lib'),
+      '@claw/core': path.resolve(__dirname, '../../packages/core/lib/index.ts'),
+      '@framework-dashboard': path.resolve(__dirname, './src'),
+      '@serverlessclaw/dashboard': path.resolve(__dirname, './'),
+    };
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+        os: false,
+        stream: false,
+        url: false,
+        string_decoder: false,
+        http: false,
+        https: false,
+        zlib: false,
+        child_process: false,
+      };
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'node:fs': false,
+        'node:fs/promises': false,
+        'node:path': false,
+        'node:stream': false,
+        'node:process': false,
+        'node:url': false,
+        'node:string_decoder': false,
+        'node:crypto': false,
+        'node:os': false,
+        child_process: false,
+      };
     }
-
-    let extensionDir = null;
-    if (process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS) {
-      if (process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS.startsWith('.')) {
-        // Resolve to ./src/extensions/project
-        extensionDir = path.resolve(__dirname, process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS, '..');
-      } else {
-        // Resolve to package root (go up from src/index.ts to package root)
-        extensionDir = path.resolve(
-          __dirname,
-          '../../../',
-          process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS,
-          '../..'
-        );
-      }
+    // Ensure @swc/helpers is resolvable for server-side builds (Lambda)
+    if (isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@swc/helpers': require.resolve('@swc/helpers'),
+      };
     }
+    return config;
+  },
+};
 
-    const messagesEnPath =
-      extensionDir && fs.existsSync(path.join(extensionDir, 'messages/en.json'))
-        ? path.join(extensionDir, 'messages/en.json')
-        : path.resolve(__dirname, './src/extensions/messages/en.json');
-
-    const messagesCnPath =
-      extensionDir && fs.existsSync(path.join(extensionDir, 'messages/cn.json'))
-        ? path.join(extensionDir, 'messages/cn.json')
-        : path.resolve(__dirname, './src/extensions/messages/cn.json');
-
-    const jobsConfigPath =
-      extensionDir && fs.existsSync(path.join(extensionDir, 'jobs.config.json'))
-        ? path.join(extensionDir, 'jobs.config.json')
+export default nextConfig;
+)
         : path.resolve(__dirname, './jobs.config.json');
 
     console.log('[NextConfig] resolved extensionPath:', extensionPath);
     console.log('[NextConfig] resolved messagesEnPath:', messagesEnPath);
     console.log('[NextConfig] messagesEnPath exists:', fs.existsSync(messagesEnPath));
     console.log('[NextConfig] resolved jobsConfigPath:', jobsConfigPath);
+=======
+>>>>>>> 165144aee8ce2ec3ead17d68207b60fc0128febf
 
     // Ensure cross-package resolution works for workspace packages
     config.resolve.alias = {
       ...config.resolve.alias,
-      'virtual-extensions': extensionPath,
       'virtual-messages-en': messagesEnPath,
       'virtual-messages-cn': messagesCnPath,
       'virtual-jobs-config': jobsConfigPath,
-      '@serverlessclaw/core': path.resolve(__dirname, '../../framework/packages/core/lib/index.ts'),
-      '@serverlessclaw/core/lib': path.resolve(__dirname, '../../framework/packages/core/lib'),
-      '@claw/core': path.resolve(__dirname, '../../framework/packages/core/lib/index.ts'),
+      '@serverlessclaw/core': path.resolve(__dirname, '../../packages/core/lib/index.ts'),
+      '@serverlessclaw/core/lib': path.resolve(__dirname, '../../packages/core/lib'),
+      '@claw/core': path.resolve(__dirname, '../../packages/core/lib/index.ts'),
+      '@framework-dashboard': path.resolve(__dirname, './src'),
+      '@serverlessclaw/dashboard': path.resolve(__dirname, './'),
     };
     if (!isServer) {
       config.resolve.fallback = {

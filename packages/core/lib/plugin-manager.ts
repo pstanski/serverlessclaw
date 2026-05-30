@@ -1,5 +1,7 @@
 import { IAgentConfig, ITool, IMemory, IProvider, MCPServerConfig } from './types';
 import { logger } from './logger';
+import { ModelRegistry } from './models/registry.interface';
+import { JobInputNormalizer } from './jobs/normalizer.interface';
 
 export interface WebhookConfig {
   path: string;
@@ -16,6 +18,16 @@ export interface ApprovalPolicy {
   requiredCount?: number;
 }
 
+export interface DashboardExtension {
+  modelRegistry?: ModelRegistry;
+  jobInputNormalizer?: JobInputNormalizer;
+  /**
+   * Custom API routes to be mounted under /api/x/
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  apiRoutes?: Record<string, (req: any) => Promise<any>>;
+}
+
 export interface ClawPlugin {
   id: string;
   agents?: Record<string, IAgentConfig>;
@@ -26,6 +38,7 @@ export interface ClawPlugin {
   llmProviders?: Record<string, IProvider>;
   webhooks?: Record<string, WebhookConfig>;
   approvalPolicies?: Record<string, ApprovalPolicy>;
+  dashboard?: DashboardExtension;
   sidebarExtensions?: unknown[];
   layoutExtensions?: unknown[];
   onInit?: () => Promise<void>;
@@ -136,6 +149,36 @@ export class PluginManager {
       }
     }
     return policies;
+  }
+
+  static getModelRegistry(): ModelRegistry | undefined {
+    for (const plugin of this.plugins.values()) {
+      if (plugin.dashboard?.modelRegistry) {
+        return plugin.dashboard.modelRegistry;
+      }
+    }
+    return undefined;
+  }
+
+  static getJobInputNormalizer(): JobInputNormalizer | undefined {
+    for (const plugin of this.plugins.values()) {
+      if (plugin.dashboard?.jobInputNormalizer) {
+        return plugin.dashboard.jobInputNormalizer;
+      }
+    }
+    return undefined;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static getApiRoutes(): Record<string, (req: any) => Promise<any>> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const routes: Record<string, (req: any) => Promise<any>> = {};
+    for (const plugin of this.plugins.values()) {
+      if (plugin.dashboard?.apiRoutes) {
+        Object.assign(routes, plugin.dashboard.apiRoutes);
+      }
+    }
+    return routes;
   }
 
   static async initialize() {

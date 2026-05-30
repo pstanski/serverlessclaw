@@ -305,7 +305,7 @@ export default function AgentDetailModal({
                   <Shield size={12} className="text-amber-400" /> {t('AGENT_ROLES')}
                 </Typography>
                 <div className="flex flex-wrap gap-2">
-                  {['ORCHESTRATOR', 'WORKER', 'CRITIC', 'TRADER', 'OPERATOR'].map((role) => (
+                  {['ORCHESTRATOR', 'WORKER', 'CRITIC', 'OPERATOR'].map((role) => (
                     <button
                       key={role}
                       onClick={() => {
@@ -338,13 +338,7 @@ export default function AgentDetailModal({
                   <Settings2 size={12} className="text-purple-400" /> {t('PERMISSION_BOUNDARIES')}
                 </Typography>
                 <div className="space-y-2">
-                  {[
-                    'agent:control',
-                    'task:approve',
-                    'action:dispatch',
-                    'action:financial',
-                    'action:infra',
-                  ].map((perm) => (
+                  {['agent:control', 'task:approve', 'action:infra'].map((perm) => (
                     <div key={perm} className="flex items-center justify-between opacity-80">
                       <Typography variant="mono" className="text-[9px] uppercase">
                         {perm.replace(':', '_')}
@@ -353,7 +347,7 @@ export default function AgentDetailModal({
                         className={`w-2 h-2 rounded-full ${
                           (agent.roles || []).some((role) =>
                             // This is a visual-only check for UI feedback
-                            ['ORCHESTRATOR', 'SYSTEM', 'TRADER', 'OPERATOR'].includes(role)
+                            ['ORCHESTRATOR', 'SYSTEM', 'OPERATOR'].includes(role)
                           )
                             ? 'bg-cyber-green shadow-[0_0_5px_rgba(0,255,163,0.5)]'
                             : 'bg-muted-more'

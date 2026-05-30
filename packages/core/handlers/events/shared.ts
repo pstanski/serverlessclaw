@@ -284,15 +284,11 @@ export async function processEventWithAgent(
 
   const sessionStateManager = new SessionStateManager();
   if (options.sessionId) {
-    const lockAcquired = await sessionStateManager.acquireProcessing(
-      options.sessionId,
-      `event-handler-${agentId}`,
-      {
-        workspaceId: options.workspaceId,
-        teamId: options.teamId,
-        staffId: options.staffId,
-      }
-    );
+    const lockAcquired = await sessionStateManager.acquireProcessing(options.sessionId, agentId, {
+      workspaceId: options.workspaceId,
+      teamId: options.teamId,
+      staffId: options.staffId,
+    });
 
     if (!lockAcquired) {
       logger.info(
@@ -339,6 +335,7 @@ export async function processEventWithAgent(
     });
 
     let responseText = '';
+    let thoughtText = '';
     const attachments: Attachment[] = [];
 
     const isValidAttachment = (rawAtt: unknown): rawAtt is Attachment => {
@@ -352,11 +349,19 @@ export async function processEventWithAgent(
 
     for await (const chunk of stream) {
       if (chunk.content) responseText += chunk.content;
+      if (chunk.thought) thoughtText += chunk.thought;
       if (chunk.attachments && Array.isArray(chunk.attachments)) {
         for (const rawAtt of chunk.attachments) {
           if (isValidAttachment(rawAtt)) attachments.push(rawAtt as Attachment);
         }
       }
+    }
+
+    if (!responseText && thoughtText) {
+      logger.info(
+        `[SHARED] Content was empty but thoughts were present (${thoughtText.length} chars). Using thoughtText as responseText.`
+      );
+      responseText = thoughtText;
     }
 
     const isPaused = isTaskPaused(responseText);

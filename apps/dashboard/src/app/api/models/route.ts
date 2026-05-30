@@ -2,45 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserId } from '@/lib/auth-utils';
 import { logger } from '@claw/core/lib/logger';
 import { HTTP_STATUS } from '@claw/core/lib/constants';
-import {
-  ModelRegistry,
-  ModelRegistryPayload,
-  ModelRegistryRecord,
-} from '@claw/core/lib/models/registry.interface';
+import { ModelRegistryRecord } from '@claw/core/lib/models/registry.interface';
+import { modelRegistry } from './state';
 
 export const dynamic = 'force-dynamic';
-
-/**
- * Default model registry that returns empty records.
- * Can be replaced with a domain-specific implementation (e.g., CustomModelRegistry).
- */
-class DefaultModelRegistry implements ModelRegistry {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async read(_workspaceId: string): Promise<ModelRegistryPayload> {
-    return { models: {} };
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async write(_workspaceId: string, _payload: ModelRegistryPayload): Promise<void> {
-    // No-op
-  }
-}
-
-/**
- * Optional custom model registry implementation.
- * Can be replaced with a domain-specific implementation (e.g., CustomModelRegistry).
- * Defaults to a no-op registry if not provided.
- */
-let modelRegistry: ModelRegistry = new DefaultModelRegistry();
-
-/**
- * Set custom model registry implementation.
- * This allows domain-specific implementations to be injected.
- */
-function setModelRegistry(registry: ModelRegistry): void {
-  modelRegistry = registry;
-  logger.info('[Models API] Custom model registry registered');
-}
 
 async function assertAuthorized(
   req: NextRequest,
@@ -153,6 +118,97 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     });
   } catch (error) {
     logger.error('[Models API] PATCH Error:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error', details: String(error) },
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+    );
+  }
+}
+
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  try {
+    const workspaceId = req.nextUrl.searchParams.get('workspaceId') || 'default';
+    const unauthorized = await assertAuthorized(req, workspaceId);
+    if (unauthorized) {
+      return unauthorized;
+    }
+
+    const body = await req.json();
+    const modelName = String(body.modelName || '').trim();
+    if (!modelName) {
+      return NextResponse.json(
+        { error: 'Missing parameter: modelName' },
+        { status: HTTP_STATUS.BAD_REQUEST }
+      );
+    }
+
+    const payload = await modelRegistry.read(workspaceId);
+    if (!payload.models) payload.models = {};
+
+    payload.models[modelName] = {
+      modelName,
+      label: body.label || '',
+      metadata: body.metadata || {},
+      metrics: body.metrics || {},
+      source: body.source || 'dashboard-manual',
+      registeredAt: new Date().toISOString(),
+    };
+
+    (payload as { lastUpdatedAt?: string }).lastUpdatedAt = new Date().toISOString();
+    await modelRegistry.write(workspaceId, payload);
+
+    return NextResponse.json({
+      success: true,
+      model: payload.models[modelName],
+    });
+  } catch (error) {
+    logger.error('[Models API] POST Error:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error', details: String(error) },
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest): Promise<NextResponse> {
+  try {
+    const workspaceId = req.nextUrl.searchParams.get('workspaceId') || 'default';
+    const unauthorized = await assertAuthorized(req, workspaceId);
+    if (unauthorized) {
+      return unauthorized;
+    }
+
+    const modelName = req.nextUrl.searchParams.get('modelName');
+    if (!modelName) {
+      return NextResponse.json(
+        { error: 'Missing parameter: modelName' },
+        { status: HTTP_STATUS.BAD_REQUEST }
+      );
+    }
+
+    const payload = await modelRegistry.read(workspaceId);
+    if (!payload.models || !payload.models[modelName]) {
+      return NextResponse.json(
+        { error: `Model '${modelName}' was not found in registry` },
+        { status: HTTP_STATUS.NOT_FOUND }
+      );
+    }
+
+    delete payload.models[modelName];
+    (payload as { lastUpdatedAt?: string }).lastUpdatedAt = new Date().toISOString();
+
+    if ((payload as { latestModel?: string }).latestModel === modelName) {
+      delete (payload as { latestModel?: string }).latestModel;
+    }
+
+    await modelRegistry.write(workspaceId, payload);
+
+    return NextResponse.json({
+      success: true,
+      message: `Model '${modelName}' removed from registry`,
+    });
+  } catch (error) {
+    logger.error('[Models API] DELETE Error:', error);
     return NextResponse.json(
       { error: 'Internal Server Error', details: String(error) },
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
