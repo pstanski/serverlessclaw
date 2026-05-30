@@ -45,6 +45,11 @@ vi.mock('@claw/core/lib/constants', () => ({
   HTTP_STATUS: { INTERNAL_SERVER_ERROR: 500, BAD_REQUEST: 400, FORBIDDEN: 403 },
 }));
 
+vi.mock('@claw/core/lib/utils/ddb-client', () => ({
+  getMemoryTableName: vi.fn(() => 'test-memory-table'),
+  getConfigTableName: vi.fn(() => 'test-config-table'),
+}));
+
 describe('Locks API Route', () => {
   beforeEach(() => {
     vi.clearAllMocks();

@@ -78,17 +78,13 @@ const nextConfig = {
   output: 'standalone',
   transpilePackages: [
     '@serverlessclaw/core',
-<<<<<<< HEAD
-    '@claw/ui',
-    '@claw/hooks',
-=======
     '@serverlessclaw/ui',
     '@serverlessclaw/hooks',
     '@claw/core',
     '@claw/ui',
+    '@claw/hooks',
     '@goldex/core',
     '@goldex/dashboard',
->>>>>>> 165144aee8ce2ec3ead17d68207b60fc0128febf
     ...(process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS
       ? [
           process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS.split('/')[0],
@@ -135,70 +131,6 @@ const nextConfig = {
       test: /\.md$/,
       use: 'raw-loader',
     });
-
-
-    // Ensure cross-package resolution works for workspace packages
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      'virtual-messages-en': messagesEnPath,
-      'virtual-messages-cn': messagesCnPath,
-      'virtual-jobs-config': jobsConfigPath,
-      '@serverlessclaw/core': path.resolve(__dirname, '../../packages/core/lib/index.ts'),
-      '@serverlessclaw/core/lib': path.resolve(__dirname, '../../packages/core/lib'),
-      '@claw/core': path.resolve(__dirname, '../../packages/core/lib/index.ts'),
-      '@framework-dashboard': path.resolve(__dirname, './src'),
-      '@serverlessclaw/dashboard': path.resolve(__dirname, './'),
-    };
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        path: false,
-        crypto: false,
-        os: false,
-        stream: false,
-        url: false,
-        string_decoder: false,
-        http: false,
-        https: false,
-        zlib: false,
-        child_process: false,
-      };
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        'node:fs': false,
-        'node:fs/promises': false,
-        'node:path': false,
-        'node:stream': false,
-        'node:process': false,
-        'node:url': false,
-        'node:string_decoder': false,
-        'node:crypto': false,
-        'node:os': false,
-        child_process: false,
-      };
-    }
-    // Ensure @swc/helpers is resolvable for server-side builds (Lambda)
-    if (isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        '@swc/helpers': require.resolve('@swc/helpers'),
-      };
-    }
-    return config;
-  },
-};
-
-export default nextConfig;
-)
-        : path.resolve(__dirname, './jobs.config.json');
-
-    console.log('[NextConfig] resolved extensionPath:', extensionPath);
-    console.log('[NextConfig] resolved messagesEnPath:', messagesEnPath);
-    console.log('[NextConfig] messagesEnPath exists:', fs.existsSync(messagesEnPath));
-    console.log('[NextConfig] resolved jobsConfigPath:', jobsConfigPath);
-=======
->>>>>>> 165144aee8ce2ec3ead17d68207b60fc0128febf
 
     // Ensure cross-package resolution works for workspace packages
     config.resolve.alias = {

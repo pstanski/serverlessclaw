@@ -36,6 +36,11 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
   },
 }));
 
+vi.mock('@claw/core/lib/utils/ddb-client', () => ({
+  getMemoryTableName: vi.fn(() => 'test-memory-table'),
+  getConfigTableName: vi.fn(() => 'test-config-table'),
+}));
+
 describe('Collaboration API Route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
