@@ -62,7 +62,12 @@ function normalizeSafetyAction(action: string, toolName?: string): string {
   if (CLASS_C_ACTIONS.map((a) => a.toLowerCase()).includes(lowerAction)) {
     return lowerAction;
   }
-  if (lowerToolName.includes('deployment') || lowerToolName.includes('deploy')) return 'deployment';
+  if (
+    lowerToolName.includes('deployment') ||
+    lowerToolName.includes('deploy') ||
+    lowerToolName.includes('stage')
+  )
+    return 'deployment';
   if (
     lowerToolName.includes('shell') ||
     lowerToolName.includes('command') ||
@@ -81,6 +86,9 @@ function normalizeSafetyAction(action: string, toolName?: string): string {
     lowerToolName.includes('access')
   )
     return 'iam_change';
+  // MCP filesystem tools: read/list/search operations map to file_operation (requireFileApproval).
+  // Note: write tools are already caught above by the 'write' pattern → code_change.
+  if (lowerToolName.startsWith('filesystem_')) return 'file_operation';
   return action;
 }
 

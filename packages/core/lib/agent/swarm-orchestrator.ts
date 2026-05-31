@@ -92,11 +92,14 @@ export async function handleSwarmDecomposition(
 
   const isPaused = isTaskPaused(responseText);
   const hasMissionMarkers = responseText.includes('### Goal:') || responseText.includes('### Step');
+  const skipDirectSmokeDecomposition =
+    payload.metadata?.directSmokeTask === true || payload.metadata?.compactTask === true;
 
   const maxDepth = await getMaxRecursionDepth();
 
   // Guard: Only decompose if not paused, not too deep, and contains mission intent
   if (
+    !skipDirectSmokeDecomposition &&
     !isContinuation &&
     !isAggregation &&
     !isPaused &&
@@ -158,6 +161,10 @@ export async function handleSwarmDecomposition(
           depth: depth,
           isParallel: true,
           dependsOn: dependsOn.length > 0 ? dependsOn : undefined,
+          workspaceId: payload.workspaceId,
+          teamId: payload.teamId,
+          staffId: payload.staffId,
+          userRole: payload.userRole,
           metadata: {
             ...payload.metadata,
             originalPlan: responseText,
@@ -204,6 +211,10 @@ export async function handleSwarmDecomposition(
         traceId,
         initiatorId: initiatorId || payload.initiatorId,
         depth,
+        workspaceId: payload.workspaceId,
+        teamId: payload.teamId,
+        staffId: payload.staffId,
+        userRole: payload.userRole,
         metadata: {
           lockedGapIds,
         },

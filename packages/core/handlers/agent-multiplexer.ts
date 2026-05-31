@@ -10,12 +10,32 @@ import { bootstrap } from '../lib/bootstrap';
  * Agent Multiplexer (Mono-lambda).
  * Routes incoming EventBridge tasks to the specialized agent logic.
  * Consolidated into a single high-performance Lambda to reduce cold-start latency.
+ *
+ * Also handles SQS FIFO events from PlannerQueue: each SQS Record body is a
+ * JSON-encoded EventBridge-style payload { source, 'detail-type', detail }.
  */
 export const handler = async (
   event: Record<string, unknown>,
   context: Context
 ): Promise<unknown> => {
   await bootstrap();
+
+  // SQS FIFO record (PlannerQueue) — unwrap the single record and re-enter as an
+  // EventBridge-shaped event.  The queue is configured with batchSize=1, so Records
+  // always contains exactly one entry when this path is taken.
+  if (Array.isArray(event.Records) && (event.Records as unknown[]).length > 0) {
+    const record = (event.Records as Array<Record<string, unknown>>)[0];
+    if (record?.eventSource === 'aws:sqs' && typeof record.body === 'string') {
+      try {
+        const parsed = JSON.parse(record.body) as Record<string, unknown>;
+        return handler(parsed, context);
+      } catch (e) {
+        logger.error('[MULTIPLEXER] Failed to parse SQS record body:', e);
+        throw e; // re-throw so SQS retries the message
+      }
+    }
+  }
+
   const detailType = (event['detail-type'] as string) || (event.type as string);
 
   // 1. Handle Centralized Warmup
@@ -54,13 +74,42 @@ export const handler = async (
   const _teamId = (detail.teamId as string) || (event.teamId as string);
   const _staffId = (detail.staffId as string) || (event.staffId as string);
   const _userRole = (detail.userRole as string) || (event.userRole as string);
+  const _source = (event.source as string) || '';
+  const isUserRole = (value: string | undefined): value is UserRole =>
+    !!value && (Object.values(UserRole) as string[]).includes(value);
+
+  const isInternalSource = (src: string): boolean => {
+    return (
+      src.startsWith('agent.') ||
+      src.startsWith('pipeline.') ||
+      src === 'superclaw' ||
+      src === 'orchestrator' ||
+      src.startsWith('system.') ||
+      src.startsWith('build.') ||
+      src.startsWith('consensus-') ||
+      src.startsWith('handoff') ||
+      src.startsWith('events.') ||
+      src.startsWith('notification.') ||
+      src.startsWith('promotion.')
+    );
+  };
+
+  // Internal autonomous task events may omit userRole. Default to MEMBER so
+  // system-dispatched coder/researcher tasks are not downgraded to VIEWER.
+  const inferredUserRole: UserRole | undefined =
+    (isUserRole(_userRole) ? _userRole : undefined) ||
+    (isInternalSource(_source) ? UserRole.MEMBER : undefined);
+
+  if (inferredUserRole && !detail.userRole) {
+    (detail as Record<string, unknown>).userRole = inferredUserRole;
+  }
 
   const scope = {
     workspaceId: _workspaceId,
     orgId: _orgId,
     teamId: _teamId,
     staffId: _staffId,
-    userRole: _userRole as UserRole,
+    userRole: inferredUserRole,
   };
 
   // Session lock management

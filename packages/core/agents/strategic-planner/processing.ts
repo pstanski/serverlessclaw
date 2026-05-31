@@ -34,6 +34,8 @@ interface PostProcessingOptions {
   isScheduledReview: boolean;
   config: { name: string };
   metadata: Record<string, unknown>;
+  workspaceId?: string;
+  userRole?: string;
 }
 
 /**
@@ -62,6 +64,8 @@ export async function postProcessPlan(
     isScheduledReview,
     config,
     metadata,
+    workspaceId,
+    userRole,
   } = options;
 
   const { extractBaseUserId } = await import('../../lib/utils/agent-helpers');
@@ -141,6 +145,7 @@ export async function postProcessPlan(
           initiatorId,
           depth,
           sessionId,
+          workspaceId,
           userNotified: !isFailure,
         })
       );
@@ -194,16 +199,31 @@ export async function postProcessPlan(
           lockResults
             .filter(({ acquired }) => acquired)
             .map(async ({ numericId }) => {
-              await assignGapToTrack(memory as unknown as TrackStore, numericId, track);
-              return numericId;
+              try {
+                await assignGapToTrack(memory as unknown as TrackStore, numericId, track);
+                return numericId;
+              } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                logger.warn(
+                  `[PLANNER] Skipping gap ${numericId} during PLANNED assignment: ${message}`
+                );
+                return null;
+              }
             })
         );
 
-        processedGapIds.push(...results);
+        processedGapIds.push(...results.filter((id): id is string => !!id));
       } else if (gapId) {
         logger.info(`Marking specific gap ${gapId} as PLANNED after design.`);
-        await assignGapToTrack(memory as unknown as TrackStore, gapId, track);
-        processedGapIds.push(gapId);
+        try {
+          await assignGapToTrack(memory as unknown as TrackStore, gapId, track);
+          processedGapIds.push(gapId);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          logger.warn(
+            `[PLANNER] Skipping primary gap ${gapId} during PLANNED assignment: ${message}`
+          );
+        }
       }
     }
 
@@ -361,6 +381,7 @@ export async function postProcessPlan(
         },
       ];
 
+      // Start a fresh fanout depth for council review so long traces do not trip recursion guards.
       await emitTypedEvent(AGENT_TYPES.STRATEGIC_PLANNER, EventType.PARALLEL_TASK_DISPATCH, {
         userId: baseUserId,
         tasks: councilTasks,
@@ -369,8 +390,10 @@ export async function postProcessPlan(
         aggregationPrompt: `Synthesize the Council discussion in session ${collaborationId} and the individual reviews for Plan ${planId}. Return your response starting with [COUNCIL_REVIEW_RESULT] followed by VERDICT: <APPROVED|REJECTED|CONDITIONAL> and a summary of findings. If all reviews are APPROVED, return VERDICT: APPROVED. If ANY review has verdict REJECTED, return VERDICT: REJECTED with consolidated feedback. Always include the Plan ID ${planId} and Collaboration ID ${collaborationId} in your response.`,
         traceId: councilTraceId,
         initiatorId: AGENT_TYPES.STRATEGIC_PLANNER,
-        depth: depth ?? 0,
+        depth: 0,
         sessionId,
+        workspaceId,
+        userRole,
       });
 
       const councilPlanKey = `TEMP#COUNCIL_PLAN#${councilTraceId}`;
@@ -435,16 +458,29 @@ export async function postProcessPlan(
 
       if (decomposed.wasDecomposed && decomposed.subTasks.length > 1) {
         const { emitTypedEvent: emitEvent } = await import('../../lib/utils/typed-emit');
+        const fanoutTraceId = `${traceId || `trace-${planId}`}-fanout-${planId}`;
         const subTaskEvents = decomposed.subTasks.map((sub) => ({
           taskId: sub.subTaskId,
           agentId: sub.agentId,
           task: sub.task,
-          metadata: { gapIds: sub.gapIds, subTaskId: sub.subTaskId, planId: sub.planId },
+          metadata: {
+            gapIds: sub.gapIds,
+            subTaskId: sub.subTaskId,
+            planId: sub.planId,
+            parentTraceId: traceId,
+          },
           dependsOn: sub.dependencies.map((depIndex) => decomposed.subTasks[depIndex].subTaskId),
         }));
 
+        // Start a fresh fanout depth so planner decomposition does not trip recursion guards.
+        // Use dashboard-user for execution tasks that require TASK_CREATE permission.
+        const hasExecutionTasks = subTaskEvents.some(
+          (t) => t.agentId === AGENT_TYPES.CODER || t.agentId === AGENT_TYPES.RESEARCHER
+        );
+        const executionUserId = hasExecutionTasks ? 'dashboard-user' : baseUserId;
+
         await emitEvent(AGENT_TYPES.STRATEGIC_PLANNER, EventType.PARALLEL_TASK_DISPATCH, {
-          userId: baseUserId,
+          userId: executionUserId,
           tasks: subTaskEvents,
           barrierTimeoutMs: 30 * 60 * 1000,
           aggregationType: subTaskEvents.some((t) => t.agentId === AGENT_TYPES.RESEARCHER)
@@ -457,24 +493,33 @@ export async function postProcessPlan(
                Identify overarching patterns, cross-repo dependencies, and specific implementation gaps. 
                The goal is to inform the next phase of development for: "${plan.substring(0, 500)}..."`
             : undefined,
-          traceId,
+          traceId: fanoutTraceId,
           initiatorId: AGENT_TYPES.STRATEGIC_PLANNER,
-          depth: depth ?? 0,
+          depth: 0,
           sessionId,
+          workspaceId,
+          userRole,
         });
       } else {
         const { dispatchTask: dispatcher } = await import('../../tools/knowledge/agent');
         const targetAgent = decomposed.subTasks[0]?.agentId || AGENT_TYPES.CODER;
 
+        // Use dashboard-user for execution tasks that require TASK_CREATE permission.
+        const isExecutionTask =
+          targetAgent === AGENT_TYPES.CODER || targetAgent === AGENT_TYPES.RESEARCHER;
+        const executionUserId = isExecutionTask ? 'dashboard-user' : baseUserId;
+
         await dispatcher.execute({
           agentId: targetAgent,
-          userId: baseUserId,
+          userId: executionUserId,
           task: plan,
           metadata: {
             gapIds: processedGapIds,
           },
           traceId,
           sessionId,
+          workspaceId,
+          userRole,
         });
       }
     } else if (!isFailure && processedGapIds.length > 0) {
