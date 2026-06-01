@@ -153,7 +153,7 @@ export function configureApiRoutes(
   });
 
   // Ping — lightweight liveness check
-  api.route('GET /ping', {
+  api.route('GET /api/ping', {
     handler: `${prefix}packages/core/handlers/ping.handler`,
     nodejs: { loader: NODEJS_LOADERS },
     architecture: LAMBDA_ARCHITECTURE,
