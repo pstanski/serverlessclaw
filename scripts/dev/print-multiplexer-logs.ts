@@ -34,7 +34,7 @@ async function main() {
     console.log(`  - ${g.logGroupName}`);
   }
 
-  const startTime = Date.now() - 10 * 60 * 1000; // 10 minutes ago
+  const startTime = Date.now() - 60 * 60 * 1000; // 60 minutes ago
 
   for (const group of logGroups) {
     const logGroupName = group.logGroupName!;

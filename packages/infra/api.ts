@@ -152,6 +152,18 @@ export function configureApiRoutes(
     },
   });
 
+  // Ping — lightweight liveness check
+  api.route('GET /ping', {
+    handler: `${prefix}packages/core/handlers/ping.handler`,
+    nodejs: { loader: NODEJS_LOADERS },
+    architecture: LAMBDA_ARCHITECTURE,
+    memory: '128 MB',
+    timeout: AGENT_CONFIG.timeout.SHORT,
+    logging: {
+      retention: LOG_RETENTION_PERIOD,
+    },
+  });
+
   // Health Probe
   api.route('GET /health', {
     handler: `${prefix}packages/core/handlers/health.handler`,

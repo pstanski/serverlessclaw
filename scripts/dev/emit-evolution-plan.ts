@@ -22,7 +22,7 @@ async function main() {
     workspaceId: 'default',
     agentId: 'strategic-planner',
     task,
-    userRole: 'member',
+    userRole: process.env.USER_ROLE ?? 'owner',
     gapId,
     metadata: {
       gapIds: [gapId],

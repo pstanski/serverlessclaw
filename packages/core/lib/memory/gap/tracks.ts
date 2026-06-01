@@ -76,9 +76,9 @@ export async function assignGapToTrack(
   } catch (error) {
     if (error instanceof Error && error.name === 'ConditionalCheckFailedException') {
       const existing = await getGapTrack(base, gapId, scope);
-      if (existing && existing.track === track) {
+      if (existing) {
         logger.info(
-          `[GapTrack] Gap ${gapId} already assigned to the same track ${track}. Overwriting assignment gracefully.`
+          `[GapTrack] Gap ${gapId} already assigned to track ${existing.track}. Updating to ${track} gracefully.`
         );
         await base.putItem({
           userId: getScopedUserId(`${MEMORY_KEYS.TRACK_PREFIX}${normalizedId}`, scope),
