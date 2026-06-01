@@ -63,6 +63,9 @@ phases:
         if [ "$SYNC_ONLY" = "true" ]; then
           echo "SYNC_ONLY mode: Skipping build and deploy phases."
         fi
+      - |
+        git config --global user.email "agent@serverlessclaw.local"
+        git config --global user.name "Claw Deployer"
   build:
     commands:
       - |
