@@ -108,7 +108,7 @@ tag: ## Create and push a git tag for the current release (for auditing)
 	@npm version patch -m "chore: release version %s [skip ci]"
 	@if [ -n "$$CODEBUILD_BUILD_ID" ]; then \
 		REPO="$${HUB_URL:-$${GITHUB_REPO:-serverlessclaw/serverlessclaw}}"; \
-		git push https://$$GITHUB_TOKEN@github.com/$$REPO.git HEAD:main --follow-tags; \
+		HUSKY=0 git push https://$$GITHUB_TOKEN@github.com/$$REPO.git HEAD:main --follow-tags; \
 	else \
 		git push origin main --follow-tags; \
 	fi
