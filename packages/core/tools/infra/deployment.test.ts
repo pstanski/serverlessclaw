@@ -432,6 +432,23 @@ describe('Deployment Tools', () => {
       expect(result).toContain('PATCH_END');
     });
 
+    it('skips validation when CLAW_SKIP_TOOL_VALIDATION env var is set (evolution tasks)', async () => {
+      mockExecSync.mockReturnValue('diff --git a/file.ts\n+++ b/file.ts\n+new line');
+      process.env.CLAW_SKIP_TOOL_VALIDATION = 'true';
+
+      try {
+        const result = await generatePatch.execute({
+          sessionId: 'test-session',
+          skipValidation: false, // explicitly false, but env var overrides
+        });
+
+        expect(result).toContain('PATCH_START');
+        expect(result).toContain('PATCH_END');
+      } finally {
+        delete process.env.CLAW_SKIP_TOOL_VALIDATION;
+      }
+    });
+
     it('returns NO_CHANGES when there are no differences', async () => {
       vi.mocked(getAgentContext).mockResolvedValue({
         memory: {
@@ -823,6 +840,50 @@ describe('Deployment Tools', () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
 
       expect(result).toContain('SUCCESS');
+    });
+
+    it('skips validation when CLAW_SKIP_TOOL_VALIDATION env var is set for stageChanges (evolution tasks)', async () => {
+      mockExecSync.mockReturnValue('file.ts\n');
+      process.env.CLAW_SKIP_TOOL_VALIDATION = 'true';
+
+      let archiveCloseCb: (() => void) | null = null;
+      mockArchiveOn.mockImplementation(function (
+        this: any,
+        event: string,
+        cb: (...args: any[]) => void
+      ) {
+        if (event === 'close') {
+          archiveCloseCb = cb as () => void;
+        }
+        return this;
+      });
+      mockCreateWriteStream.mockReturnValue({
+        on: function (event: string, cb: (...args: any[]) => void) {
+          if (event === 'close') {
+            setImmediate(() => cb());
+          }
+          return this;
+        },
+      });
+      mockArchiveFinalize.mockImplementation(() => {
+        if (archiveCloseCb) archiveCloseCb();
+      });
+
+      s3Mock.on(PutObjectCommand).resolves({});
+
+      try {
+        const result = await stageChanges.execute({
+          modifiedFiles: ['file.ts'],
+          sessionId: 'test-session',
+          skipValidation: false, // explicitly false, but env var overrides
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        expect(result).toContain('SUCCESS');
+      } finally {
+        delete process.env.CLAW_SKIP_TOOL_VALIDATION;
+      }
     });
   });
 });

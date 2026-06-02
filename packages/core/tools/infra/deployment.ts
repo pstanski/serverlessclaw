@@ -30,7 +30,7 @@ export const stageChanges = {
     };
 
     try {
-      if (!skipValidation) {
+      if (!skipValidation && process.env.CLAW_SKIP_TOOL_VALIDATION !== 'true') {
         // Enforce Definition of Done (DoD) verification
         const { memory } = await getAgentContext();
         const history = await memory.getHistory(sessionId);
@@ -153,7 +153,7 @@ export const generatePatch = {
     };
 
     try {
-      if (!skipValidation) {
+      if (!skipValidation && process.env.CLAW_SKIP_TOOL_VALIDATION !== 'true') {
         const { memory } = await getAgentContext();
         const history = await memory.getHistory(sessionId);
 
