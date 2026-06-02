@@ -184,8 +184,7 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
   const isFailure = detectFailure(responseText);
   const parsed = result.parsedData;
 
-  // Fallback: tolerate schema/structured-output drift by extracting a patch
-  // from raw text when present.
+  // Fallback: Extract patch from responseText if not in parsed data
   if (!parsed?.patch) {
     const patchMatch = responseText.match(/PATCH_START\s*([\s\S]*?)\s*PATCH_END/);
     if (patchMatch?.[1]?.trim()) {
@@ -193,6 +192,41 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
         ...(result.parsedData || {}),
         patch: patchMatch[1].trim(),
       };
+    }
+  }
+
+  // Fallback 2: If still no patch, try to recover from session history
+  // This handles cases where generatePatch tool was called but result wasn't
+  // included in the final LLM response text
+  if (!result.parsedData?.patch && sessionId) {
+    try {
+      const history = await memory.getHistory(sessionId);
+      // Find the last generatePatch tool result
+      for (let i = history.length - 1; i >= 0; i--) {
+        const msg = history[i];
+        if (msg.tool_calls?.some((tc) => tc.function?.name === 'generatePatch')) {
+          // Check subsequent messages for tool results
+          for (let j = i + 1; j < history.length; j++) {
+            const nextMsg = history[j];
+            if (nextMsg.content?.includes?.('PATCH_START')) {
+              const patchMatch = nextMsg.content.match(/PATCH_START\s*([\s\S]*?)\s*PATCH_END/);
+              if (patchMatch?.[1]?.trim()) {
+                result.parsedData = {
+                  ...(result.parsedData || {}),
+                  patch: patchMatch[1].trim(),
+                };
+                logger.info(
+                  '[Coder] Recovered patch from session history after generatePatch call'
+                );
+                break;
+              }
+            }
+          }
+          if (result.parsedData?.patch) break;
+        }
+      }
+    } catch (err) {
+      logger.warn('[Coder] Failed to recover patch from history:', err);
     }
   }
 

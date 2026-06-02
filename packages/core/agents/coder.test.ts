@@ -43,6 +43,7 @@ const mockMemory = vi.hoisted(() => ({
   updateGapStatus: vi.fn().mockResolvedValue({ success: true }),
   acquireGapLock: vi.fn().mockResolvedValue(true),
   releaseGapLock: vi.fn().mockResolvedValue(undefined),
+  getHistory: vi.fn().mockResolvedValue([]),
 }));
 
 const mockAgent = vi.hoisted(() => ({
@@ -332,6 +333,67 @@ describe('Coder Agent', () => {
       expect.objectContaining({
         metadata: expect.objectContaining({
           patch: expect.stringContaining('diff --git a/packages/core/handlers/ping.ts'),
+        }),
+      })
+    );
+  });
+
+  it('should recover patch from session history when tool was called but result not in response', async () => {
+    vi.mocked(processEventWithAgent).mockResolvedValueOnce({
+      responseText: 'Changes completed successfully.',
+      attachments: [],
+      parsedData: {
+        status: 'SUCCESS',
+        response: 'Changes completed.',
+        // patch intentionally missing
+      },
+    });
+
+    // Mock session history with generatePatch tool call and result
+    mockMemory.getHistory.mockResolvedValueOnce([
+      {
+        role: 'assistant',
+        content: 'I will make the changes.',
+        tool_calls: [
+          {
+            id: '1',
+            function: { name: 'filesystem_write_file', arguments: '{}' },
+          },
+          {
+            id: '2',
+            function: { name: 'generatePatch', arguments: '{"sessionId":"test"}' },
+          },
+        ],
+      },
+      {
+        role: 'user',
+        content: 'Tool results',
+      },
+      {
+        role: 'user',
+        content:
+          'PATCH_START\ndiff --git a/file.ts b/file.ts\n+new content\nPATCH_END\nPatch generated.',
+      },
+    ]);
+
+    const event = {
+      detail: {
+        userId: 'user123',
+        task: 'implement feature',
+        sessionId: 'test-session',
+        metadata: { gapIds: ['gap1'] },
+      },
+    } as any;
+
+    const result = await handler(event, mockContext);
+
+    expect(result).not.toContain('FAILED: Evolution task requires a technical patch');
+    expect(mockMemory.getHistory).toHaveBeenCalledWith('test-session');
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED);
+    expect(emitTaskEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          patch: expect.stringContaining('diff --git a/file.ts'),
         }),
       })
     );
