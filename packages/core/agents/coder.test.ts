@@ -304,6 +304,39 @@ describe('Coder Agent', () => {
     expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED);
   });
 
+  it('should extract patch from responseText when parsedData.patch is missing', async () => {
+    vi.mocked(processEventWithAgent).mockResolvedValueOnce({
+      responseText:
+        'Implemented changes.\nPATCH_START\ndiff --git a/packages/core/handlers/ping.ts b/packages/core/handlers/ping.ts\n+"X-Powered-By": "serverlessclaw"\nPATCH_END',
+      attachments: [],
+      parsedData: {
+        status: 'SUCCESS',
+        response: 'Implemented changes.',
+        // patch intentionally missing to validate fallback extraction
+      },
+    });
+
+    const event = {
+      detail: {
+        userId: 'user123',
+        task: 'implement feature',
+        metadata: { gapIds: ['gap1'] },
+      },
+    } as any;
+
+    const result = await handler(event, mockContext);
+
+    expect(result).not.toContain('FAILED: Evolution task requires a technical patch');
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED);
+    expect(emitTaskEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          patch: expect.stringContaining('diff --git a/packages/core/handlers/ping.ts'),
+        }),
+      })
+    );
+  });
+
   it('should NOT mark gaps as PROGRESS when initAgent fails (Bug 2 regression)', async () => {
     // Simulate initAgent throwing during initialization
     vi.mocked(initAgent).mockRejectedValueOnce(new Error('LLM provider unavailable'));

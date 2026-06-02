@@ -184,9 +184,23 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
   const isFailure = detectFailure(responseText);
   const parsed = result.parsedData;
 
+  // Fallback: tolerate schema/structured-output drift by extracting a patch
+  // from raw text when present.
+  if (!parsed?.patch) {
+    const patchMatch = responseText.match(/PATCH_START\s*([\s\S]*?)\s*PATCH_END/);
+    if (patchMatch?.[1]?.trim()) {
+      result.parsedData = {
+        ...(result.parsedData || {}),
+        patch: patchMatch[1].trim(),
+      };
+    }
+  }
+
+  const effectiveParsed = result.parsedData;
+
   // 5. Evolution Validation: Require patch for successful evolution tasks
   if (gapIds && gapIds.length > 0 && !isFailure && !isTaskPaused(responseText)) {
-    if (!parsed?.patch) {
+    if (!effectiveParsed?.patch) {
       logger.error('[Coder] Evolution task successful but no patch was returned.');
       responseText = `FAILED: Evolution task requires a technical patch for gaps: ${gapIds.join(', ')}`;
     }
@@ -197,7 +211,7 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
     const finalStatus =
       detectFailure(responseText) || isTaskPaused(responseText)
         ? GapStatus.OPEN
-        : parsed?.buildId
+        : effectiveParsed?.buildId
           ? GapStatus.PROGRESS // Still in progress if building
           : GapStatus.DEPLOYED;
 
@@ -261,8 +275,8 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
     depth,
     userRole,
     metadata: {
-      patch: parsed?.patch,
-      buildId: parsed?.buildId,
+      patch: effectiveParsed?.patch,
+      buildId: effectiveParsed?.buildId,
     },
   });
 
