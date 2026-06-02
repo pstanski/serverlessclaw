@@ -184,14 +184,26 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
   const isFailure = detectFailure(responseText);
   const parsed = result.parsedData;
 
+  logger.debug(
+    `[Coder] Post-process state: parsed.patch=${!!parsed?.patch}, isFailure=${isFailure}, gapIds=${JSON.stringify(gapIds)}`
+  );
+
   // Fallback: Extract patch from responseText if not in parsed data
   if (!parsed?.patch) {
+    logger.debug(
+      `[Coder] Fallback 1: Attempting to extract patch from responseText (length=${responseText.length})`
+    );
     const patchMatch = responseText.match(/PATCH_START\s*([\s\S]*?)\s*PATCH_END/);
     if (patchMatch?.[1]?.trim()) {
+      logger.info(
+        `[Coder] Fallback 1 SUCCESS: Extracted patch (${patchMatch[1].trim().length} chars)`
+      );
       result.parsedData = {
         ...(result.parsedData || {}),
         patch: patchMatch[1].trim(),
       };
+    } else {
+      logger.debug('[Coder] Fallback 1 FAILED: No PATCH_START/END markers in responseText');
     }
   }
 
@@ -199,16 +211,25 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
   // This handles cases where generatePatch tool was called but result wasn't
   // included in the final LLM response text
   if (!result.parsedData?.patch && sessionId) {
+    logger.debug(
+      `[Coder] Fallback 2: Attempting to recover from session history (sessionId=${sessionId})`
+    );
     try {
       const history = await memory.getHistory(sessionId);
+      logger.debug(`[Coder] Fallback 2: Retrieved history with ${history.length} messages`);
+
       // Find the last generatePatch tool result
+      let foundGeneratePatch = false;
       for (let i = history.length - 1; i >= 0; i--) {
         const msg = history[i];
         if (msg.tool_calls?.some((tc) => tc.function?.name === 'generatePatch')) {
+          foundGeneratePatch = true;
+          logger.debug(`[Coder] Fallback 2: Found generatePatch tool_call at index ${i}`);
           // Check subsequent messages for tool results
           for (let j = i + 1; j < history.length; j++) {
             const nextMsg = history[j];
             if (nextMsg.content?.includes?.('PATCH_START')) {
+              logger.debug(`[Coder] Fallback 2: Found PATCH_START at index ${j}`);
               const patchMatch = nextMsg.content.match(/PATCH_START\s*([\s\S]*?)\s*PATCH_END/);
               if (patchMatch?.[1]?.trim()) {
                 result.parsedData = {
@@ -216,7 +237,7 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
                   patch: patchMatch[1].trim(),
                 };
                 logger.info(
-                  '[Coder] Recovered patch from session history after generatePatch call'
+                  `[Coder] Fallback 2 SUCCESS: Recovered patch from history (${patchMatch[1].trim().length} chars)`
                 );
                 break;
               }
@@ -225,18 +246,34 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
           if (result.parsedData?.patch) break;
         }
       }
+      if (!foundGeneratePatch) {
+        logger.debug('[Coder] Fallback 2: generatePatch tool_call NOT found in history');
+      }
+      if (!result.parsedData?.patch) {
+        logger.debug('[Coder] Fallback 2 FAILED: No patch recovered from history');
+      }
     } catch (err) {
-      logger.warn('[Coder] Failed to recover patch from history:', err);
+      logger.warn('[Coder] Fallback 2 ERROR: Failed to recover patch from history:', err);
     }
   }
 
   const effectiveParsed = result.parsedData;
 
+  logger.info(
+    `[Coder] Evolution validation state: effectiveParsed.patch=${!!effectiveParsed?.patch}, gapIds=${gapIds?.length ?? 0}, isFailure=${isFailure}, isPaused=${isTaskPaused(responseText)}`
+  );
+
   // 5. Evolution Validation: Require patch for successful evolution tasks
   if (gapIds && gapIds.length > 0 && !isFailure && !isTaskPaused(responseText)) {
     if (!effectiveParsed?.patch) {
-      logger.error('[Coder] Evolution task successful but no patch was returned.');
+      logger.error(
+        `[Coder] Evolution task successful but no patch was returned. gapIds=${gapIds.join(', ')}`
+      );
       responseText = `FAILED: Evolution task requires a technical patch for gaps: ${gapIds.join(', ')}`;
+    } else {
+      logger.info(
+        `[Coder] Evolution validation PASSED: patch present (${effectiveParsed.patch.length} chars)`
+      );
     }
   }
 
