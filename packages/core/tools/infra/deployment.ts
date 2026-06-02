@@ -171,14 +171,27 @@ export const generatePatch = {
       }
 
       const { execSync } = await import('child_process');
-      const patch = execSync('git diff HEAD', {
-        cwd: process.cwd(),
-        encoding: 'utf-8',
-        timeout: 30000,
-      });
+
+      // Try to get either staged (after stageChanges) or unstaged changes
+      let patch = '';
+      try {
+        // First try staged changes (happens after stageChanges tool is called)
+        patch = execSync('git diff --cached HEAD', {
+          cwd: process.cwd(),
+          encoding: 'utf-8',
+          timeout: 30000,
+        });
+      } catch {
+        // If no staged changes, try unstaged changes
+        patch = execSync('git diff HEAD', {
+          cwd: process.cwd(),
+          encoding: 'utf-8',
+          timeout: 30000,
+        });
+      }
 
       if (!patch || patch.trim().length === 0) {
-        return 'NO_CHANGES: No differences detected against HEAD.';
+        return 'NO_CHANGES: No differences detected against HEAD (staged or unstaged).';
       }
 
       return `PATCH_START\n${patch}\nPATCH_END`;
