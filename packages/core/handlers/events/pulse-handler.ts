@@ -42,3 +42,25 @@ export async function handlePulsePing(
     logger.error(`[PULSE] Failed to emit pong for ${targetAgentId}:`, error);
   }
 }
+
+/**
+ * Handles pulse pong events.
+ * Currently logs the responsiveness of the target agent.
+ */
+export async function handlePulsePong(
+  eventDetail: Record<string, unknown>,
+  _context: Context
+): Promise<void> {
+  const { targetAgentId, timestamp, responseTimestamp, workspaceId, initiatorId } =
+    PULSE_EVENT_SCHEMA.parse(eventDetail);
+
+  const latency = responseTimestamp ? responseTimestamp - timestamp : -1;
+
+  logger.info(`[PULSE] Received pong from ${targetAgentId} (Initiated by: ${initiatorId}).`, {
+    latencyMs: latency,
+    workspaceId,
+    timestamp,
+  });
+
+  // Future: Update a 'LiveStatus' table or emit a dashboard signal
+}

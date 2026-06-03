@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handlePulsePing } from './pulse-handler';
+import { handlePulsePing, handlePulsePong } from './pulse-handler';
 import { emitEvent } from '../../lib/utils/bus';
 import { AGENT_TYPES, EventType } from '../../lib/types/agent';
+import { logger } from '../../lib/logger';
 
 vi.mock('../../lib/utils/bus', () => ({
   emitEvent: vi.fn(),
@@ -57,6 +58,30 @@ describe('Pulse Handler', () => {
       await handlePulsePing(payload, {} as any);
 
       expect(emitEvent).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handlePulsePong', () => {
+    it('should log the pong and latency', async () => {
+      const now = Date.now();
+      const payload = {
+        userId: 'user-123',
+        traceId: 'trace-123',
+        targetAgentId: AGENT_TYPES.CODER,
+        initiatorId: AGENT_TYPES.SUPERCLAW,
+        timestamp: now - 100,
+        responseTimestamp: now,
+        status: 'pong',
+      };
+
+      await handlePulsePong(payload, {} as any);
+
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.stringContaining('Received pong from coder'),
+        expect.objectContaining({
+          latencyMs: expect.any(Number),
+        })
+      );
     });
   });
 });
