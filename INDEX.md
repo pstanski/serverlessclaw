@@ -37,6 +37,14 @@
 
 **Serverless Claw** is a self-evolving AI agent platform on AWS. A SuperClaw (Lambda) receives messages via Telegram/Discord webhooks, processes them with an LLM, and can autonomously delegate code changes to a **Coder Agent**, which then triggers the **Deployer** (CodeBuild) to redeploy the stack. Safety guardrails (circuit breakers, protected resource labeling, health probes, rollback) prevent runaway evolution, while the **ClawCenter Dashboard** enables real-time human **co-management** of agent capabilities and memory.
 
+## 🚀 Active Strategic Gaps (Evolution Backlog)
+
+The following gaps have been identified for autonomous resolution by the **Strategic Planner** and **Coder Agent**.
+
+| Gap ID              | Description                                                                                                                                                 | Impact | Urgency | Status   |
+| :------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: | :-----: | :------- |
+| **GAP#20260603-01** | **Enhance Ping API with Uptime**: The `/api/ping` endpoint should return an `uptime` field (seconds since process start) to support reliability monitoring. |   6    |    7    | **OPEN** |
+
 ---
 
 ## Quick Start
