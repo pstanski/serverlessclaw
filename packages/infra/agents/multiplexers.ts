@@ -58,6 +58,7 @@ export function createMultiplexers(ctx: SharedContext, options: MultiplexerOptio
       detailType: [
         EventType.CODER_TASK,
         EventType.RESEARCH_TASK,
+        EventType.DELEGATION_TASK,
         // EVOLUTION_PLAN + STRATEGIC_PLANNER_TASK removed — now serial via PlannerQueue
       ],
     },

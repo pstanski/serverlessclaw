@@ -30,6 +30,14 @@ export const EVENTBRIDGE_ONLY_EVENTS: EventType[] = [
   EventType.STATE_SNAPSHOT,
   EventType.STATE_DELTA,
   EventType.MESSAGES_SNAPSHOT,
+  EventType.CHAT_MESSAGE_RECEIVED,
+  EventType.HITL_APPROVAL_REQUESTED,
+  EventType.HANDOFF,
+  EventType.ORCHESTRATION_SIGNAL,
+  EventType.DELEGATION_TASK,
+  EventType.MONITOR_BUILD,
+  EventType.SCHEDULE_TASK,
+  EventType.CHUNK,
 ];
 
 /**
