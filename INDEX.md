@@ -41,9 +41,9 @@
 
 The following gaps have been identified for autonomous resolution by the **Strategic Planner** and **Coder Agent**.
 
-| Gap ID              | Description                                                                                                                                                 | Impact | Urgency | Status   |
-| :------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: | :-----: | :------- |
-| **GAP#20260603-01** | **Enhance Ping API with Uptime**: The `/api/ping` endpoint should return an `uptime` field (seconds since process start) to support reliability monitoring. |   6    |    7    | **OPEN** |
+| Gap ID              | Description                                                                                                                                                 | Impact | Urgency | Status       |
+| :------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: | :-----: | :----------- |
+| **GAP#20260603-01** | **Enhance Ping API with Uptime**: The `/api/ping` endpoint should return an `uptime` field (seconds since process start) to support reliability monitoring. |   6    |    7    | **DEPLOYED** |
 
 ---
 
