@@ -44,7 +44,7 @@ The following gaps have been identified for autonomous resolution by the **Strat
 | Gap ID              | Description                                                                                                                                                 | Impact | Urgency | Status       |
 | :------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: | :-----: | :----------- |
 | **GAP#20260603-01** | **Enhance Ping API with Uptime**: The `/api/ping` endpoint should return an `uptime` field (seconds since process start) to support reliability monitoring. |   6    |    7    | **DEPLOYED** |
-| **GAP#20260603-02** | **Add Version to Ping API**: The `/api/ping` endpoint should return a `version` field (from package.json) to help verify deployments.                       |   4    |    5    | **OPEN**     |
+| **GAP#20260603-02** | **Add Version to Ping API**: The `/api/ping` endpoint should return a `version` field (from package.json) to help verify deployments.                       |   9    |    9    | **OPEN**     |
 
 ---
 
