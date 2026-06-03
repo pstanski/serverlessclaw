@@ -38,6 +38,20 @@ interface PostProcessingOptions {
   userRole?: string;
 }
 
+function sanitizeAutonomousGapPlan(
+  plan: string,
+  gapId?: string,
+  isScheduledReview?: boolean
+): string {
+  if (!gapId || isScheduledReview) return plan;
+
+  const approvalMarker = /^If you approve this plan I will:/im;
+  const markerMatch = approvalMarker.exec(plan);
+  if (!markerMatch || markerMatch.index < 0) return plan;
+
+  return plan.slice(0, markerMatch.index).trimEnd();
+}
+
 /**
  * Handles all post-plan-generation tasks like notifications, event emission,
  * gap state updates, and Council review dispatch.
@@ -70,6 +84,7 @@ export async function postProcessPlan(
 
   const { extractBaseUserId } = await import('../../lib/utils/agent-helpers');
   const baseUserId = extractBaseUserId(userId);
+  const effectivePlan = sanitizeAutonomousGapPlan(plan, gapId, isScheduledReview);
 
   const lockedCoveredGapIds: string[] = [];
 
@@ -82,7 +97,7 @@ export async function postProcessPlan(
           planId,
           status,
           coveredGaps: coveredGapIds,
-          planSnippet: plan.substring(0, 500),
+          planSnippet: effectivePlan.substring(0, 500),
         },
         metadata: { event: 'plan_generated', planId },
       });
@@ -111,12 +126,14 @@ export async function postProcessPlan(
     const postProcessingPromises: Promise<unknown>[] = [];
 
     // 1. Notify user directly in the chat session ONLY if successful and not empty
-    if (!isFailure && plan !== 'Empty response from OpenAI.') {
+    if (!isFailure && effectivePlan !== 'Empty response from OpenAI.') {
       postProcessingPromises.push(
         sendOutboundMessage(
           AGENT_TYPES.STRATEGIC_PLANNER,
           userId,
-          plan.startsWith('🚀') ? plan : `🚀 **Strategic Plan Generated**\n\n${plan}`,
+          effectivePlan.startsWith('🚀')
+            ? effectivePlan
+            : `🚀 **Strategic Plan Generated**\n\n${effectivePlan}`,
           undefined,
           sessionId,
           config.name,
@@ -132,15 +149,15 @@ export async function postProcessPlan(
     }
 
     // 2. Emit Task Result for Universal Coordination
-    if (!isTaskPaused(plan)) {
+    if (!isTaskPaused(effectivePlan)) {
       postProcessingPromises.push(
         emitTaskEvent({
           source: AGENT_TYPES.STRATEGIC_PLANNER,
           userId: baseUserId,
           agentId: AGENT_TYPES.STRATEGIC_PLANNER,
           task: isScheduledReview ? 'Scheduled Review' : task,
-          response: plan,
-          error: isFailure ? plan : undefined,
+          response: effectivePlan,
+          error: isFailure ? effectivePlan : undefined,
           traceId,
           initiatorId,
           depth,
@@ -160,7 +177,7 @@ export async function postProcessPlan(
     const processedGapIds: string[] = [];
     if (!isFailure) {
       const { assignGapToTrack, determineTrack } = await import('../../lib/memory/gap-operations');
-      const track = determineTrack(plan);
+      const track = determineTrack(effectivePlan);
 
       if (isScheduledReview || coveredGapIds.length > 0) {
         logger.info(`Marking ${coveredGapIds.length} gaps as PLANNED based on structured output.`);
@@ -238,11 +255,11 @@ export async function postProcessPlan(
       let spec = '';
 
       try {
-        const trimmedPlan = plan.trim();
+        const trimmedPlan = effectivePlan.trim();
         if (trimmedPlan.startsWith('{')) {
           // Proactive Mode: Parse structured JSON plan
           const parsed = JSON.parse(trimmedPlan);
-          strategy = parsed.plan || parsed.strategy || plan;
+          strategy = parsed.plan || parsed.strategy || effectivePlan;
 
           const rawTasks = (parsed.tasks || parsed.subTasks || []) as Array<{
             id?: string | number;
@@ -260,10 +277,10 @@ export async function postProcessPlan(
           spec = parsed.spec || '';
         } else {
           // Reactive Mode: Parse Rich Markdown plan
-          strategy = plan;
+          strategy = effectivePlan;
 
           // Parse subtasks by finding goal headers or bullet tasks
-          const taskMatches = [...plan.matchAll(/(?:### Goal:|- \[ \])\s*(.*)/g)];
+          const taskMatches = [...effectivePlan.matchAll(/(?:### Goal:|- \[ \])\s*(.*)/g)];
           subTasks = taskMatches.map((m, idx) => ({
             id: `${gapIdToSave}-task-${idx + 1}`,
             description: m[1].trim(),
@@ -271,16 +288,16 @@ export async function postProcessPlan(
           }));
 
           // Locate EARS specification by looking for ## Technical Specification header
-          const specHeaderIndex = plan.search(/##\s+Technical\s+Specification/i);
+          const specHeaderIndex = effectivePlan.search(/##\s+Technical\s+Specification/i);
           if (specHeaderIndex !== -1) {
-            spec = plan.substring(specHeaderIndex).trim();
+            spec = effectivePlan.substring(specHeaderIndex).trim();
             // Keep strategy clean by separating out the technical specification
-            strategy = plan.substring(0, specHeaderIndex).trim();
+            strategy = effectivePlan.substring(0, specHeaderIndex).trim();
           }
         }
       } catch (err) {
         logger.error(`[PLANNER] Failed to parse plan to EvolutionPlan:`, err);
-        strategy = plan;
+        strategy = effectivePlan;
       }
 
       const evolutionPlan = {
@@ -297,7 +314,7 @@ export async function postProcessPlan(
     postProcessingPromises.push(
       memory.updateDistilledMemory(
         `PLAN#${planId}`,
-        JSON.stringify({ plan, gapIds: processedGapIds })
+        JSON.stringify({ plan: effectivePlan, gapIds: processedGapIds })
       )
     );
 
@@ -409,7 +426,7 @@ export async function postProcessPlan(
       await memory.updateDistilledMemory(councilPlanKey, councilPlanValue);
       return { gapId, plan, planId, status: 'COUNCIL_DISPATCHED' };
     } else if (evolutionMode === EvolutionMode.AUTO && !isFailure && processedGapIds.length > 0) {
-      const validation = validatePlan(plan, processedGapIds);
+      const validation = validatePlan(effectivePlan, processedGapIds);
       if (!validation.isValid) {
         logger.warn(`[PLANNER] Plan validation failed: ${validation.reason}. Skipping dispatch.`);
         await sendOutboundMessage(
@@ -427,7 +444,7 @@ export async function postProcessPlan(
       await sendOutboundMessage(
         AGENT_TYPES.STRATEGIC_PLANNER,
         userId,
-        `🚀 **Autonomous Evolution Triggered**\n\nI have identified a capability gap and designed a plan to fix it. The Coder Agent is now executing the following STRATEGIC_PLAN:\n\n${plan}`,
+        `🚀 **Autonomous Evolution Triggered**\n\nI have identified a capability gap and designed a plan to fix it. The Coder Agent is now executing the following STRATEGIC_PLAN:\n\n${effectivePlan}`,
         [baseUserId],
         sessionId,
         config.name,
@@ -448,6 +465,22 @@ export async function postProcessPlan(
             complexity: 5,
             agentId: st.agentId,
           })),
+        };
+      } else if (processedGapIds.length === 1) {
+        decomposed = {
+          wasDecomposed: false,
+          subTasks: [
+            {
+              subTaskId: `${planId}-sub-0`,
+              planId,
+              task: effectivePlan,
+              gapIds: processedGapIds,
+              order: 0,
+              dependencies: [] as number[],
+              complexity: 5,
+              agentId: AGENT_TYPES.CODER,
+            },
+          ],
         };
       } else {
         const { decomposePlan } = await import('../../lib/agent/decomposer');
@@ -491,7 +524,7 @@ export async function postProcessPlan(
           aggregationPrompt: subTaskEvents.some((t) => t.agentId === AGENT_TYPES.RESEARCHER)
             ? `I have received findings from parallel research tasks. Please synthesize these into a comprehensive technical report. 
                Identify overarching patterns, cross-repo dependencies, and specific implementation gaps. 
-               The goal is to inform the next phase of development for: "${plan.substring(0, 500)}..."`
+              The goal is to inform the next phase of development for: "${effectivePlan.substring(0, 500)}..."`
             : undefined,
           traceId: fanoutTraceId,
           initiatorId: AGENT_TYPES.STRATEGIC_PLANNER,
@@ -509,10 +542,11 @@ export async function postProcessPlan(
           targetAgent === AGENT_TYPES.CODER || targetAgent === AGENT_TYPES.RESEARCHER;
         const executionUserId = isExecutionTask ? 'dashboard-user' : baseUserId;
 
-        await dispatcher.execute({
+        const dispatchResult = await dispatcher.execute({
           agentId: targetAgent,
           userId: executionUserId,
-          task: plan,
+          task: effectivePlan,
+          skipDecomposition: true,
           metadata: {
             gapIds: processedGapIds,
           },
@@ -521,13 +555,18 @@ export async function postProcessPlan(
           workspaceId,
           userRole,
         });
+
+        if (!isTaskPaused(dispatchResult)) {
+          logger.error(`[PLANNER] Auto-dispatch to ${targetAgent} failed: ${dispatchResult}`);
+          throw new Error(`Planner auto-dispatch failed: ${dispatchResult}`);
+        }
       }
     } else if (!isFailure && processedGapIds.length > 0) {
       logger.info('Evolution mode is hitl, asking for approval.');
       await sendOutboundMessage(
         AGENT_TYPES.STRATEGIC_PLANNER,
         userId,
-        `🚀 **NEW STRATEGIC PLAN PROPOSED**\n\n${plan}\n\nReply with 'APPROVE' to execute.`,
+        `🚀 **NEW STRATEGIC PLAN PROPOSED**\n\n${effectivePlan}\n\nReply with 'APPROVE' to execute.`,
         [baseUserId],
         sessionId,
         config.name,
@@ -535,7 +574,7 @@ export async function postProcessPlan(
       );
     }
 
-    return { gapId, plan, planId };
+    return { gapId, plan: effectivePlan, planId };
   } finally {
     for (const coveredId of lockedCoveredGapIds) {
       try {

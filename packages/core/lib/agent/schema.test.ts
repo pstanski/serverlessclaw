@@ -52,8 +52,8 @@ describe('DEFAULT_SIGNAL_SCHEMA', () => {
       expect(schema.properties.data.type).toBe('object');
     });
 
-    it('disallows additional properties for strict schema compatibility', () => {
-      expect(schema.properties.data.additionalProperties).toBe(false);
+    it('allows structured artifacts in nested data payloads', () => {
+      expect(schema.properties.data.additionalProperties).toBe(true);
     });
   });
 

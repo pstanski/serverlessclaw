@@ -58,6 +58,7 @@ All resources are managed via the `infra/` directory.
 1. **Tagging**: All resources are tagged with `Project: serverlessclaw` for cost tracking.
 2. **Access Control**: Agents only have the minimum IAM permissions required for their specific role (defined in `infra/agents.ts`).
 3. **Encryption**: All data at rest is encrypted using AWS-managed CMKs.
+4. **MCP Packaging**: The general MCP multiplexer vendors its filesystem and AST server package trees directly from local dependencies via SST `copyFiles` so production Lambdas do not depend on runtime `npx --offline` downloads or deploy-time `npm install`.
 
 ### Linkable Resource Architecture
 
@@ -134,6 +135,5 @@ npx sst secret set TelegramBotToken 123456:ABC-DEF
 
 > [!IMPORTANT]
 > **Controlled CI/CD**: To ensure maximum intentionality and security, automatic deployments on GitHub push are disabled. However, an **autonomous `Deployer`** (CodeBuild) exists within the stack to perform emergency rollbacks and self-healing when triggered by the [Dead Man's Switch](./RESILIENCE.md).
-
 > [!TIP]
 > Use `make help` to see all available environment management commands.

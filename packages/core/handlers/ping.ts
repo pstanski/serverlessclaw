@@ -10,6 +10,6 @@ export async function handler(): Promise<{
   return {
     statusCode: 200,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pong: true, ts: Date.now() }),
+    body: JSON.stringify({ pong: true, ts: Date.now(), service: 'serverlessclaw' }),
   };
 }

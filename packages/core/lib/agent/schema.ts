@@ -14,9 +14,9 @@ export const DEFAULT_SIGNAL_SCHEMA: ResponseFormat = {
       properties: {
         status: { type: 'string', enum: ['SUCCESS', 'FAILED', 'CONTINUE', 'REOPEN'] },
         message: { type: 'string' },
-        // OpenAI strict JSON schema requires nested objects to explicitly disallow
-        // arbitrary properties when strict mode is enabled.
-        data: { type: 'object', properties: {}, additionalProperties: false },
+        // Agents may attach structured artifacts under data (for example coder
+        // patch/build outputs) while keeping the top-level protocol stable.
+        data: { type: 'object', properties: {}, additionalProperties: true },
         coveredGapIds: { type: 'array', items: { type: 'string' } },
       },
       // OpenAI strict JSON schema now requires every declared property to be

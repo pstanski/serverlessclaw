@@ -99,6 +99,7 @@ export const handler = async (
   const inferredUserRole: UserRole | undefined =
     (isUserRole(_userRole) ? _userRole : undefined) ||
     (isInternalSource(_source) ? UserRole.MEMBER : undefined);
+  const shouldManageInteractiveSession = !!sessionId && !isInternalSource(_source);
 
   if (inferredUserRole && !detail.userRole) {
     (detail as Record<string, unknown>).userRole = inferredUserRole;
@@ -194,7 +195,7 @@ export const handler = async (
   }
 
   // Check collaboration timeout if this is part of an active session
-  if (sessionId && _traceId) {
+  if (shouldManageInteractiveSession && _traceId) {
     const sessionState = await sessionStateManager.getState(sessionId, scope);
     if (sessionState && sessionState.lastMessageAt) {
       const isTimedOut = await checkCollaborationTimeout(
@@ -235,7 +236,7 @@ export const handler = async (
     };
   }
 
-  if (sessionId && targetAgent) {
+  if (shouldManageInteractiveSession && targetAgent) {
     lockAcquired = await sessionStateManager.acquireProcessing(sessionId, targetAgent, scope);
 
     if (!lockAcquired) {

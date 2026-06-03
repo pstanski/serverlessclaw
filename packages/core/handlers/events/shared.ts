@@ -258,6 +258,7 @@ export async function processEventWithAgent(
     formatResponse?: (responseText: string, attachments: Attachment[]) => string;
     tokenBudget?: number;
     costLimit?: number;
+    skipToolLoading?: boolean;
     priorTokenUsage?: {
       inputTokens: number;
       outputTokens: number;
@@ -291,7 +292,9 @@ export async function processEventWithAgent(
   }
 
   const { getAgentTools: loadAgentTools } = await import('../../tools/index');
-  const agentTools = await loadAgentTools(agentId, { workspaceId: options.workspaceId });
+  const agentTools = options.skipToolLoading
+    ? []
+    : await loadAgentTools(agentId, { workspaceId: options.workspaceId });
   const agent = new Agent(memory, provider, agentTools, { ...config });
 
   const sessionStateManager = new SessionStateManager();

@@ -400,6 +400,34 @@ describe('Infrastructure Resource Creation', () => {
         ])
       );
     });
+
+    it('should vendor filesystem and ast MCP package trees into the general multiplexer', () => {
+      const mockCtx = {
+        memoryTable: { name: 'memory' },
+        configTable: { name: 'config' },
+        secrets: {},
+        stagingBucket: { arn: 'arn:s3:staging' },
+        knowledgeBucket: { arn: 'arn:s3:knowledge' },
+      } as unknown as SharedContext;
+
+      createMCPServers(mockCtx);
+
+      const generalArgs = mockFunction.mock.calls.find(
+        (call) => call[0] === 'GeneralMCPMultiplexer'
+      )![1] as any;
+
+      expect(generalArgs.nodejs).toEqual(expect.objectContaining({ loader: expect.anything() }));
+      expect(generalArgs.copyFiles).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            to: 'node_modules/@modelcontextprotocol/server-filesystem',
+          }),
+          expect.objectContaining({
+            to: 'node_modules/@aiready/ast-mcp-server',
+          }),
+        ])
+      );
+    });
   });
 
   describe('createApi', () => {
