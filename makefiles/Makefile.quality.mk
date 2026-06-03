@@ -3,7 +3,7 @@
 ###############################################################################
 include makefiles/Makefile.shared.mk
 
-.PHONY: check gate gate-deploy gate-tier-1 gate-tier-2 gate-fast fix lint lint-fix format format-check type-check aiready aeo lint-staged build-integrations build-cli bundle-check docs-check security-scan
+.PHONY: check gate gate-deploy gate-tier-1 gate-tier-2 gate-fast fix lint lint-fix format format-check type-check aiready aeo lint-staged build-integrations build-cli bundle-check docs-check security-scan eventbridge-lint
 
 aeo: aiready docs-check ## Run all Agentic Engine Optimization (AEO) checks
 
@@ -11,6 +11,13 @@ bundle-check: ## [FAIL-FAST] Verify Lambda bundles contain critical dependencies
 	@$(call log_step,Scanning Lambda bundles for critical dependencies...)
 	@$(PNPM) exec tsx $(SCRIPTS_DIR)/quality/bundle-scanner.ts || { \
 		$(call log_error,Bundle check failed - critical dependencies missing from Lambda zip); \
+		exit 1; \
+	}
+
+eventbridge-lint: ## [FAIL-FAST] Validate EventBridge subscriptions have explicit patterns
+	@$(call log_step,Validating EventBridge subscription patterns...)
+	@node $(SCRIPTS_DIR)/ci/lint-eventbridge-patterns.js || { \
+		$(call log_error,EventBridge pattern validation FAILED - catch-all patterns detected); \
 		exit 1; \
 	}
 
@@ -33,6 +40,10 @@ gate-tier-1: ## [FAIL-FAST #3/3] Fast Tier 1 checks (linting, formatting, types)
 	@$(call log_info,Running: lint, format, type-check...)
 	@$(PNPM) run check || { \
 		$(call log_error,Tier 1 gate FAILED - fix lint/format/type errors and try again); \
+		exit 1; \
+	}
+	@$(MAKE) eventbridge-lint || { \
+		$(call log_error,EventBridge pattern validation FAILED); \
 		exit 1; \
 	}
 	@$(PNPM) exec aiready scan . || { \

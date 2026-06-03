@@ -282,7 +282,8 @@ export const triggerDeployment = {
         });
 
         const s3 = new S3Client({});
-        const stagingBucket = Resource.StagingBucket?.name;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const stagingBucket = (Resource as any).StagingBucket?.name;
 
         if (stagingBucket) {
           const fileBuffer = await (await import('fs/promises')).readFile(zipPath);
