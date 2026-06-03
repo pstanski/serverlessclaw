@@ -47,6 +47,7 @@ The following gaps have been identified for autonomous resolution by the **Strat
 | **GAP#20260603-02** | **Add Version to Ping API**: The `/api/ping` endpoint should return a `version` field (from package.json) to help verify deployments.                                         |   9    |    9    | **DEPLOYED** |
 | **GAP#20260603-03** | **Agent Self-Awareness (Pulse Monitoring)**: Implement a system-wide health dashboard that tracks agent responsiveness and latency using the `pulse_pong` event stream.       |   7    |    6    | **DEPLOYED** |
 | **GAP#20260603-04** | **Add Node Runtime to Ping API**: The `/api/ping` endpoint should return a `runtime` field (e.g., `Node.js v24.15.0`) using `process.version` to aid in runtime verification. |   5    |    8    | **DEPLOYED** |
+| **GAP#20260603-05** | **Agent Health Timestamp**: Add a `timestamp` field to the response of the `checkAgentHealth` tool output to show the exact time the health check was performed.              |   7    |    8    | **OPEN**     |
 
 ---
 
