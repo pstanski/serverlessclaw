@@ -15,6 +15,7 @@ export async function handler(): Promise<{
       ts: Date.now(),
       service: 'serverlessclaw',
       uptime: Math.floor(process.uptime()),
+      version: '1.1.32',
     }),
   };
 }
