@@ -416,4 +416,25 @@ export class CachedMemory implements IMemory {
   invalidateGlobalUserCaches(): void {
     return this.system.invalidateGlobalUserCaches();
   }
+
+  async updateAgentHealth(
+    agentId: string,
+    health: Partial<Omit<import('../types/agent/health').AgentHealth, 'agentId'>>,
+    options?: { workspaceId?: string }
+  ): Promise<void> {
+    return this.underlying.updateAgentHealth(agentId, health, options);
+  }
+
+  async getAgentHealth(
+    agentId: string,
+    options?: { workspaceId?: string }
+  ): Promise<import('../types/agent/health').AgentHealth | undefined> {
+    return this.underlying.getAgentHealth(agentId, options);
+  }
+
+  async getAllAgentHealth(options?: {
+    workspaceId?: string;
+  }): Promise<import('../types/agent/health').AgentHealth[]> {
+    return this.underlying.getAllAgentHealth(options);
+  }
 }

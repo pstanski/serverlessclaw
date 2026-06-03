@@ -3,6 +3,7 @@ export * from './insight-operations';
 export * from './session-operations';
 export * from './clarification-operations';
 export * from './reputation-operations';
+export * from './health-operations';
 export * from './base';
 export * from './cache';
 export * from './cached-memory';

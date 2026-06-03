@@ -8,6 +8,43 @@ import { AgentCategory } from '../../lib/types/agent';
 import { logger } from '../../lib/logger';
 
 /**
+ * Retrieves real-time health and latency status of agents.
+ */
+export const checkAgentHealth = {
+  ...knowledgeSchema.checkAgentHealth,
+  execute: async (args: Record<string, unknown>): Promise<string> => {
+    const { agentId, workspaceId } = args as { agentId?: string; workspaceId?: string };
+
+    try {
+      const { DynamoMemory } = await import('../../lib/memory/dynamo-memory');
+      const memory = new DynamoMemory();
+
+      if (agentId) {
+        const health = await memory.getAgentHealth(agentId, { workspaceId });
+        if (!health) return `No health data found for agent '${agentId}'.`;
+
+        const lastSeenAgo = Math.floor((Date.now() - health.lastSeen) / 1000);
+        return `Health Status for ${agentId}:\n- Status: ${health.status}\n- Latency: ${health.latencyMs}ms\n- Last Seen: ${lastSeenAgo} seconds ago`;
+      }
+
+      const allHealth = await memory.getAllAgentHealth({ workspaceId });
+      if (allHealth.length === 0) return 'No health data found for any agents.';
+
+      const summary = allHealth
+        .map((h) => {
+          const ago = Math.floor((Date.now() - h.lastSeen) / 1000);
+          return `- [${h.agentId}] ${h.status} (Latency: ${h.latencyMs}ms, Last Seen: ${ago}s ago)`;
+        })
+        .join('\n');
+
+      return `Swarm Health Status:\n${summary}`;
+    } catch (error) {
+      return `Failed to check agent health: ${formatErrorMessage(error)}`;
+    }
+  },
+};
+
+/**
  * Lists all registered agents and their current status.
  */
 export const listAgents = {

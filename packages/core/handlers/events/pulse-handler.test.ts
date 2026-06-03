@@ -16,6 +16,18 @@ vi.mock('../../lib/logger', () => ({
   },
 }));
 
+const mocks = vi.hoisted(() => ({
+  updateAgentHealth: vi.fn(),
+}));
+
+vi.mock('../../lib/memory/dynamo-memory', () => ({
+  DynamoMemory: vi.fn().mockImplementation(function () {
+    return {
+      updateAgentHealth: mocks.updateAgentHealth,
+    };
+  }),
+}));
+
 describe('Pulse Handler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -62,7 +74,7 @@ describe('Pulse Handler', () => {
   });
 
   describe('handlePulsePong', () => {
-    it('should log the pong and latency', async () => {
+    it('should log the pong and latency and update memory', async () => {
       const now = Date.now();
       const payload = {
         userId: 'user-123',
@@ -72,6 +84,7 @@ describe('Pulse Handler', () => {
         timestamp: now - 100,
         responseTimestamp: now,
         status: 'pong',
+        workspaceId: 'ws-1',
       };
 
       await handlePulsePong(payload, {} as any);
@@ -81,6 +94,15 @@ describe('Pulse Handler', () => {
         expect.objectContaining({
           latencyMs: expect.any(Number),
         })
+      );
+
+      expect(mocks.updateAgentHealth).toHaveBeenCalledWith(
+        AGENT_TYPES.CODER,
+        {
+          status: 'online',
+          latencyMs: 100,
+        },
+        { workspaceId: 'ws-1' }
       );
     });
   });
