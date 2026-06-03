@@ -323,13 +323,43 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
       `[Coder] Evolution validation state: effectiveParsed.patch=${!!effectiveParsed?.patch}, effectiveParsed.buildId=${!!effectiveParsed?.buildId}, gapIds=${gapIds?.length ?? 0}, isFailure=${isFailure}, isPaused=${isTaskPaused(responseText)}`
     );
 
-    // 5. Evolution Validation: Require a concrete technical artifact for successful evolution tasks
+    // 5. Evolution Validation & Auto-Deployment: Require a concrete technical artifact
     if (gapIds && gapIds.length > 0 && !isFailure && !isTaskPaused(responseText)) {
       if (!hasTechnicalArtifact) {
         logger.error(
           `[Coder] Evolution task successful but no technical artifact was returned. gapIds=${gapIds.join(', ')}`
         );
         responseText = `FAILED: Evolution task requires a technical artifact (patch or build) for gaps: ${gapIds.join(', ')}`;
+      } else if (effectiveParsed?.patch && !effectiveParsed?.buildId) {
+        // Auto-Deploy Fallback: Trigger deployment if patch exists but no buildId was returned
+        logger.info('[Coder] Evolution task has patch but no build. Triggering auto-deployment...');
+        try {
+          const { triggerDeployment } = await import('../tools/infra/deployment');
+          const deployResult = await triggerDeployment.execute({
+            reason: `Autonomous evolution for gaps: ${gapIds.join(', ')}`,
+            userId: extractBaseUserId(userId),
+            traceId,
+            initiatorId: AGENT_TYPES.CODER,
+            sessionId,
+            gapIds,
+            patch: effectiveParsed.patch,
+            workspaceId,
+          });
+
+          const buildMatch = deployResult.match(/Build ID: ([\w:-]+)/);
+          if (buildMatch?.[1]) {
+            effectiveParsed.buildId = buildMatch[1];
+            logger.info(
+              `[Coder] Auto-deployment triggered successfully. Build ID: ${effectiveParsed.buildId}`
+            );
+          } else {
+            logger.warn(
+              `[Coder] Auto-deployment triggered but no Build ID found in result: ${deployResult}`
+            );
+          }
+        } catch (err) {
+          logger.error('[Coder] Failed to trigger auto-deployment for evolution patch:', err);
+        }
       } else {
         logger.info(
           `[Coder] Evolution validation PASSED: patch=${!!effectiveParsed?.patch}, buildId=${effectiveParsed?.buildId ?? 'none'}`

@@ -58,6 +58,10 @@ export const infraSchema: Record<string, IToolDefinition> = {
       properties: {
         reason: { type: 'string' },
         gapIds: { type: 'array', items: { type: 'string' } },
+        patch: {
+          type: 'string',
+          description: 'Optional: Git diff patch to apply before deployment.',
+        },
         stagingKey: {
           type: 'string',
           description: 'Optional: Specific staging ZIP key returned by stageChanges.',

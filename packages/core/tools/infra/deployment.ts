@@ -217,7 +217,8 @@ export const triggerDeployment = {
       task,
       gapIds,
       deployType = 'autonomous',
-      stagingKey,
+      stagingKey: providedStagingKey,
+      patch,
       workspaceId,
       teamId,
       staffId,
@@ -231,6 +232,7 @@ export const triggerDeployment = {
       gapIds?: string[];
       deployType?: 'autonomous' | 'emergency';
       stagingKey?: string;
+      patch?: string;
       workspaceId?: string;
       teamId?: string;
       staffId?: string;
@@ -239,7 +241,7 @@ export const triggerDeployment = {
     const { getCircuitBreaker } = await import('../../lib/safety/circuit-breaker');
     const { getDeployCountToday, incrementDeployCount } =
       await import('../../lib/metrics/deploy-stats');
-    const { SYSTEM, DYNAMO_KEYS } = await import('../../lib/constants');
+    const { SYSTEM, DYNAMO_KEYS, STORAGE } = await import('../../lib/constants');
     const { DynamoDBClient } = await import('@aws-sdk/client-dynamodb');
     const { DynamoDBDocumentClient, GetCommand, PutCommand } =
       await import('@aws-sdk/lib-dynamodb');
@@ -248,6 +250,66 @@ export const triggerDeployment = {
     const codebuild = new CodeBuildClient({});
     const db = DynamoDBDocumentClient.from(new DynamoDBClient({}));
     const cb = getCircuitBreaker('circuit_breaker_state', workspaceId);
+
+    let effectiveStagingKey = providedStagingKey;
+
+    // If a patch is provided, ZIP it and upload to S3 to satisfy CodeBuild requirements
+    if (patch && !effectiveStagingKey) {
+      const { createWriteStream } = await import('fs');
+      const { writeFile, unlink } = await import('fs/promises');
+      const archiver = (await import('archiver')).default;
+      const path = await import('path');
+
+      const tempDir = '/tmp';
+      const patchFileName = `patch-${traceId || Date.now()}.patch`;
+      const patchFilePath = path.join(tempDir, patchFileName);
+      const zipPath = path.join(tempDir, `patch-deploy-${traceId || Date.now()}.zip`);
+
+      try {
+        await writeFile(patchFilePath, patch, 'utf-8');
+
+        await new Promise<void>((resolve, reject) => {
+          const output = createWriteStream(zipPath);
+          const archive = archiver('zip', { zlib: { level: 9 } });
+          output.on('close', () => resolve());
+          archive.on('error', (err) => reject(err));
+          archive.pipe(output);
+          // Only include the patch file in the ZIP.
+          // buildspec.yml needs to be updated to handle this correctly,
+          // or we can name it staged_changes.zip if it expects that.
+          archive.file(patchFilePath, { name: 'autonomous.patch' });
+          archive.finalize();
+        });
+
+        const s3 = new S3Client({});
+        const stagingBucket = Resource.StagingBucket?.name;
+
+        if (stagingBucket) {
+          const fileBuffer = await (await import('fs/promises')).readFile(zipPath);
+          const baseZipKey = traceId ? `staged_${traceId}.zip` : STORAGE.STAGING_ZIP;
+          effectiveStagingKey = workspaceId
+            ? `workspaces/${workspaceId}/${baseZipKey}`
+            : baseZipKey;
+
+          logger.info(
+            `[Deployment] Uploading patch ZIP to S3: ${stagingBucket}/${effectiveStagingKey}`
+          );
+          await s3.send(
+            new PutObjectCommand({
+              Bucket: stagingBucket,
+              Key: effectiveStagingKey,
+              Body: fileBuffer,
+            })
+          );
+        }
+      } catch (error) {
+        logger.error('[Deployment] Failed to stage patch for build:', error);
+      } finally {
+        await unlink(patchFilePath).catch(() => {});
+        await unlink(zipPath).catch(() => {});
+      }
+    }
+
     const today = new Date().toISOString().split('T')[0];
 
     // Added safeguard: prevent local stage from triggering remote builds
@@ -325,8 +387,8 @@ export const triggerDeployment = {
       logger.info(`Triggering deployment for reason: ${reason}${warning}`);
 
       const envOverrides = [{ name: 'DEPLOY_REASON', value: reason }];
-      if (stagingKey) {
-        envOverrides.push({ name: 'STAGING_ZIP_KEY', value: stagingKey });
+      if (effectiveStagingKey) {
+        envOverrides.push({ name: 'STAGING_ZIP_KEY', value: effectiveStagingKey });
       } else {
         const baseZipKey = traceId ? `staged_${traceId}.zip` : 'latest/staging.zip';
         const finalZipKey = workspaceId ? `workspaces/${workspaceId}/${baseZipKey}` : baseZipKey;

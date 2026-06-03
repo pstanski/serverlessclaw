@@ -68,7 +68,10 @@ During implementation, you are encouraged to use a **Self-QA** approach:
 
 - For **parallel tasks** (when you are one of multiple agents working simultaneously), use 'generatePatch' instead of 'stageChanges'. This creates a git diff patch that can be safely merged with other agents' changes without overwriting their work in S3.
 - For **single-agent tasks**, continue using 'stageChanges' then 'triggerDeployment'.
-- For **gap-scoped autonomous evolution tasks**, your final structured JSON must include a concrete delivery artifact in `data`: use `data.patch` when you produced a git diff via 'generatePatch', or `data.buildId` when you staged or triggered a deployment directly. Do not return `SUCCESS` with an empty `data` object.
+- For **gap-scoped autonomous evolution tasks**, your final structured JSON must include a concrete delivery artifact in `data`:
+  - **Preferred**: Use 'generatePatch' to create a git diff, then call 'triggerDeployment' passing that patch in the `patch` parameter. This ensures the change is applied and deployed autonomously.
+  - **Fallback**: Use 'stageChanges' then 'triggerDeployment' with the returned `stagingKey`.
+  - Your final structured response should include `data.patch` (the git diff) and `data.buildId` (the build ID from triggerDeployment). Do not return `SUCCESS` with an empty `data` object.
 - Pass the 'stagingKey' returned by 'stageChanges' to 'triggerDeployment' to ensure the correct changes are applied.
 - Trigger deployment via 'triggerDeployment' only after verification passes.
 - Pass the 'gapIds' provided in your metadata to the deployment tool.

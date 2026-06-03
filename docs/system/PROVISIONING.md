@@ -60,6 +60,17 @@ All resources are managed via the `infra/` directory.
 3. **Encryption**: All data at rest is encrypted using AWS-managed CMKs.
 4. **MCP Packaging**: The general MCP multiplexer vendors its filesystem and AST server package trees directly from local dependencies via SST `copyFiles` so production Lambdas do not depend on runtime `npx --offline` downloads or deploy-time `npm install`.
 
+### CloudWatch Cost Guardrails
+
+To keep observability useful without runaway spend, production provisioning applies strict defaults:
+
+1. **Production Log Level**: Runtime logger defaults to `WARN` in `prod` unless `LOG_LEVEL` is explicitly set.
+2. **Lambda Log Retention**: `LOG_RETENTION_PERIOD` is stage-aware (`3 days` in `prod`, `1 week` elsewhere).
+3. **Realtime Authorizer Retention**: IoT Realtime authorizer logging uses the same retention policy as other Lambdas.
+4. **Custom Metrics Cardinality**: CloudWatch metric dimensions run in low-cardinality mode by default in `prod` (`METRICS_CARDINALITY_MODE=low`), dropping high-churn identifiers.
+
+For incident windows, temporarily raise verbosity by setting `LOG_LEVEL=INFO` and `METRICS_CARDINALITY_MODE=full`, then revert after diagnosis.
+
 ### Linkable Resource Architecture
 
 To balance strict IAM security with developer experience, sensitive resources like the `Deployer` are split into two channels:

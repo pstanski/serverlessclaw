@@ -38,6 +38,14 @@ phases:
           if [ -f "staged_changes.zip" ]; then
             echo "Applying staged changes..."
             unzip -o staged_changes.zip || { echo "ERROR: Failed to unzip staged changes." && exit 1; }
+
+            # Apply patch if present (for generatePatch based evolution)
+            if [ -f "autonomous.patch" ]; then
+              echo "Applying autonomous.patch..."
+              git apply autonomous.patch || { echo "ERROR: Failed to apply autonomous.patch." && exit 1; }
+              rm autonomous.patch
+            fi
+
             rm staged_changes.zip
             echo "Committing staged changes for clean working directory..."
             git config --global user.email "agent@serverlessclaw.local"

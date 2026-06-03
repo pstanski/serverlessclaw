@@ -26,6 +26,12 @@ class Logger {
       if (levelStr in LogLevel) {
         this.level = LogLevel[levelStr as keyof typeof LogLevel];
       }
+    } else {
+      const stage = (env.SST_STAGE || env.STAGE || '').toLowerCase();
+      // Cost guardrail: production defaults to WARN to cut CloudWatch ingest volume.
+      if (stage === 'prod') {
+        this.level = LogLevel.WARN;
+      }
     }
 
     if (env.NODE_ENV === 'test' || env.VITEST) {
