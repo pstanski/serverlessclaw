@@ -51,6 +51,8 @@ export function createDeployer(ctx: DeployerContext) {
             'iot:*',
             'scheduler:*',
             'cloudfront:*',
+            'sns:*',
+            'budgets:*',
             'iam:PassRole',
             'iam:GetRole',
             'iam:ListRolePolicies',
