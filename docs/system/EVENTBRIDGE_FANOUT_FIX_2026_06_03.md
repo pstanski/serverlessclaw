@@ -6,13 +6,15 @@
 
 **Root Cause**: [packages/integration-github/stack.ts](../../packages/integration-github/stack.ts) subscribed ReleaseNotifier without a `pattern` argument, defaulting to catch-all `{"source":[{"prefix":""}]}`.
 
-**Impact**: 
+**Impact**:
+
 - ReleaseNotifier: 2,098,157 invocations on 2026-05-31 (spike day)
 - EventHandler: 2,085,176 invocations (secondary fanout)
 - RealtimeBridge: 1,045,963 invocations (tertiary fanout)
 - CloudWatch PutMetricData: 5,976,016 requests (cost: $49.88 USD)
 
 **Fix Applied**: Deployed production with corrected event filter:
+
 ```typescript
 pattern: {
   source: ['github.webhook'],
@@ -28,13 +30,15 @@ pattern: {
 **EventBus**: `serverlessclaw-prod-AgentBusBus-nwfxvuxt`
 
 **Before Deploy (2026-06-03 ~14:50 UTC)**:
+
 ```json
 {
-  "source": [{"prefix": ""}]
+  "source": [{ "prefix": "" }]
 }
 ```
 
 **After Deploy (2026-06-03 ~14:58 UTC)**:
+
 ```json
 {
   "detail-type": ["github_release_created"],
@@ -57,16 +61,17 @@ pattern: {
 
 ### ReleaseNotifier Invocation Trajectory
 
-| Time Window | Expected Rate | Pre-Deploy Actual | Post-Deploy Actual | Target |
-|---|---|---|---|---|
-| Last 60 min | ~600–1k inv | ~39,072 | TBD (verify in 30min) | <10 per day |
-| Last 10 min | ~100–200 inv | ~4,960 | TBD (verify in 30min) | <1 per day |
+| Time Window | Expected Rate | Pre-Deploy Actual | Post-Deploy Actual    | Target      |
+| ----------- | ------------- | ----------------- | --------------------- | ----------- |
+| Last 60 min | ~600–1k inv   | ~39,072           | TBD (verify in 30min) | <10 per day |
+| Last 10 min | ~100–200 inv  | ~4,960            | TBD (verify in 30min) | <1 per day  |
 
 **Interpretation**: Pre-deploy rates were amplified by fanout. Post-deploy should approach near-zero unless genuine GitHub events are occurring.
 
 ### EventHandler & RealtimeBridge
 
 These two functions should show proportional reduction since they were downstream of the amplification:
+
 - Pre-deploy 60min: ~13,554 each
 - Post-deploy trend: Should stabilize to normal request volume (likely <1000/hour)
 
@@ -126,7 +131,8 @@ AWS_PAGER='' AWS_PROFILE=aiready AWS_REGION=ap-southeast-2 \
 sort -k2 -r
 ```
 
-**Expected Result**: 
+**Expected Result**:
+
 - PutMetricData usage should drop to <500–1000 (from 5,976,016)
 - PutLogEvents usage should drop proportionally
 - Daily CloudWatch cost should return to ~$0.0005 USD
@@ -134,6 +140,7 @@ sort -k2 -r
 ### ⏳ Weekly Trend (2026-06-10)
 
 Monitor the following metrics on a daily cadence through 2026-06-10 to confirm:
+
 1. ReleaseNotifier stays below 100 invocations/day
 2. EventHandler & RealtimeBridge return to baseline
 3. CloudWatch PutMetricData operations stabilize at <5000/day
@@ -146,6 +153,7 @@ Monitor the following metrics on a daily cadence through 2026-06-10 to confirm:
 If post-deploy verification fails (e.g., ReleaseNotifier still shows millions of invocations):
 
 1. Edit [packages/integration-github/stack.ts](../../packages/integration-github/stack.ts) to restore catch-all:
+
    ```typescript
    // Revert temporarily for investigation
    // bus.subscribe('GitHubReleaseCreated', releaseNotifier.arn, {

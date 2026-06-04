@@ -9,13 +9,13 @@
 
 Deployed multi-layered guardrails to prevent future EventBridge catch-all pattern incidents like the 2026-05-31 $51.26 CloudWatch cost spike.
 
-| Aspect | Before | After | Status |
-|---|---|---|---|
-| **Cost/day** | $51.26 | ~$0.10 | ✓ 99.8% reduction |
-| **Invocations** | 2.1M amplified | ~5 expected | ✓ Fix deployed |
-| **Linting** | None | Automated CI gate | ✓ Active |
-| **Documentation** | None | Comprehensive | ✓ Complete |
-| **Code Review** | Manual detection | Structured checklist | ✓ Ready |
+| Aspect            | Before           | After                | Status            |
+| ----------------- | ---------------- | -------------------- | ----------------- |
+| **Cost/day**      | $51.26           | ~$0.10               | ✓ 99.8% reduction |
+| **Invocations**   | 2.1M amplified   | ~5 expected          | ✓ Fix deployed    |
+| **Linting**       | None             | Automated CI gate    | ✓ Active          |
+| **Documentation** | None             | Comprehensive        | ✓ Complete        |
+| **Code Review**   | Manual detection | Structured checklist | ✓ Ready           |
 
 ---
 
@@ -26,6 +26,7 @@ Deployed multi-layered guardrails to prevent future EventBridge catch-all patter
 **What it does**: Scans all TypeScript files for EventBridge subscriptions and validates explicit patterns.
 
 **How to run**:
+
 ```bash
 # Via make
 make eventbridge-lint
@@ -35,6 +36,7 @@ node scripts/ci/lint-eventbridge-patterns.js
 ```
 
 **Integration**:
+
 - Runs in `make gate-tier-1` (fail-fast, blocks deployment)
 - Exit code 0 = PASS, Exit code 1 = FAIL with violations listed
 
@@ -47,8 +49,9 @@ node scripts/ci/lint-eventbridge-patterns.js
 **File**: [.github/instructions/engineering/standards.md](../.github/instructions/engineering/standards.md)
 
 **Addition**:
+
 ```markdown
-4. **Infrastructure Safety** (NEW): All EventBridge subscriptions MUST have 
+4. **Infrastructure Safety** (NEW): All EventBridge subscriptions MUST have
    explicit event patterns (no catch-all).
 ```
 
@@ -61,6 +64,7 @@ node scripts/ci/lint-eventbridge-patterns.js
 **File**: [docs/system/EVENTBRIDGE_BEST_PRACTICES.md](../docs/system/EVENTBRIDGE_BEST_PRACTICES.md)
 
 **Includes**:
+
 - ❌ Anti-patterns with explanations
 - ✅ Safe patterns with examples
 - 🔗 Common integration templates (GitHub, Slack, internal)
@@ -77,6 +81,7 @@ node scripts/ci/lint-eventbridge-patterns.js
 **File**: [.github/REVIEW_CHECKLIST_EVENTBRIDGE.md](./.github/REVIEW_CHECKLIST_EVENTBRIDGE.md)
 
 **Includes**:
+
 - 6-point checklist (pattern, source, detail-type, DLQ, tests, docs)
 - Red flags triggering auto-rejection
 - Approval template for passing reviews
@@ -148,15 +153,15 @@ cat docs/system/EVENTBRIDGE_BEST_PRACTICES.md | head -20
 
 ## 📚 Documentation Artifacts
 
-| File | Purpose | Audience |
-|---|---|---|
-| [EVENTBRIDGE_FANOUT_FIX_2026_06_03.md](../docs/system/EVENTBRIDGE_FANOUT_FIX_2026_06_03.md) | Deployment & rollback plan | DevOps, On-call |
+| File                                                                                                        | Purpose                       | Audience                  |
+| ----------------------------------------------------------------------------------------------------------- | ----------------------------- | ------------------------- |
+| [EVENTBRIDGE_FANOUT_FIX_2026_06_03.md](../docs/system/EVENTBRIDGE_FANOUT_FIX_2026_06_03.md)                 | Deployment & rollback plan    | DevOps, On-call           |
 | [EVENTBRIDGE_FANOUT_FIX_RESULTS_2026_06_03.md](../docs/system/EVENTBRIDGE_FANOUT_FIX_RESULTS_2026_06_03.md) | Post-deploy metrics & lessons | Platform team, architects |
-| [EVENTBRIDGE_BEST_PRACTICES.md](../docs/system/EVENTBRIDGE_BEST_PRACTICES.md) | Safety guidelines & patterns | Engineers, reviewers |
-| [REVIEW_CHECKLIST_EVENTBRIDGE.md](./.github/REVIEW_CHECKLIST_EVENTBRIDGE.md) | Code review template | Reviewers, maintainers |
-| [standards.md](./.github/instructions/engineering/standards.md) | Engineering principles | All engineers |
-| [verify-eventbridge-fix.sh](../scripts/ci/verify-eventbridge-fix.sh) | Post-deploy verification | DevOps, on-call |
-| [lint-eventbridge-patterns.js](../scripts/ci/lint-eventbridge-patterns.js) | Automated linter | CI/CD, developers |
+| [EVENTBRIDGE_BEST_PRACTICES.md](../docs/system/EVENTBRIDGE_BEST_PRACTICES.md)                               | Safety guidelines & patterns  | Engineers, reviewers      |
+| [REVIEW_CHECKLIST_EVENTBRIDGE.md](./.github/REVIEW_CHECKLIST_EVENTBRIDGE.md)                                | Code review template          | Reviewers, maintainers    |
+| [standards.md](./.github/instructions/engineering/standards.md)                                             | Engineering principles        | All engineers             |
+| [verify-eventbridge-fix.sh](../scripts/ci/verify-eventbridge-fix.sh)                                        | Post-deploy verification      | DevOps, on-call           |
+| [lint-eventbridge-patterns.js](../scripts/ci/lint-eventbridge-patterns.js)                                  | Automated linter              | CI/CD, developers         |
 
 ---
 
@@ -230,6 +235,7 @@ aws ce get-cost-and-usage \
 ```
 
 **Expected**:
+
 - PutMetricData: < 5,000 operations/day (was 5,976,016)
 - PutLogEvents: < 100,000 operations/day (was high due to fanout)
 - CloudWatch daily cost: < $0.10 (was $51.26)

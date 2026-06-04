@@ -33,12 +33,20 @@ bus.subscribe('EventName', functionArn, {
 
 ```typescript
 // ✗ FAIL: Empty or catch-all source
-pattern: { source: [{ prefix: '' }] }
-pattern: { source: ['*'] }
+pattern: {
+  source: [{ prefix: '' }];
+}
+pattern: {
+  source: ['*'];
+}
 
 // ✓ PASS: Explicit source
-pattern: { source: ['github.webhook'] }
-pattern: { source: ['slack.integration'] }
+pattern: {
+  source: ['github.webhook'];
+}
+pattern: {
+  source: ['slack.integration'];
+}
 ```
 
 **Action**: If using catch-all or empty source, request revision.
@@ -143,6 +151,7 @@ node scripts/ci/lint-eventbridge-patterns.js
 **Expected Result**: Exit code 0 (no violations)
 
 If this step fails in CI:
+
 - [ ] Check the error message for violations
 - [ ] Update the EventBridge subscription with explicit patterns
 - [ ] Re-run locally: `node scripts/ci/lint-eventbridge-patterns.js`
@@ -197,6 +206,7 @@ bus.subscribe('EventName', handler.arn);
 \`\`\`
 
 **Why This Matters**: Without an explicit `pattern`, this subscription receives ALL events on the bus (~2.1M/day). This can cause:
+
 - Cost spike (CloudWatch metrics explosion)
 - System overload (Lambda invocation flood)
 - Cascading fanout (downstream handlers also amplify)
@@ -204,14 +214,15 @@ bus.subscribe('EventName', handler.arn);
 **Fix Required**:
 \`\`\`typescript
 bus.subscribe('EventName', handler.arn, {
-  pattern: {
-    source: ['specific.source'],
-    detailType: ['specific_type'],
-  },
+pattern: {
+source: ['specific.source'],
+detailType: ['specific_type'],
+},
 });
 \`\`\`
 
 **Also add**:
+
 - [ ] Inline comment explaining what events trigger this subscription
 - [ ] Integration test verifying the pattern works
 - [ ] Dead-letter queue for error handling

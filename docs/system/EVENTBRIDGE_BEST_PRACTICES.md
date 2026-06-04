@@ -93,15 +93,22 @@ pattern: {
 
 ```typescript
 // ❌ Catch-all patterns (DO NOT USE)
-pattern: { source: [{ prefix: '' }] }
-pattern: {}
-pattern: { source: ['*'] }
+pattern: {
+  source: [{ prefix: '' }];
+}
+pattern: {
+}
+pattern: {
+  source: ['*'];
+}
 
 // ❌ Missing pattern argument entirely
-bus.subscribe('EventName', functionArn)
+bus.subscribe('EventName', functionArn);
 
 // ❌ Vague sources without detail-type filter
-pattern: { source: ['*'] }
+pattern: {
+  source: ['*'];
+}
 ```
 
 ---
@@ -196,19 +203,19 @@ describe('GitHub Integration Subscription Pattern', () => {
       source: ['github.webhook'],
       detailType: ['github_release_created'],
     };
-    
+
     // Verify pattern structure
     expect(pattern.source).toBeDefined();
     expect(pattern.detailType).toBeDefined();
   });
-  
+
   it('should NOT match non-GitHub events', () => {
     const nonGitHubEvent = {
       Source: 'slack.integration',
       DetailType: 'message_received',
       Detail: '{}',
     };
-    
+
     // Verify this event would be filtered out
     expect(matchesPattern(nonGitHubEvent, pattern)).toBe(false);
   });
@@ -230,6 +237,7 @@ node scripts/ci/lint-eventbridge-patterns.js
 ```
 
 **What it checks**:
+
 - ✓ All `bus.subscribe()` calls have explicit patterns
 - ✓ No catch-all source prefixes
 - ✓ At least one of: `source` or `detailType` is specified

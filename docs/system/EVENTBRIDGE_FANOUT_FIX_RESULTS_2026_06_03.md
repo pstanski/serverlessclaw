@@ -6,11 +6,11 @@
 
 ### Invocation Rate Comparison
 
-| Function | Pre-Deploy (10min) | Post-Deploy (10min) | Delta | Status |
-|---|---|---|---|---|
-| **ReleaseNotifier** | 4,960 invocations | **0 invocations** | **-100%** | ✓ FIXED |
-| **EventHandler** | 2,184 invocations | **0 invocations** | **-100%** | ✓ Normalized |
-| **RealtimeBridge** | 2,184 invocations | **0 invocations** | **-100%** | ✓ Normalized |
+| Function            | Pre-Deploy (10min) | Post-Deploy (10min) | Delta     | Status       |
+| ------------------- | ------------------ | ------------------- | --------- | ------------ |
+| **ReleaseNotifier** | 4,960 invocations  | **0 invocations**   | **-100%** | ✓ FIXED      |
+| **EventHandler**    | 2,184 invocations  | **0 invocations**   | **-100%** | ✓ Normalized |
+| **RealtimeBridge**  | 2,184 invocations  | **0 invocations**   | **-100%** | ✓ Normalized |
 
 ### EventBridge Rule Pattern Confirmation
 
@@ -24,9 +24,10 @@
 ```
 
 Previously (pre-deploy):
+
 ```json
 {
-  "source": [{"prefix": ""}]
+  "source": [{ "prefix": "" }]
 }
 ```
 
@@ -51,18 +52,21 @@ The immediate drop to 0 invocations is expected and healthy:
 ### Based on Pre-Deploy Metrics (2026-05-31)
 
 **Pre-Deploy Fanout**:
+
 - ReleaseNotifier: 2,098,157 invocations → ~2.1M metrics generated
-- EventHandler: 2,085,176 invocations → ~2.1M metrics generated  
+- EventHandler: 2,085,176 invocations → ~2.1M metrics generated
 - RealtimeBridge: 1,045,963 invocations → ~1.0M metrics generated
 - **Total**: ~5.2M events amplified through the pipeline
 
 **Post-Deploy Projection**:
+
 - ReleaseNotifier: ~5–10 per day (genuine GitHub releases)
 - EventHandler: ~1000s per day (normal business events)
 - RealtimeBridge: ~1000s per day (normal broadcast events)
 - **Total**: ~2000–3000 events per day (99.9% reduction)
 
 **Expected Daily Cost Savings**:
+
 - PutMetricData: **$49.88 → ~$0.05** (-99.9%)
 - PutLogEvents: **$0.80 → ~$0.01** (-98%)
 - **Total CloudWatch**: **$51.26 → ~$0.10 per day** (-99.8%)
@@ -86,6 +90,7 @@ The immediate drop to 0 invocations is expected and healthy:
 Empty `source` prefix patterns (`{"source":[{"prefix":""}]}`) match ALL bus events. For integrations that need selective filtering:
 
 ✅ **DO**: Specify explicit patterns
+
 ```typescript
 bus.subscribe('GitHubReleaseCreated', releaseNotifier.arn, {
   pattern: {
@@ -96,6 +101,7 @@ bus.subscribe('GitHubReleaseCreated', releaseNotifier.arn, {
 ```
 
 ❌ **DON'T**: Omit patterns or use catch-all prefixes
+
 ```typescript
 // WRONG: catches all events!
 bus.subscribe('GitHubReleaseCreated', releaseNotifier.arn);
@@ -114,6 +120,7 @@ Even with a catch-all EventBridge subscription, the production telemetry guardra
 ### 3. Testing Coverage Gap
 
 The integration tests for [packages/integration-github](../../packages/integration-github) did not verify:
+
 - EventBridge subscription pattern correctness
 - Fanout amplification under high event load
 
