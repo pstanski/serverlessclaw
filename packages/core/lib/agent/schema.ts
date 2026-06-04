@@ -8,6 +8,7 @@ export const DEFAULT_SIGNAL_SCHEMA: ResponseFormat = {
   type: 'json_schema',
   json_schema: {
     name: 'agent_signal',
+    strict: false,
     schema: {
       type: 'object',
       properties: {
