@@ -329,18 +329,26 @@ export const triggerDeployment = {
 
       const count = await getDeployCountToday(workspaceId);
 
-      const typedResource = Resource as any;
-      const configTable = typedResource.ConfigTable?.name;
-      const memoryTable = typedResource.MemoryTable?.name;
-      const buildProject =
-        typedResource.SelfDeployProject?.name ||
-        typedResource.Deployer?.name ||
-        process.env.DEPLOYER_PROJECT_NAME;
+      let configTable: string | undefined;
+      let memoryTable: string | undefined;
+      let buildProject = process.env.DEPLOYER_PROJECT_NAME;
+
+      try {
+        const typedResource = Resource as any;
+        configTable = typedResource.ConfigTable?.name;
+        memoryTable = typedResource.MemoryTable?.name;
+        buildProject =
+          typedResource.SelfDeployProject?.name || typedResource.Deployer?.name || buildProject;
+      } catch (e) {
+        logger.warn('[Deployment] Defensive resource access failed, falling back to env:', e);
+      }
 
       if (!configTable || !memoryTable || !buildProject) {
-        const availableResources = Object.keys(typedResource).filter(
-          (k) => typeof typedResource[k] === 'object'
-        );
+        const availableResources = [];
+        try {
+          availableResources.push(...Object.keys(Resource));
+        } catch (e) {}
+
         logger.error('[Deployment] Infrastructure resources not fully linked.', {
           availableResources,
           hasConfig: !!configTable,
@@ -509,8 +517,14 @@ export const triggerInfraRebuild = {
       const { StartBuildCommand, CodeBuildClient } = await import('@aws-sdk/client-codebuild');
       const client = new CodeBuildClient({});
 
-      const typedResource = Resource as unknown as import('../../lib/types/system').SSTResource;
-      const buildProject = typedResource.SelfDeployProject?.name || typedResource.Deployer?.name;
+      let buildProject = process.env.DEPLOYER_PROJECT_NAME;
+      try {
+        const typedResource = Resource as any;
+        buildProject = typedResource.SelfDeployProject?.name || typedResource.Deployer?.name || buildProject;
+      } catch (e) {
+        logger.warn('[triggerInfraRebuild] Defensive resource access failed, falling back to env:', e);
+      }
+
       if (!buildProject) return 'FAILED: SelfDeployProject not linked.';
 
       const build = await client.send(
