@@ -65,9 +65,7 @@ export function createDeployer(ctx: DeployerContext) {
         // Dedicated statement for CloudWatch Logs (untagged)
         {
           Effect: 'Allow',
-          Action: [
-            'logs:*',
-          ],
+          Action: ['logs:*'],
           Resource: '*',
         },
         // Exception: IAM management and global listing
