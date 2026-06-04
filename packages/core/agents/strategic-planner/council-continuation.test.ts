@@ -60,7 +60,7 @@ vi.mock('../../lib/utils/agent-helpers', () => ({
   }),
   emitTaskEvent: emitTaskEventMock,
   parseStructuredResponse: (r: string) => JSON.parse(r),
-  isTaskPaused: vi.fn().mockReturnValue(false),
+  isTaskPaused: vi.fn().mockReturnValue(true),
 }));
 
 vi.mock('../../lib/utils/typed-emit', () => ({

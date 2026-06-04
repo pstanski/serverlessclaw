@@ -32,6 +32,7 @@ describe('Knowledge Domain Tool Schemas', () => {
     'listSystemConfigs',
     'getSystemConfigMetadata',
     'inspectTrace',
+    'checkAgentHealth',
   ];
 
   it('should export all expected tool definitions', () => {
@@ -94,6 +95,7 @@ describe('Knowledge Domain Tool Schemas', () => {
       listSystemConfigs: [],
       getSystemConfigMetadata: [],
       inspectTrace: ['traceId'],
+      checkAgentHealth: undefined as any,
     };
 
     for (const [name, expected] of Object.entries(requiredByTool)) {
