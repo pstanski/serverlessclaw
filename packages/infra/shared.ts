@@ -72,7 +72,7 @@ export const AGENT_CONFIG = {
     SHORT: '30 seconds',
     MEDIUM: '60 seconds',
     LONG: '300 seconds',
-    MAX: '600 seconds',
+    MAX: '900 seconds',
   },
 } as const;
 
