@@ -329,13 +329,22 @@ export const triggerDeployment = {
 
       const count = await getDeployCountToday(workspaceId);
 
-      const typedResource = Resource as unknown as import('../../lib/types/system').SSTResource;
+      const typedResource = Resource as any;
       const configTable = typedResource.ConfigTable?.name;
       const memoryTable = typedResource.MemoryTable?.name;
       const buildProject = typedResource.SelfDeployProject?.name || typedResource.Deployer?.name;
 
       if (!configTable || !memoryTable || !buildProject) {
-        return 'FAILED: Infrastructure resources not fully linked.';
+        const availableResources = Object.keys(typedResource).filter(
+          (k) => typeof typedResource[k] === 'object'
+        );
+        logger.error('[Deployment] Infrastructure resources not fully linked.', {
+          availableResources,
+          hasConfig: !!configTable,
+          hasMemory: !!memoryTable,
+          hasBuildProject: !!buildProject,
+        });
+        return `FAILED: Infrastructure resources not fully linked. Missing: ${[!configTable && 'ConfigTable', !memoryTable && 'MemoryTable', !buildProject && 'Deployer'].filter(Boolean).join(', ')}. Available: ${availableResources.join(', ')}`;
       }
 
       const { Item: configItem } = await db.send(

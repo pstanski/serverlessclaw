@@ -40,7 +40,7 @@ export function createMultiplexers(ctx: SharedContext, options: MultiplexerOptio
   const highPowerMultiplexer = new sst.aws.Function('HighPowerMultiplexer', {
     handler: `${prefix}packages/core/handlers/agent-multiplexer.handler`,
     dev: liveInLocalOnly,
-    link: [...baseLink, stagingBucket, deployerLink].filter(Boolean) as sst.Linkable<
+    link: [...baseLink, stagingBucket, deployerLink, ctx.deployer].filter(Boolean) as sst.Linkable<
       Record<string, unknown>
     >[],
     permissions: [...basePermissions, ...schedulerPermissions],
@@ -93,7 +93,7 @@ export function createMultiplexers(ctx: SharedContext, options: MultiplexerOptio
   const standardMultiplexer = new sst.aws.Function('StandardMultiplexer', {
     handler: `${prefix}packages/core/handlers/agent-multiplexer.handler`,
     dev: liveInLocalOnly,
-    link: [...baseLink, deployerLink].filter(Boolean) as sst.Linkable<Record<string, unknown>>[],
+    link: [...baseLink, deployerLink, ctx.deployer].filter(Boolean) as sst.Linkable<Record<string, unknown>>[],
     permissions: [...basePermissions, ...schedulerPermissions],
     architecture: LAMBDA_ARCHITECTURE,
     nodejs: { loader: NODEJS_LOADERS },
@@ -120,7 +120,7 @@ export function createMultiplexers(ctx: SharedContext, options: MultiplexerOptio
   const lightMultiplexer = new sst.aws.Function('LightMultiplexer', {
     handler: `${prefix}packages/core/handlers/agent-multiplexer.handler`,
     dev: liveInLocalOnly,
-    link: [...baseLink, stagingBucket, deployerLink].filter(Boolean) as sst.Linkable<
+    link: [...baseLink, stagingBucket, deployerLink, ctx.deployer].filter(Boolean) as sst.Linkable<
       Record<string, unknown>
     >[],
     permissions: [...basePermissions, ...schedulerPermissions],
