@@ -66,11 +66,7 @@ export function createDeployer(ctx: DeployerContext) {
         {
           Effect: 'Allow',
           Action: [
-            'logs:CreateLogGroup',
-            'logs:CreateLogStream',
-            'logs:PutLogEvents',
-            'logs:DescribeLogStreams',
-            'logs:GetLogEvents',
+            'logs:*',
           ],
           Resource: '*',
         },
