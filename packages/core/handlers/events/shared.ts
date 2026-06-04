@@ -269,6 +269,7 @@ export async function processEventWithAgent(
     staffId?: string;
     userRole?: UserRole;
     metadata?: Record<string, unknown>;
+    maxTokens?: number;
   }
 ): Promise<{
   responseText: string;
@@ -347,6 +348,7 @@ export async function processEventWithAgent(
       tokenBudget: options.tokenBudget,
       costLimit: options.costLimit,
       priorTokenUsage: options.priorTokenUsage,
+      maxTokens: options.maxTokens,
     });
 
     let responseText = '';

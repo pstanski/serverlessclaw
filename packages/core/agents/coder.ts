@@ -186,6 +186,7 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
         handlerTitle: 'Coder Agent',
         outboundHandlerName: AGENT_TYPES.CODER,
         formatResponse: (text) => text,
+        maxTokens: 32000,
       });
       result = {
         ...processResult,
