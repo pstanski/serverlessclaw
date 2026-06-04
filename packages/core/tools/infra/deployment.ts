@@ -332,7 +332,10 @@ export const triggerDeployment = {
       const typedResource = Resource as any;
       const configTable = typedResource.ConfigTable?.name;
       const memoryTable = typedResource.MemoryTable?.name;
-      const buildProject = typedResource.SelfDeployProject?.name || typedResource.Deployer?.name;
+      const buildProject =
+        typedResource.SelfDeployProject?.name ||
+        typedResource.Deployer?.name ||
+        process.env.DEPLOYER_PROJECT_NAME;
 
       if (!configTable || !memoryTable || !buildProject) {
         const availableResources = Object.keys(typedResource).filter(
