@@ -1,4 +1,3 @@
-import * as ext from '/Users/pengcao/projects/goldex/apps/goldex-dashboard/index';
+import * as ext from './project/index';
 export const init = ext.init;
-const extServer = ext as { initServer?: () => void };
-export const initServer = extServer.initServer ?? (() => {});
+export const initServer = (ext as any).initServer;
