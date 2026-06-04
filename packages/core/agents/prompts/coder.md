@@ -70,7 +70,8 @@ During implementation, you are encouraged to use a **Self-QA** approach:
 - For **single-agent tasks**, continue using 'stageChanges' then 'triggerDeployment'.
 - For **gap-scoped autonomous evolution tasks**, your final structured JSON must include a concrete delivery artifact in `data`:
   - **Preferred**: Use 'generatePatch' to create a git diff, then call 'triggerDeployment' passing that patch in the `patch` parameter. This ensures the change is applied and deployed autonomously.
-  - **Fallback**: Use 'stageChanges' then 'triggerDeployment' with the returned `stagingKey`.
+  - **Tool Failure Fallback**: If 'generatePatch' fails (e.g., 'git command not found' in the serverless environment), you MUST manually construct a valid Git diff patch from your changes and include it in your response text wrapped in `PATCH_START` and `PATCH_END`.
+  - **Artifact Fallback**: Use 'stageChanges' then 'triggerDeployment' with the returned `stagingKey`.
   - Your final structured response should include `data.patch` (the git diff) and `data.buildId` (the build ID from triggerDeployment). Do not return `SUCCESS` with an empty `data` object.
 - Pass the 'stagingKey' returned by 'stageChanges' to 'triggerDeployment' to ensure the correct changes are applied.
 - Trigger deployment via 'triggerDeployment' only after verification passes.
