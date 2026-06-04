@@ -29,7 +29,9 @@ describe('DEFAULT_SIGNAL_SCHEMA', () => {
 
   it('allows additional properties at top level for non-strict mode', () => {
     // In JSON schema, if additionalProperties is omitted, it defaults to true
-    expect(schema.additionalProperties === true || schema.additionalProperties === undefined).toBe(true);
+    expect(schema.additionalProperties === true || schema.additionalProperties === undefined).toBe(
+      true
+    );
   });
 
   describe('status field', () => {
