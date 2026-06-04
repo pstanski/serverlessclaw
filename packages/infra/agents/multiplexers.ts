@@ -49,7 +49,7 @@ export function createMultiplexers(ctx: SharedContext, options: MultiplexerOptio
     environment: {
       ...agentEnv,
       MULTIPLEXER_TIER: 'high',
-      DEPLOYER_PROJECT_NAME: \`\${$app.name}-\${$app.stage}-Deployer\`,
+      DEPLOYER_PROJECT_NAME: `${$app.name}-${$app.stage}-Deployer`,
     },
     memory: AGENT_CONFIG.memory.LARGE,
     timeout: AGENT_CONFIG.timeout.MAX,
@@ -104,7 +104,7 @@ export function createMultiplexers(ctx: SharedContext, options: MultiplexerOptio
     environment: {
       ...agentEnv,
       MULTIPLEXER_TIER: 'standard',
-      DEPLOYER_PROJECT_NAME: \`\${$app.name}-\${$app.stage}-Deployer\`,
+      DEPLOYER_PROJECT_NAME: `${$app.name}-${$app.stage}-Deployer`,
     },
     memory: AGENT_CONFIG.memory.MEDIUM_LARGE,
     timeout: AGENT_CONFIG.timeout.MAX,
@@ -137,7 +137,7 @@ export function createMultiplexers(ctx: SharedContext, options: MultiplexerOptio
     environment: {
       ...agentEnv,
       MULTIPLEXER_TIER: 'light',
-      DEPLOYER_PROJECT_NAME: \`\${$app.name}-\${$app.stage}-Deployer\`,
+      DEPLOYER_PROJECT_NAME: `${$app.name}-${$app.stage}-Deployer`,
     },
     memory: AGENT_CONFIG.memory.MEDIUM,
     timeout: AGENT_CONFIG.timeout.LONG,
