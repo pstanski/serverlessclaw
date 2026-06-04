@@ -45,11 +45,14 @@ function sanitizeAutonomousGapPlan(
 ): string {
   if (!gapId || isScheduledReview) return plan;
 
-  const approvalMarker = /^If you approve this plan I will:/im;
+  // Match common conversational endings from the Planner
+  const approvalMarker = /(?:^If you approve this plan|^Which path do you want|If you approve,|Do you approve\?)/im;
   const markerMatch = approvalMarker.exec(plan);
-  if (!markerMatch || markerMatch.index < 0) return plan;
+  if (markerMatch && markerMatch.index >= 0) {
+    return plan.slice(0, markerMatch.index).trimEnd();
+  }
 
-  return plan.slice(0, markerMatch.index).trimEnd();
+  return plan;
 }
 
 /**
