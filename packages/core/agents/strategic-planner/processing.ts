@@ -217,9 +217,15 @@ export async function postProcessPlan(
             .filter(({ acquired }) => acquired)
             .map(async ({ numericId }) => {
               try {
-                await assignGapToTrack(memory as unknown as TrackStore, numericId, track, undefined, {
-                  workspaceId,
-                });
+                await assignGapToTrack(
+                  memory as unknown as TrackStore,
+                  numericId,
+                  track,
+                  undefined,
+                  {
+                    workspaceId,
+                  }
+                );
                 return numericId;
               } catch (error) {
                 const message = error instanceof Error ? error.message : String(error);
