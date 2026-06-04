@@ -217,7 +217,9 @@ export async function postProcessPlan(
             .filter(({ acquired }) => acquired)
             .map(async ({ numericId }) => {
               try {
-                await assignGapToTrack(memory as unknown as TrackStore, numericId, track);
+                await assignGapToTrack(memory as unknown as TrackStore, numericId, track, {
+                  workspaceId,
+                });
                 return numericId;
               } catch (error) {
                 const message = error instanceof Error ? error.message : String(error);
@@ -233,7 +235,9 @@ export async function postProcessPlan(
       } else if (gapId) {
         logger.info(`Marking specific gap ${gapId} as PLANNED after design.`);
         try {
-          await assignGapToTrack(memory as unknown as TrackStore, gapId, track);
+          await assignGapToTrack(memory as unknown as TrackStore, gapId, track, {
+            workspaceId,
+          });
           processedGapIds.push(gapId);
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
