@@ -24,10 +24,15 @@ function resolvePackageRoot(packageName: string, searchDirs: string[]): string {
 
     const packageRoot = realpathSync(candidate);
     const packageJsonPath = join(packageRoot, 'package.json');
-    if (!existsSync(packageJsonPath)) continue;
+    if (!existsSync(packageJsonPath)) {
+       // If it's a directory and it was exactly what we looked for, 
+       // but maybe it's just a folder without package.json (unlikely for node_modules but...)
+       continue;
+    }
 
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { name?: string };
-    if (packageJson.name === packageName) {
+    // Relaxed check: if folder name matches OR package.json name matches
+    if (packageJson.name === packageName || candidate.endsWith(packageName)) {
       return packageRoot;
     }
   }
