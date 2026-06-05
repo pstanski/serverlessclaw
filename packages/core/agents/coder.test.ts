@@ -39,10 +39,25 @@ vi.mock('../handlers/events/shared', () => ({
   }),
 }));
 
+const mockHandleSwarmDecomposition = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ wasDecomposed: false, response: undefined })
+);
+
+const mockGeneratePatchExecute = vi.hoisted(() => vi.fn().mockResolvedValue('NO_CHANGES'));
+
+vi.mock('../lib/agent/swarm-orchestrator', () => ({
+  handleSwarmDecomposition: mockHandleSwarmDecomposition,
+}));
+
+vi.mock('../tools/infra/deployment', () => ({
+  generatePatch: { execute: mockGeneratePatchExecute },
+}));
+
 const mockMemory = vi.hoisted(() => ({
   updateGapStatus: vi.fn().mockResolvedValue({ success: true }),
   acquireGapLock: vi.fn().mockResolvedValue(true),
   releaseGapLock: vi.fn().mockResolvedValue(undefined),
+  getHistory: vi.fn().mockResolvedValue([]),
 }));
 
 const mockAgent = vi.hoisted(() => ({
@@ -70,6 +85,8 @@ describe('Coder Agent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(process, 'chdir').mockImplementation(() => {});
+    mockHandleSwarmDecomposition.mockResolvedValue({ wasDecomposed: false, response: undefined });
+    mockGeneratePatchExecute.mockResolvedValue('NO_CHANGES');
   });
 
   it('should process a valid task and emit events', async () => {
@@ -100,6 +117,59 @@ describe('Coder Agent', () => {
         task: 'implement feature',
         response: 'Completed task',
       })
+    );
+    expect(mockHandleSwarmDecomposition).toHaveBeenCalled();
+  });
+
+  it('should skip swarm decomposition for gap-scoped evolution tasks', async () => {
+    vi.mocked(processEventWithAgent).mockResolvedValueOnce({
+      responseText: 'Completed task',
+      attachments: [],
+      parsedData: { status: 'SUCCESS', response: 'Completed task', patch: 'diff-content' },
+    });
+
+    const event = {
+      detail: {
+        userId: 'user123',
+        task: 'implement feature',
+        traceId: 'trace123',
+        sessionId: 'session123',
+        depth: 0,
+        metadata: { gapIds: ['gap1'] },
+      },
+    } as any;
+
+    await handler(event, mockContext);
+
+    expect(mockHandleSwarmDecomposition).not.toHaveBeenCalled();
+    expect(processEventWithAgent).toHaveBeenCalled();
+  });
+
+  it('should append artifact requirements for gap-scoped evolution tasks', async () => {
+    vi.mocked(processEventWithAgent).mockResolvedValueOnce({
+      responseText: 'Build started',
+      attachments: [],
+      parsedData: { status: 'SUCCESS', message: 'Build started', buildId: 'build-123' },
+    });
+
+    const event = {
+      detail: {
+        userId: 'user123',
+        task: 'implement feature',
+        traceId: 'trace123',
+        sessionId: 'session123',
+        depth: 0,
+        metadata: { gapIds: ['gap1'] },
+      },
+    } as any;
+
+    await handler(event, mockContext);
+
+    expect(processEventWithAgent).toHaveBeenCalledWith(
+      'user123',
+      AGENT_TYPES.CODER,
+      expect.stringContaining('[EVOLUTION_OUTPUT_REQUIREMENTS]'),
+      expect.any(Object)
     );
   });
 
@@ -245,6 +315,40 @@ describe('Coder Agent', () => {
     // Should NOT mark as DEPLOYED
     expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED);
   });
+
+  it('should accept buildId-only evolution outputs as valid technical artifacts', async () => {
+    vi.mocked(processEventWithAgent).mockResolvedValueOnce({
+      responseText: 'Building',
+      attachments: [],
+      parsedData: {
+        status: 'SUCCESS',
+        message: 'Building',
+        buildId: 'build456',
+      },
+    });
+
+    const event = {
+      detail: {
+        userId: 'user123',
+        task: 'implement feature',
+        metadata: { gapIds: ['gap1'] },
+      },
+    } as any;
+
+    const result = await handler(event, mockContext);
+
+    expect(result).not.toContain('FAILED: Evolution task requires a technical artifact');
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.PROGRESS);
+    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED);
+    expect(emitTaskEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          buildId: 'build456',
+          patch: undefined,
+        }),
+      })
+    );
+  });
   it('should handle FAILED status correctly', async () => {
     const { processEventWithAgent } = await import('../handlers/events/shared');
     vi.mocked(processEventWithAgent).mockResolvedValueOnce({
@@ -278,7 +382,7 @@ describe('Coder Agent', () => {
     expect(initAgent).not.toHaveBeenCalled();
   });
 
-  it('should mark as FAILED if evolution task (gapIds present) does not provide a patch', async () => {
+  it('should mark as FAILED if evolution task (gapIds present) does not provide a technical artifact', async () => {
     vi.mocked(processEventWithAgent).mockResolvedValueOnce({
       responseText: 'Implemented without patch',
       attachments: [],
@@ -299,9 +403,213 @@ describe('Coder Agent', () => {
 
     const result = await handler(event, mockContext);
 
-    expect(result).toContain('FAILED: Evolution task requires a technical patch');
+    expect(result).toContain('FAILED: Evolution task requires a technical artifact');
     // Ensure it doesn't mark as DEPLOYED
     expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED);
+  });
+
+  it('should extract patch from responseText when parsedData.patch is missing', async () => {
+    vi.mocked(processEventWithAgent).mockResolvedValueOnce({
+      responseText:
+        'Implemented changes.\nPATCH_START\ndiff --git a/packages/core/handlers/ping.ts b/packages/core/handlers/ping.ts\n+"X-Powered-By": "serverlessclaw"\nPATCH_END',
+      attachments: [],
+      parsedData: {
+        status: 'SUCCESS',
+        response: 'Implemented changes.',
+        // patch intentionally missing to validate fallback extraction
+      },
+    });
+
+    const event = {
+      detail: {
+        userId: 'user123',
+        task: 'implement feature',
+        metadata: { gapIds: ['gap1'] },
+      },
+    } as any;
+
+    const result = await handler(event, mockContext);
+
+    expect(result).not.toContain('FAILED: Evolution task requires a technical artifact');
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED);
+    expect(emitTaskEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          patch: expect.stringContaining('diff --git a/packages/core/handlers/ping.ts'),
+        }),
+      })
+    );
+  });
+
+  it('should accept patch artifacts nested under parsedData.data', async () => {
+    vi.mocked(processEventWithAgent).mockResolvedValueOnce({
+      responseText: 'Completed with nested patch data',
+      attachments: [],
+      parsedData: {
+        status: 'SUCCESS',
+        message: 'Completed with nested patch data',
+        data: {
+          patch: 'diff --git a/file.ts b/file.ts\n+new content',
+        },
+      },
+    });
+
+    const event = {
+      detail: {
+        userId: 'user123',
+        task: 'implement feature',
+        metadata: { gapIds: ['gap1'] },
+      },
+    } as any;
+
+    const result = await handler(event, mockContext);
+
+    expect(result).not.toContain('FAILED: Evolution task requires a technical artifact');
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED);
+    expect(emitTaskEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          patch: expect.stringContaining('diff --git a/file.ts'),
+        }),
+      })
+    );
+  });
+
+  it('should accept build artifacts nested under parsedData.data', async () => {
+    vi.mocked(processEventWithAgent).mockResolvedValueOnce({
+      responseText: 'Build started',
+      attachments: [],
+      parsedData: {
+        status: 'SUCCESS',
+        message: 'Build started',
+        data: {
+          patch: 'diff --git a/file.ts b/file.ts\n+new content',
+          buildId: 'build-456',
+        },
+      },
+    });
+
+    const event = {
+      detail: {
+        userId: 'user123',
+        task: 'implement feature',
+        metadata: { gapIds: ['gap1'] },
+      },
+    } as any;
+
+    await handler(event, mockContext);
+
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.PROGRESS);
+    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED);
+    expect(emitTaskEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          buildId: 'build-456',
+        }),
+      })
+    );
+  });
+
+  it('should recover patch from session history when tool was called but result not in response', async () => {
+    vi.mocked(processEventWithAgent).mockResolvedValueOnce({
+      responseText: 'Changes completed successfully.',
+      attachments: [],
+      parsedData: {
+        status: 'SUCCESS',
+        response: 'Changes completed.',
+        // patch intentionally missing
+      },
+    });
+
+    // Mock session history with generatePatch tool call and result
+    mockMemory.getHistory.mockResolvedValueOnce([
+      {
+        role: 'assistant',
+        content: 'I will make the changes.',
+        tool_calls: [
+          {
+            id: '1',
+            function: { name: 'filesystem_write_file', arguments: '{}' },
+          },
+          {
+            id: '2',
+            function: { name: 'generatePatch', arguments: '{"sessionId":"test"}' },
+          },
+        ],
+      },
+      {
+        role: 'user',
+        content: 'Tool results',
+      },
+      {
+        role: 'user',
+        content:
+          'PATCH_START\ndiff --git a/file.ts b/file.ts\n+new content\nPATCH_END\nPatch generated.',
+      },
+    ]);
+
+    const event = {
+      detail: {
+        userId: 'user123',
+        task: 'implement feature',
+        sessionId: 'test-session',
+        metadata: { gapIds: ['gap1'] },
+      },
+    } as any;
+
+    const result = await handler(event, mockContext);
+
+    expect(result).not.toContain('FAILED: Evolution task requires a technical artifact');
+    expect(mockMemory.getHistory).toHaveBeenCalledWith('test-session');
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED);
+    expect(emitTaskEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          patch: expect.stringContaining('diff --git a/file.ts'),
+        }),
+      })
+    );
+  });
+
+  it('should generate a patch directly from the workspace when no artifact was returned', async () => {
+    vi.mocked(processEventWithAgent).mockResolvedValueOnce({
+      responseText: 'Changes completed successfully.',
+      attachments: [],
+      parsedData: {
+        status: 'SUCCESS',
+        response: 'Changes completed.',
+      },
+    });
+    mockMemory.getHistory.mockResolvedValueOnce([]);
+    mockGeneratePatchExecute.mockResolvedValueOnce(
+      'PATCH_START\ndiff --git a/file.ts b/file.ts\n+new content\nPATCH_END'
+    );
+
+    const event = {
+      detail: {
+        userId: 'user123',
+        task: 'implement feature',
+        sessionId: 'test-session',
+        traceId: 'trace123',
+        metadata: { gapIds: ['gap1'] },
+      },
+    } as any;
+
+    const result = await handler(event, mockContext);
+
+    expect(result).not.toContain('FAILED: Evolution task requires a technical artifact');
+    expect(mockGeneratePatchExecute).toHaveBeenCalledWith({
+      sessionId: 'test-session',
+      skipValidation: true,
+    });
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED);
+    expect(emitTaskEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          patch: expect.stringContaining('diff --git a/file.ts'),
+        }),
+      })
+    );
   });
 
   it('should NOT mark gaps as PROGRESS when initAgent fails (Bug 2 regression)', async () => {

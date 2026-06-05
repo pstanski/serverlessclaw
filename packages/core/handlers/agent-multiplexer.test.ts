@@ -7,6 +7,14 @@ import * as agentHelpers from '../lib/utils/agent-helpers';
 const mocks = vi.hoisted(() => ({
   mergerHandler: vi.fn().mockResolvedValue('MERGER_DONE'),
   failHandler: false,
+  getState: vi.fn().mockResolvedValue(null),
+  acquireProcessing: vi.fn().mockResolvedValue(true),
+  renewProcessing: vi.fn().mockResolvedValue(true),
+  releaseProcessing: vi.fn().mockResolvedValue(undefined),
+  addPendingMessage: vi.fn().mockResolvedValue(undefined),
+  checkCollaborationTimeout: vi.fn().mockResolvedValue(false),
+  bootstrap: vi.fn().mockResolvedValue(undefined),
+  getAgentConfig: vi.fn().mockResolvedValue({ enabled: true }),
 }));
 
 // Mock WarmupManager
@@ -42,6 +50,30 @@ vi.mock('../lib/recursion-tracker', () => ({
 vi.mock('../lib/utils/agent-helpers', () => ({
   handleWarmup: vi.fn(),
   initAgent: vi.fn(),
+}));
+
+vi.mock('../lib/bootstrap', () => ({
+  bootstrap: mocks.bootstrap,
+}));
+
+vi.mock('../lib/conflict-resolution', () => ({
+  checkCollaborationTimeout: mocks.checkCollaborationTimeout,
+}));
+
+vi.mock('../lib/session/session-state', () => ({
+  SessionStateManager: class {
+    getState = mocks.getState;
+    acquireProcessing = mocks.acquireProcessing;
+    renewProcessing = mocks.renewProcessing;
+    releaseProcessing = mocks.releaseProcessing;
+    addPendingMessage = mocks.addPendingMessage;
+  },
+}));
+
+vi.mock('../lib/registry/AgentRegistry', () => ({
+  AgentRegistry: {
+    getAgentConfig: mocks.getAgentConfig,
+  },
 }));
 
 // Agent Mocks (Moved to top level to avoid hoisting warnings)
@@ -88,6 +120,14 @@ describe('AgentMultiplexer', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getState.mockResolvedValue(null);
+    mocks.acquireProcessing.mockResolvedValue(true);
+    mocks.renewProcessing.mockResolvedValue(true);
+    mocks.releaseProcessing.mockResolvedValue(undefined);
+    mocks.addPendingMessage.mockResolvedValue(undefined);
+    mocks.checkCollaborationTimeout.mockResolvedValue(false);
+    mocks.bootstrap.mockResolvedValue(undefined);
+    mocks.getAgentConfig.mockResolvedValue({ enabled: true });
   });
 
   it('should handle centralized warmup and return WARM', async () => {
@@ -181,5 +221,76 @@ describe('AgentMultiplexer', () => {
     const result = await handler(event, mockContext);
     expect(result).toBe('CODER_DONE');
     expect((event.detail as any).userRole).toBe('member');
+  });
+
+  it('skips collaboration timeout checks for internal autonomous events', async () => {
+    vi.mocked(agentHelpers.handleWarmup).mockResolvedValue(false);
+    mocks.getState.mockResolvedValue({ lastMessageAt: Date.now() - 60_000 });
+    mocks.checkCollaborationTimeout.mockResolvedValue(true);
+
+    const event = {
+      'detail-type': EventType.CODER_TASK,
+      source: 'agent.parallel',
+      detail: {
+        ...baseEventDetail,
+        userId: 'dashboard-user',
+      },
+    };
+
+    const result = await handler(event, mockContext);
+
+    expect(result).toBe('CODER_DONE');
+    expect(mocks.getState).not.toHaveBeenCalled();
+    expect(mocks.checkCollaborationTimeout).not.toHaveBeenCalled();
+  });
+
+  it('skips session locking for internal autonomous events', async () => {
+    vi.mocked(agentHelpers.handleWarmup).mockResolvedValue(false);
+    mocks.acquireProcessing.mockResolvedValue(false);
+
+    const event = {
+      'detail-type': EventType.CODER_TASK,
+      source: 'agent.parallel',
+      detail: {
+        ...baseEventDetail,
+        userId: 'dashboard-user',
+      },
+    };
+
+    const result = await handler(event, mockContext);
+
+    expect(result).toBe('CODER_DONE');
+    expect(mocks.acquireProcessing).not.toHaveBeenCalled();
+    expect(mocks.addPendingMessage).not.toHaveBeenCalled();
+  });
+
+  it('still times out interactive user sessions', async () => {
+    vi.mocked(agentHelpers.handleWarmup).mockResolvedValue(false);
+    mocks.getState.mockResolvedValue({ lastMessageAt: Date.now() - 60_000 });
+    mocks.checkCollaborationTimeout.mockResolvedValue(true);
+
+    const event = {
+      'detail-type': EventType.CODER_TASK,
+      source: 'user.chat',
+      detail: {
+        ...baseEventDetail,
+        userId: 'user-1',
+      },
+    };
+
+    const result = await handler(event, mockContext);
+
+    expect(result).toEqual({
+      status: 'TIMEOUT',
+      message: 'Task terminated due to session timeout.',
+    });
+    expect(mocks.getState).toHaveBeenCalledWith('s1', {
+      orgId: undefined,
+      staffId: undefined,
+      teamId: undefined,
+      userRole: undefined,
+      workspaceId: undefined,
+    });
+    expect(mocks.checkCollaborationTimeout).toHaveBeenCalledOnce();
   });
 });

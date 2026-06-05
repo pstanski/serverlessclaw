@@ -181,7 +181,7 @@ describe('knowledge-storage tools', () => {
       const result = await manageGap.execute({ action: 'list' });
 
       expect(mocks.getAllGaps).toHaveBeenCalledWith(GapStatus.OPEN, { workspaceId: undefined });
-      expect(result).toContain('Found 2 open capability gaps');
+      expect(result).toContain("Found 2 capability gaps with status 'OPEN'");
       expect(result.indexOf('gap-high')).toBeLessThan(result.indexOf('gap-low'));
     });
 
@@ -190,7 +190,7 @@ describe('knowledge-storage tools', () => {
 
       const result = await manageGap.execute({ action: 'list' });
 
-      expect(result).toBe('No open capability gaps found.');
+      expect(result).toBe("No capability gaps found with status 'OPEN'.");
     });
   });
 

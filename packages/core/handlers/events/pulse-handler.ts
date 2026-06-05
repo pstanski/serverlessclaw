@@ -3,6 +3,7 @@ import { emitEvent } from '../../lib/utils/bus';
 import { EventType } from '../../lib/types/index';
 import { Context } from 'aws-lambda';
 import { logger } from '../../lib/logger';
+import { DynamoMemory } from '../../lib/memory/dynamo-memory';
 
 /**
  * Handles pulse ping events by responding with a pong.
@@ -40,5 +41,39 @@ export async function handlePulsePing(
     logger.info(`[PULSE] Pong emitted for ${targetAgentId}.`);
   } catch (error) {
     logger.error(`[PULSE] Failed to emit pong for ${targetAgentId}:`, error);
+  }
+}
+
+/**
+ * Handles pulse pong events.
+ * Records the responsiveness and latency of the target agent in memory.
+ */
+export async function handlePulsePong(
+  eventDetail: Record<string, unknown>,
+  _context: Context
+): Promise<void> {
+  const { targetAgentId, timestamp, responseTimestamp, workspaceId, initiatorId } =
+    PULSE_EVENT_SCHEMA.parse(eventDetail);
+
+  const latency = responseTimestamp ? responseTimestamp - timestamp : -1;
+
+  logger.info(`[PULSE] Received pong from ${targetAgentId} (Initiated by: ${initiatorId}).`, {
+    latencyMs: latency,
+    workspaceId,
+    timestamp,
+  });
+
+  try {
+    const memory = new DynamoMemory();
+    await memory.updateAgentHealth(
+      targetAgentId,
+      {
+        status: 'online',
+        latencyMs: latency,
+      },
+      { workspaceId }
+    );
+  } catch (error) {
+    logger.error(`[PULSE] Failed to record health status for ${targetAgentId}:`, error);
   }
 }

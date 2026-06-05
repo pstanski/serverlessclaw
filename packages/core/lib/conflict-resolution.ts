@@ -118,6 +118,22 @@ export async function checkCollaborationTimeout(
   const elapsed = Date.now() - collaboration.lastActivityAt;
 
   if (elapsed > timeoutMs) {
+    // P1 Fix: Prevent Strategic Tie-Break Storm (Principle 11: Systemic Reliability)
+    // Ensure only one tie-break event is emitted per session timeout window.
+    const { reserveIdempotencyKey } = await import('./utils/bus/idempotency');
+    const idempotencyKey = `tie-break:${collaboration.sessionId}:${Math.floor(
+      collaboration.lastActivityAt / 1000
+    )}`;
+
+    const reserved = await reserveIdempotencyKey(idempotencyKey, collaboration.workspaceId);
+
+    if (!reserved) {
+      logger.debug(
+        `[COLLABORATION] Tie-break already emitted for session ${collaboration.sessionId}. Skipping.`
+      );
+      return true; // Still timed out, just don't re-emit
+    }
+
     logger.warn(
       `[COLLABORATION] Session ${collaboration.sessionId} has exceeded timeout ` +
         `(${elapsed}ms > ${timeoutMs}ms). Triggering strategic tie-break.`

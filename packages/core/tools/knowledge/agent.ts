@@ -8,6 +8,43 @@ import { AgentCategory } from '../../lib/types/agent';
 import { logger } from '../../lib/logger';
 
 /**
+ * Retrieves real-time health and latency status of agents.
+ */
+export const checkAgentHealth = {
+  ...knowledgeSchema.checkAgentHealth,
+  execute: async (args: Record<string, unknown>): Promise<string> => {
+    const { agentId, workspaceId } = args as { agentId?: string; workspaceId?: string };
+
+    try {
+      const { DynamoMemory } = await import('../../lib/memory/dynamo-memory');
+      const memory = new DynamoMemory();
+
+      if (agentId) {
+        const health = await memory.getAgentHealth(agentId, { workspaceId });
+        if (!health) return `No health data found for agent '${agentId}'.`;
+
+        const lastSeenAgo = Math.floor((Date.now() - health.lastSeen) / 1000);
+        return `Health Status for ${agentId}:\n- Status: ${health.status}\n- Latency: ${health.latencyMs}ms\n- Last Seen: ${lastSeenAgo} seconds ago`;
+      }
+
+      const allHealth = await memory.getAllAgentHealth({ workspaceId });
+      if (allHealth.length === 0) return 'No health data found for any agents.';
+
+      const summary = allHealth
+        .map((h) => {
+          const ago = Math.floor((Date.now() - h.lastSeen) / 1000);
+          return `- [${h.agentId}] ${h.status} (Latency: ${h.latencyMs}ms, Last Seen: ${ago}s ago)`;
+        })
+        .join('\n');
+
+      return `Swarm Health Status:\n${summary}`;
+    } catch (error) {
+      return `Failed to check agent health: ${formatErrorMessage(error)}`;
+    }
+  },
+};
+
+/**
  * Lists all registered agents and their current status.
  */
 export const listAgents = {
@@ -89,6 +126,7 @@ export const dispatchTask = {
       userId,
       task,
       metadata = {},
+      skipDecomposition = false,
       traceId,
       nodeId,
       initiatorId,
@@ -101,6 +139,7 @@ export const dispatchTask = {
       userId: string;
       task: string;
       metadata?: Record<string, unknown>;
+      skipDecomposition?: boolean;
       traceId?: string;
       nodeId?: string;
       initiatorId?: string;
@@ -125,9 +164,13 @@ export const dispatchTask = {
     const tracer = new ClawTracer(userId, 'system', traceId, nodeId);
 
     // Dynamic Plan Decomposition for large tasks
-    const { decomposePlan } = await import('../../lib/agent/decomposer');
     const gapIds = (metadata.gapIds as string[]) || [];
-    const decomposition = await decomposePlan(task, traceId || 'mission', gapIds);
+    const decomposition = skipDecomposition
+      ? { wasDecomposed: false, totalSubTasks: 0, subTasks: [] }
+      : await (async () => {
+          const { decomposePlan } = await import('../../lib/agent/decomposer');
+          return decomposePlan(task, traceId || 'mission', gapIds);
+        })();
 
     if (decomposition.wasDecomposed) {
       logger.info(
@@ -139,7 +182,7 @@ export const dispatchTask = {
           ? `${sub.agentId}_task`
           : `dynamic_${sub.agentId}_task`;
 
-        await emitEvent(initiatorId ?? 'superclaw', eventName, {
+        const result = await emitEvent(initiatorId ?? 'superclaw', eventName, {
           userId,
           task: sub.task,
           metadata: { ...metadata, gapIds: sub.gapIds, order: sub.order, planId: sub.planId },
@@ -152,6 +195,10 @@ export const dispatchTask = {
           workspaceId,
           userRole,
         });
+
+        if (!result.success) {
+          return `Failed to dispatch task: ${result.reason ?? 'UNKNOWN_ERROR'}`;
+        }
       }
       return `TASK_PAUSED: I have decomposed this mission into ${decomposition.totalSubTasks} sub-tasks and dispatched them to the appropriate agents. Monitoring progress...`;
     }
@@ -161,7 +208,7 @@ export const dispatchTask = {
     const eventName = config.isBackbone ? `${agentId}_task` : `dynamic_${agentId}_task`;
 
     try {
-      await emitEvent(initiatorId ?? 'superclaw', eventName, {
+      const result = await emitEvent(initiatorId ?? 'superclaw', eventName, {
         userId,
         task,
         metadata,
@@ -174,6 +221,11 @@ export const dispatchTask = {
         workspaceId,
         userRole,
       });
+
+      if (!result.success) {
+        return `Failed to dispatch task: ${result.reason ?? 'UNKNOWN_ERROR'}`;
+      }
+
       return `TASK_PAUSED: I have successfully dispatched this task to the **${agentId}** agent. I'll let you know once they have an update.`;
     } catch (error) {
       return `Failed to dispatch task: ${formatErrorMessage(error)}`;

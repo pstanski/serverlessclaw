@@ -3,7 +3,7 @@ import { CloudWatchLogsClient, DescribeLogGroupsCommand, FilterLogEventsCommand 
 async function main() {
   const region = process.env.AWS_REGION || 'ap-southeast-2';
   const client = new CloudWatchLogsClient({ region });
-  const queries = ['1780221547259', '1780219991962'];
+  const queries = [process.env.QUERY || '1780274431269'];
 
   console.log(`🔍 Finding all production log groups...`);
   // Fetch multiple prefixes to be extremely thorough
@@ -37,14 +37,19 @@ async function main() {
           new FilterLogEventsCommand({
             logGroupName,
             filterPattern: query,
-            limit: 10,
+            startTime: Date.now() - 60 * 60 * 1000,
+            limit: 5000,
           })
         );
         const events = response.events || [];
-        if (events.length > 0) {
-          console.log(`\n✅ Match found in Log Group: ${logGroupName} (${events.length} events)`);
-          events.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-          for (const event of events) {
+        const filteredEvents = events.filter(e => {
+          const msg = e.message || '';
+          return !msg.includes('.delta') && !msg.includes('Type: response.');
+        });
+        if (filteredEvents.length > 0) {
+          console.log(`\n✅ Match found in Log Group: ${logGroupName} (${filteredEvents.length} of ${events.length} events)`);
+          filteredEvents.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+          for (const event of filteredEvents) {
             const date = new Date(event.timestamp || 0).toISOString();
             console.log(`  🕒 [${date}] ${event.message?.trim().slice(0, 500)}`);
           }

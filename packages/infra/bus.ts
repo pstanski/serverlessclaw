@@ -1,3 +1,5 @@
+import { LOG_RETENTION_PERIOD } from './shared';
+
 /**
  * Creates the event bus and realtime communication resources for agent orchestration.
  *
@@ -11,7 +13,7 @@ export function createBus(options: { pathPrefix?: string } = {}) {
     authorizer: {
       handler: `${prefix}packages/core/handlers/realtime-auth.handler`,
       logging: {
-        retention: '1 month',
+        retention: LOG_RETENTION_PERIOD,
       },
     },
   });

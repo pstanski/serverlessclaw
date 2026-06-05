@@ -258,6 +258,7 @@ export async function processEventWithAgent(
     formatResponse?: (responseText: string, attachments: Attachment[]) => string;
     tokenBudget?: number;
     costLimit?: number;
+    skipToolLoading?: boolean;
     priorTokenUsage?: {
       inputTokens: number;
       outputTokens: number;
@@ -268,6 +269,7 @@ export async function processEventWithAgent(
     staffId?: string;
     userRole?: UserRole;
     metadata?: Record<string, unknown>;
+    maxTokens?: number;
   }
 ): Promise<{
   responseText: string;
@@ -291,7 +293,9 @@ export async function processEventWithAgent(
   }
 
   const { getAgentTools: loadAgentTools } = await import('../../tools/index');
-  const agentTools = await loadAgentTools(agentId, { workspaceId: options.workspaceId });
+  const agentTools = options.skipToolLoading
+    ? []
+    : await loadAgentTools(agentId, { workspaceId: options.workspaceId });
   const agent = new Agent(memory, provider, agentTools, { ...config });
 
   const sessionStateManager = new SessionStateManager();
@@ -344,6 +348,7 @@ export async function processEventWithAgent(
       tokenBudget: options.tokenBudget,
       costLimit: options.costLimit,
       priorTokenUsage: options.priorTokenUsage,
+      maxTokens: options.maxTokens,
     });
 
     let responseText = '';

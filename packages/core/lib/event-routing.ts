@@ -30,6 +30,14 @@ export const EVENTBRIDGE_ONLY_EVENTS: EventType[] = [
   EventType.STATE_SNAPSHOT,
   EventType.STATE_DELTA,
   EventType.MESSAGES_SNAPSHOT,
+  EventType.CHAT_MESSAGE_RECEIVED,
+  EventType.HITL_APPROVAL_REQUESTED,
+  EventType.HANDOFF,
+  EventType.ORCHESTRATION_SIGNAL,
+  EventType.DELEGATION_TASK,
+  EventType.MONITOR_BUILD,
+  EventType.SCHEDULE_TASK,
+  EventType.CHUNK,
 ];
 
 /**
@@ -229,6 +237,10 @@ const BASE_EVENT_ROUTING: EventRoutingTable = {
   [EventType.PULSE_PING]: {
     module: './events/pulse-handler',
     function: 'handlePulsePing',
+  },
+  [EventType.PULSE_PONG]: {
+    module: './events/pulse-handler',
+    function: 'handlePulsePong',
   },
   [EventType.NOTIFICATION_CREATED]: {
     module: './events/internal-notifier',

@@ -32,12 +32,34 @@ describe('MCP Server Registry', () => {
       expect(lastArg).toBe('/tmp');
     });
 
-    it('all servers should run offline where possible', () => {
-      Object.entries(MCP_SERVER_REGISTRY).forEach(([_name, config]) => {
-        // fetch and google-search need internet, but the npx command itself should use --offline
-        // to prevent downloading new packages at runtime
-        expect(config.args).toContain('--offline');
-      });
+    it('packaged filesystem and ast servers should prefer local entrypoints when available', () => {
+      const fsServer = MCP_SERVER_REGISTRY.filesystem;
+      const astServer = MCP_SERVER_REGISTRY.ast;
+
+      if (fsServer.command !== 'npx') {
+        expect(fsServer.command).toBe(process.execPath);
+        expect(fsServer.args?.[0]).toContain('@modelcontextprotocol/server-filesystem');
+        expect(fsServer.args).not.toContain('--offline');
+      } else {
+        expect(fsServer.args).toContain('--offline');
+      }
+
+      if (astServer.command !== 'npx') {
+        expect(astServer.command).toBe(process.execPath);
+        expect(astServer.args?.[0]).toContain('@aiready/ast-mcp-server');
+        expect(astServer.args).not.toContain('--offline');
+      } else {
+        expect(astServer.args).toContain('--offline');
+      }
+    });
+
+    it('other remote servers should continue to use offline npx launches', () => {
+      Object.entries(MCP_SERVER_REGISTRY)
+        .filter(([name]) => !['filesystem', 'ast'].includes(name))
+        .forEach(([_name, config]) => {
+          expect(config.command).toBe('npx');
+          expect(config.args).toContain('--offline');
+        });
     });
 
     it('HOME directory should be overridden to /tmp for safety', () => {

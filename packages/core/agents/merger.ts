@@ -141,7 +141,8 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
     logger.info('Merger Agent Process Complete.');
 
     // 4. Trigger deployment if a patch was generated
-    if (processResult.responseText.includes('PATCH_START')) {
+    const match = processResult.responseText.match(/PATCH_START\s*([\s\S]*?)\s*PATCH_END/);
+    if (match?.[1]?.trim()) {
       try {
         const { triggerDeployment } = await import('../tools/infra/deployment');
         await triggerDeployment.execute({
@@ -151,6 +152,7 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
           initiatorId: AGENT_TYPES.MERGER,
           sessionId: sessionId ?? '',
           gapIds,
+          patch: match[1].trim(),
         });
         logger.info(
           `[Merger] Deployment triggered for LLM-merged result (gaps: ${gapIds.join(', ') || 'none'}).`

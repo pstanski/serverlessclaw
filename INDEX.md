@@ -37,6 +37,18 @@
 
 **Serverless Claw** is a self-evolving AI agent platform on AWS. A SuperClaw (Lambda) receives messages via Telegram/Discord webhooks, processes them with an LLM, and can autonomously delegate code changes to a **Coder Agent**, which then triggers the **Deployer** (CodeBuild) to redeploy the stack. Safety guardrails (circuit breakers, protected resource labeling, health probes, rollback) prevent runaway evolution, while the **ClawCenter Dashboard** enables real-time human **co-management** of agent capabilities and memory.
 
+## 🚀 Active Strategic Gaps (Evolution Backlog)
+
+The following gaps have been identified for autonomous resolution by the **Strategic Planner** and **Coder Agent**.
+
+| Gap ID              | Description                                                                                                                                                                   | Impact | Urgency | Status       |
+| :------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: | :-----: | :----------- |
+| **GAP#20260603-01** | **Enhance Ping API with Uptime**: The `/api/ping` endpoint should return an `uptime` field (seconds since process start) to support reliability monitoring.                   |   6    |    7    | **DEPLOYED** |
+| **GAP#20260603-02** | **Add Version to Ping API**: The `/api/ping` endpoint should return a `version` field (from package.json) to help verify deployments.                                         |   9    |    9    | **DEPLOYED** |
+| **GAP#20260603-03** | **Agent Self-Awareness (Pulse Monitoring)**: Implement a system-wide health dashboard that tracks agent responsiveness and latency using the `pulse_pong` event stream.       |   7    |    6    | **DEPLOYED** |
+| **GAP#20260603-04** | **Add Node Runtime to Ping API**: The `/api/ping` endpoint should return a `runtime` field (e.g., `Node.js v24.15.0`) using `process.version` to aid in runtime verification. |   5    |    8    | **DEPLOYED** |
+| **GAP#20260603-05** | **Agent Health Timestamp**: Add a `timestamp` field to the response of the `checkAgentHealth` tool output to show the exact time the health check was performed.              |   7    |    8    | **OPEN**     |
+
 ---
 
 ## Quick Start

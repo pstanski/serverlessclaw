@@ -38,24 +38,54 @@ phases:
           if [ -f "staged_changes.zip" ]; then
             echo "Applying staged changes..."
             unzip -o staged_changes.zip || { echo "ERROR: Failed to unzip staged changes." && exit 1; }
+
+            # Apply patch if present (for generatePatch based evolution)
+            if [ -f "autonomous.patch" ]; then
+              echo "Applying autonomous.patch..."
+              git apply autonomous.patch || { echo "ERROR: Failed to apply autonomous.patch." && exit 1; }
+              rm autonomous.patch
+            fi
+
             rm staged_changes.zip
+            echo "Committing staged changes for clean working directory..."
+            git config --global user.email "agent@serverlessclaw.local"
+            git config --global user.name "Claw Coder Agent"
+            git add -A
+            HUSKY=0 git commit -m "${COMMIT_MESSAGE:-chore: apply staged changes from autonomous coder [skip ci]}" || echo "No staged changes to commit."
           fi
+        fi
+      - |
+        if [ -n "$CODEBUILD_BUILD_ID" ] && [ ! -f ".env.${SST_STAGE:-prod}" ]; then
+          echo "Creating .env.${SST_STAGE:-prod} for CodeBuild CI..."
+          CI_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null) || { echo "ERROR: Could not determine AWS account ID. Check CodeBuild service role." && exit 1; }
+          CF_API_TOKEN=$(aws ssm get-parameter --name "/serverlessclaw/${SST_STAGE:-prod}/CLOUDFLARE_API_TOKEN" --with-decryption --query 'Parameter.Value' --output text 2>/dev/null || echo "")
+          CF_ZONE_ID=$(aws ssm get-parameter --name "/serverlessclaw/${SST_STAGE:-prod}/CLOUDFLARE_ZONE_ID" --query 'Parameter.Value' --output text 2>/dev/null || echo "")
+          printf "AWS_REGION=%s\nEXPECTED_ACCOUNT=%s\n" "${AWS_DEFAULT_REGION:-ap-southeast-2}" "$CI_ACCOUNT_ID" > ".env.${SST_STAGE:-prod}"
+          [ -n "$CF_API_TOKEN" ] && printf "CLOUDFLARE_API_TOKEN=%s\n" "$CF_API_TOKEN" >> ".env.${SST_STAGE:-prod}"
+          [ -n "$CF_ZONE_ID" ] && printf "CLOUDFLARE_ZONE_ID=%s\n" "$CF_ZONE_ID" >> ".env.${SST_STAGE:-prod}"
+          printf "CLAW_DOMAIN_DASHBOARD=demo.clawmore.ai\n" >> ".env.${SST_STAGE:-prod}"
+          printf "CLAW_DOMAIN_API=api.demo.clawmore.ai\n" >> ".env.${SST_STAGE:-prod}"
+          echo "Created .env.${SST_STAGE:-prod} (account: $CI_ACCOUNT_ID, cloudflare: $([ -n "$CF_API_TOKEN" ] && echo "yes" || echo "no"), domains: yes)"
         fi
       - |
         if [ "$SYNC_ONLY" = "true" ]; then
           echo "SYNC_ONLY mode: Skipping build and deploy phases."
         fi
+      - |
+        git config --global user.email "agent@serverlessclaw.local"
+        git config --global user.name "Claw Deployer"
   build:
     commands:
       - |
         if [ "$SYNC_ONLY" != "true" ]; then
           echo "Running audited release (gates + deploy + tag)..."
           # make release handles: Tier 1 gates, Tier 2 (coverage/aiready) + Deploy in parallel, Tier 3 (E2E), and Audit Tag.
-          make release ENV=$SST_STAGE > /tmp/ci-logs/release.log 2>&1
-          RELEASE_EXIT=$?
+          { make release ENV=$SST_STAGE 2>&1; echo "$?" > /tmp/make_exit_code; } | tee /tmp/ci-logs/release.log
+          RELEASE_EXIT=$(cat /tmp/make_exit_code 2>/dev/null || echo 1)
           if [ $RELEASE_EXIT -ne 0 ]; then
-             echo "Release failed. Check release.log"
+             echo "=== Release failed (exit $RELEASE_EXIT). Full log above. ==="
              cp /tmp/ci-logs/*.log . || true
+             aws s3 cp /tmp/ci-logs/release.log "s3://${STAGING_BUCKET_NAME}/logs/release-${CODEBUILD_BUILD_ID}.log" 2>/dev/null || true
              npx tsx scripts/ci/generate-manifest.ts /tmp/ci-logs .
              exit 1
           fi
@@ -87,7 +117,7 @@ phases:
           else
             git add .
             MSG="${COMMIT_MESSAGE:-chore: autonomous improvement by Claw Coder Agent [skip ci]}"
-            if git commit -m "$MSG"; then
+            if HUSKY=0 git commit -m "$MSG"; then
               git push https://$GITHUB_TOKEN@github.com/$REPO.git HEAD:main
             else
               echo "No changes to commit."

@@ -4,6 +4,7 @@ export * from './status';
 export * from './safety';
 export * from './qa';
 export * from './config';
+export * from './health';
 
 import { UserRole } from '../common';
 export { UserRole };

@@ -102,21 +102,18 @@ export const handler: Handler = async (
   }
 
   // 3. Prepare resolved parameters with multi-tenant scoping
-  const resolvedParams: StdioServerParameters =
-    baseConfig.command === 'npx'
-      ? {
-          ...baseConfig,
-          command: getResolvedNpxPath(),
-          env: {
-            ...baseConfig.env,
-            PATH: process.env.PATH ?? '/var/lang/bin:/usr/local/bin:/usr/bin',
-            MCP_SERVER_NAME: serverName,
-            WORKSPACE_ID: workspaceId,
-            HOME: workspacePath, // Isolate HOME per tenant
-            XDG_CACHE_HOME: `${workspacePath}/.cache`,
-          },
-        }
-      : baseConfig;
+  const resolvedParams: StdioServerParameters = {
+    ...baseConfig,
+    command: baseConfig.command === 'npx' ? getResolvedNpxPath() : baseConfig.command,
+    env: {
+      ...baseConfig.env,
+      PATH: process.env.PATH ?? '/var/lang/bin:/usr/local/bin:/usr/bin',
+      MCP_SERVER_NAME: serverName,
+      WORKSPACE_ID: workspaceId,
+      HOME: workspacePath, // Isolate HOME per tenant
+      XDG_CACHE_HOME: `${workspacePath}/.cache`,
+    },
+  };
 
   // Dynamic scoping for filesystem server (P0 remediation)
   if (serverName === 'filesystem' && Array.isArray(resolvedParams.args)) {

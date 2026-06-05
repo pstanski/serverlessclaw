@@ -46,7 +46,11 @@ export function createMultiplexers(ctx: SharedContext, options: MultiplexerOptio
     permissions: [...basePermissions, ...schedulerPermissions],
     architecture: LAMBDA_ARCHITECTURE,
     nodejs: { loader: NODEJS_LOADERS },
-    environment: { ...agentEnv, MULTIPLEXER_TIER: 'high' },
+    environment: {
+      ...agentEnv,
+      MULTIPLEXER_TIER: 'high',
+      DEPLOYER_PROJECT_NAME: `${$app.name}-${$app.stage}-Deployer`,
+    },
     memory: AGENT_CONFIG.memory.LARGE,
     timeout: AGENT_CONFIG.timeout.MAX,
     logging: { retention: LOG_RETENTION_PERIOD },
@@ -58,6 +62,7 @@ export function createMultiplexers(ctx: SharedContext, options: MultiplexerOptio
       detailType: [
         EventType.CODER_TASK,
         EventType.RESEARCH_TASK,
+        EventType.DELEGATION_TASK,
         // EVOLUTION_PLAN + STRATEGIC_PLANNER_TASK removed — now serial via PlannerQueue
       ],
     },
@@ -92,11 +97,15 @@ export function createMultiplexers(ctx: SharedContext, options: MultiplexerOptio
   const standardMultiplexer = new sst.aws.Function('StandardMultiplexer', {
     handler: `${prefix}packages/core/handlers/agent-multiplexer.handler`,
     dev: liveInLocalOnly,
-    link: [...baseLink, deployerLink].filter(Boolean) as sst.Linkable<Record<string, unknown>>[],
+    link: [...baseLink, deployerLink, ctx.deployer].filter(Boolean) as sst.Linkable<Record<string, unknown>>[],
     permissions: [...basePermissions, ...schedulerPermissions],
     architecture: LAMBDA_ARCHITECTURE,
     nodejs: { loader: NODEJS_LOADERS },
-    environment: { ...agentEnv, MULTIPLEXER_TIER: 'standard' },
+    environment: {
+      ...agentEnv,
+      MULTIPLEXER_TIER: 'standard',
+      DEPLOYER_PROJECT_NAME: `${$app.name}-${$app.stage}-Deployer`,
+    },
     memory: AGENT_CONFIG.memory.MEDIUM_LARGE,
     timeout: AGENT_CONFIG.timeout.MAX,
     logging: { retention: LOG_RETENTION_PERIOD },
@@ -119,13 +128,17 @@ export function createMultiplexers(ctx: SharedContext, options: MultiplexerOptio
   const lightMultiplexer = new sst.aws.Function('LightMultiplexer', {
     handler: `${prefix}packages/core/handlers/agent-multiplexer.handler`,
     dev: liveInLocalOnly,
-    link: [...baseLink, stagingBucket, deployerLink].filter(Boolean) as sst.Linkable<
+    link: [...baseLink, stagingBucket, deployerLink, ctx.deployer].filter(Boolean) as sst.Linkable<
       Record<string, unknown>
     >[],
     permissions: [...basePermissions, ...schedulerPermissions],
     architecture: LAMBDA_ARCHITECTURE,
     nodejs: { loader: NODEJS_LOADERS },
-    environment: { ...agentEnv, MULTIPLEXER_TIER: 'light' },
+    environment: {
+      ...agentEnv,
+      MULTIPLEXER_TIER: 'light',
+      DEPLOYER_PROJECT_NAME: `${$app.name}-${$app.stage}-Deployer`,
+    },
     memory: AGENT_CONFIG.memory.MEDIUM,
     timeout: AGENT_CONFIG.timeout.LONG,
     logging: { retention: LOG_RETENTION_PERIOD },

@@ -7,6 +7,7 @@ import {
   deleteAgent,
   syncAgentRegistry,
   pulseCheck,
+  checkAgentHealth,
 } from './agent';
 import { setSystemConfig } from './config';
 import { emitEvent } from '../../lib/utils/bus';
@@ -17,7 +18,21 @@ const ddbMock = mockClient(DynamoDBDocumentClient);
 
 // Mock dependencies
 vi.mock('../../lib/utils/bus', () => ({
-  emitEvent: vi.fn().mockResolvedValue(undefined),
+  emitEvent: vi.fn().mockResolvedValue({ success: true, eventId: 'evt-123' }),
+}));
+
+const mocks = vi.hoisted(() => ({
+  getAgentHealth: vi.fn(),
+  getAllAgentHealth: vi.fn(),
+}));
+
+vi.mock('../../lib/memory/dynamo-memory', () => ({
+  DynamoMemory: vi.fn().mockImplementation(function () {
+    return {
+      getAgentHealth: mocks.getAgentHealth,
+      getAllAgentHealth: mocks.getAllAgentHealth,
+    };
+  }),
 }));
 
 vi.mock('../../lib/registry/index', () => ({
@@ -65,6 +80,16 @@ vi.mock('../../lib/backbone', () => ({
 
 vi.mock('../../lib/utils/topology', () => ({
   discoverSystemTopology: vi.fn().mockResolvedValue({ nodes: [], edges: [] }),
+}));
+
+vi.mock('../../lib/agent/decomposer', () => ({
+  decomposePlan: vi.fn().mockResolvedValue({
+    originalPlan: 'test-plan',
+    planId: 'plan-0',
+    wasDecomposed: false,
+    totalSubTasks: 0,
+    subTasks: [],
+  }),
 }));
 
 vi.mock('sst', () => ({
@@ -151,6 +176,46 @@ describe('Knowledge Agent Tools', () => {
     });
 
     it('should decompose complex missions into sub-tasks', async () => {
+      const { decomposePlan } = await import('../../lib/agent/decomposer');
+      vi.mocked(decomposePlan).mockResolvedValueOnce({
+        originalPlan: 'complex mission',
+        planId: 'plan-1',
+        wasDecomposed: true,
+        totalSubTasks: 3,
+        subTasks: [
+          {
+            subTaskId: 'sub-1',
+            planId: 'plan-1',
+            task: 'Implement the backend API with auth and database connection.',
+            gapIds: [],
+            order: 0,
+            dependencies: [],
+            complexity: 5,
+            agentId: 'coder',
+          },
+          {
+            subTaskId: 'sub-2',
+            planId: 'plan-1',
+            task: 'Implement the frontend dashboard with responsive design.',
+            gapIds: [],
+            order: 1,
+            dependencies: [],
+            complexity: 5,
+            agentId: 'coder',
+          },
+          {
+            subTaskId: 'sub-3',
+            planId: 'plan-1',
+            task: 'Deploy the application and verify all resources are active.',
+            gapIds: [],
+            order: 2,
+            dependencies: [],
+            complexity: 5,
+            agentId: 'coder',
+          },
+        ],
+      });
+
       const args = {
         agentId: 'coder',
         userId: 'user-1',
@@ -174,6 +239,43 @@ Deploy the entire application to AWS using SST and verify all resources are acti
       // Verify multiple events emitted (total 3 sub-tasks)
       expect(emitEvent).toHaveBeenCalledTimes(3);
     });
+
+    it('should bypass decomposition when skipDecomposition is set', async () => {
+      const { decomposePlan } = await import('../../lib/agent/decomposer');
+
+      const result = await dispatchTask.execute({
+        agentId: 'coder',
+        userId: 'user-1',
+        task: 'A long task that would normally be decomposed before dispatching to coder.',
+        skipDecomposition: true,
+        sessionId: 'session-1',
+      });
+
+      expect(result).toContain('TASK_PAUSED');
+      expect(decomposePlan).not.toHaveBeenCalled();
+      expect(emitEvent).toHaveBeenCalledTimes(1);
+      expect(emitEvent).toHaveBeenCalledWith(
+        'superclaw',
+        'coder_task',
+        expect.objectContaining({
+          userId: 'user-1',
+          task: 'A long task that would normally be decomposed before dispatching to coder.',
+          sessionId: 'session-1',
+        })
+      );
+    });
+
+    it('should surface event bus failures during single dispatch', async () => {
+      vi.mocked(emitEvent).mockResolvedValueOnce({ success: false, reason: 'DLQ' });
+
+      const result = await dispatchTask.execute({
+        agentId: 'coder',
+        userId: 'user-1',
+        task: 'build a feature',
+      });
+
+      expect(result).toBe('Failed to dispatch task: DLQ');
+    });
   });
 
   describe('pulseCheck', () => {
@@ -194,6 +296,47 @@ Deploy the entire application to AWS using SST and verify all resources are acti
           userId: 'user-pulse',
         })
       );
+    });
+  });
+
+  describe('checkAgentHealth', () => {
+    it('should return health for a specific agent', async () => {
+      mocks.getAgentHealth.mockResolvedValueOnce({
+        agentId: 'coder',
+        status: 'online',
+        latencyMs: 150,
+        lastSeen: Date.now() - 5000,
+      });
+
+      const result = await checkAgentHealth.execute({ agentId: 'coder' });
+      expect(result).toContain('Health Status for coder');
+      expect(result).toContain('Status: online');
+      expect(result).toContain('Latency: 150ms');
+      expect(result).toContain('Last Seen: 5 seconds ago');
+    });
+
+    it('should return friendly message if no health data found for specific agent', async () => {
+      mocks.getAgentHealth.mockResolvedValueOnce(undefined);
+
+      const result = await checkAgentHealth.execute({ agentId: 'unknown-agent' });
+      expect(result).toBe("No health data found for agent 'unknown-agent'.");
+    });
+
+    it('should return summary for all agents', async () => {
+      mocks.getAllAgentHealth.mockResolvedValueOnce([
+        { agentId: 'coder', status: 'online', latencyMs: 100, lastSeen: Date.now() - 2000 },
+        {
+          agentId: 'researcher',
+          status: 'degraded',
+          latencyMs: 5000,
+          lastSeen: Date.now() - 10000,
+        },
+      ]);
+
+      const result = await checkAgentHealth.execute({});
+      expect(result).toContain('Swarm Health Status:');
+      expect(result).toContain('[coder] online');
+      expect(result).toContain('[researcher] degraded');
     });
   });
 

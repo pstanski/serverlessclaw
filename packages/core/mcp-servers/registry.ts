@@ -1,4 +1,35 @@
 import { type StdioServerParameters } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { readFileSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+
+function resolvePackageBin(packageName: string, preferredBin?: string): string | undefined {
+  try {
+    const packageJsonPath = require.resolve(`${packageName}/package.json`);
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+      bin?: string | Record<string, string>;
+    };
+
+    const relativeBin =
+      typeof packageJson.bin === 'string'
+        ? packageJson.bin
+        : ((preferredBin ? packageJson.bin?.[preferredBin] : undefined) ??
+          Object.values(packageJson.bin ?? {})[0]);
+
+    return relativeBin ? resolve(dirname(packageJsonPath), relativeBin) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const NODE_COMMAND = process.execPath || 'node';
+const LOCAL_FILESYSTEM_BIN = resolvePackageBin(
+  '@modelcontextprotocol/server-filesystem',
+  'mcp-server-filesystem'
+);
+const LOCAL_AST_BIN = resolvePackageBin('@aiready/ast-mcp-server', 'ast-mcp-server');
 
 /**
  * Central registry of all MCP server configurations.
@@ -14,8 +45,10 @@ export const MCP_SERVER_REGISTRY: Record<string, StdioServerParameters> = {
     },
   },
   filesystem: {
-    command: 'npx',
-    args: ['--offline', '@modelcontextprotocol/server-filesystem', '/tmp'],
+    command: LOCAL_FILESYSTEM_BIN ? NODE_COMMAND : 'npx',
+    args: LOCAL_FILESYSTEM_BIN
+      ? [LOCAL_FILESYSTEM_BIN, '/tmp']
+      : ['--offline', '@modelcontextprotocol/server-filesystem', '/tmp'],
     env: {
       HOME: '/tmp',
     },
@@ -67,8 +100,8 @@ export const MCP_SERVER_REGISTRY: Record<string, StdioServerParameters> = {
     },
   },
   ast: {
-    command: 'npx',
-    args: ['--offline', '@aiready/ast-mcp-server@0.8.6'],
+    command: LOCAL_AST_BIN ? NODE_COMMAND : 'npx',
+    args: LOCAL_AST_BIN ? [LOCAL_AST_BIN] : ['--offline', '@aiready/ast-mcp-server@0.8.6'],
     env: {
       HOME: '/tmp',
       NPM_CONFIG_CACHE: '/tmp/npm-cache',

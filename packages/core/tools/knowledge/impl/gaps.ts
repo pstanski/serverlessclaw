@@ -29,15 +29,17 @@ export const manageGap = {
       const memory = getMemory();
 
       if (action === 'list') {
-        const gaps = await memory.getAllGaps(GapStatus.OPEN, { workspaceId });
-        if (gaps.length === 0) return 'No open capability gaps found.';
+        const targetStatus = status || GapStatus.OPEN;
+        const gaps = await memory.getAllGaps(targetStatus, { workspaceId });
+        if (gaps.length === 0)
+          return `No capability gaps found with status '${targetStatus}'${workspaceId ? ` for workspace ${workspaceId}` : ''}.`;
 
         const sortedGaps = [...gaps].sort(
           (a, b) => (b.metadata.impact || 0) - (a.metadata.impact || 0)
         );
 
         return (
-          `Found ${gaps.length} open capability gaps:\n` +
+          `Found ${gaps.length} capability gaps with status '${targetStatus}':\n` +
           sortedGaps
             .map(
               (g) =>

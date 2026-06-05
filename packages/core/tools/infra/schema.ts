@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { IToolDefinition, ToolType } from '../../lib/types/index';
 import { AgentStatus, AGENT_TYPES } from '../../lib/types/agent';
+import { Permission } from '../../lib/types/security';
 
 /**
  * Infra Domain Tool Definitions
@@ -57,6 +58,10 @@ export const infraSchema: Record<string, IToolDefinition> = {
       properties: {
         reason: { type: 'string' },
         gapIds: { type: 'array', items: { type: 'string' } },
+        patch: {
+          type: 'string',
+          description: 'Optional: Git diff patch to apply before deployment.',
+        },
         stagingKey: {
           type: 'string',
           description: 'Optional: Specific staging ZIP key returned by stageChanges.',
@@ -67,7 +72,7 @@ export const infraSchema: Record<string, IToolDefinition> = {
     },
     connectionProfile: ['codebuild'],
     requiresApproval: false,
-    requiredPermissions: ['admin'],
+    requiredPermissions: [Permission.ACTION_INFRA],
   },
   triggerInfraRebuild: {
     type: ToolType.FUNCTION,
@@ -103,7 +108,7 @@ export const infraSchema: Record<string, IToolDefinition> = {
     },
     connectionProfile: ['codebuild'],
     requiresApproval: true,
-    requiredPermissions: ['admin'],
+    requiredPermissions: [Permission.ACTION_INFRA],
   },
 
   // Scheduler (from scheduler.ts)
