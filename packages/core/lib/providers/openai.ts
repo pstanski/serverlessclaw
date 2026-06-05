@@ -108,14 +108,20 @@ export class OpenAIProvider implements IProvider {
 
     const shouldRequestSummary = shouldRequestReasoningSummary(activeModel, requestedProfile);
 
+    const isReasoningModel = activeModel.includes('gpt-5');
+
     const requestPayload: Record<string, unknown> = {
       model: activeModel as OpenAI.ResponsesModel,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       input: responsesInput as any,
-      reasoning: {
-        effort: reasoningEffort as OpenAI.ReasoningEffort,
-        ...(shouldRequestSummary ? { summary: 'auto' } : {}),
-      },
+      ...(isReasoningModel
+        ? {
+            reasoning: {
+              effort: reasoningEffort as OpenAI.ReasoningEffort,
+              ...(shouldRequestSummary ? { summary: 'auto' } : {}),
+            },
+          }
+        : {}),
       // 2026 Responses API: response_format has moved to text.format
       ...(responseFormat
         ? {
@@ -250,14 +256,20 @@ export class OpenAIProvider implements IProvider {
 
     const shouldRequestSummary = shouldRequestReasoningSummary(activeModel, requestedProfile);
 
+    const isReasoningModel = activeModel.includes('gpt-5');
+
     const requestPayload: Record<string, unknown> = {
       model: activeModel as OpenAI.ResponsesModel,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       input: responsesInput as any,
-      reasoning: {
-        effort: reasoningEffort as OpenAI.ReasoningEffort,
-        ...(shouldRequestSummary ? { summary: 'auto' } : {}),
-      },
+      ...(isReasoningModel
+        ? {
+            reasoning: {
+              effort: reasoningEffort as OpenAI.ReasoningEffort,
+              ...(shouldRequestSummary ? { summary: 'auto' } : {}),
+            },
+          }
+        : {}),
       stream: true,
       ...(responseFormat
         ? {
