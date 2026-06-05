@@ -101,6 +101,11 @@ export function createAgents(
 
   const agentEnv = {
     TRACE_SUMMARIES_ENABLED: 'true',
+    MEMORY_TABLE_NAME: memoryTable.name,
+    CONFIG_TABLE_NAME: configTable.name,
+    TRACE_TABLE_NAME: traceTable.name,
+    AGENT_BUS_NAME: bus.name,
+    PLANNER_QUEUE_URL: plannerQueue?.url || '',
     ...(mcpServers
       ? {
           MCP_SERVER_ARNS: $util.jsonStringify({
