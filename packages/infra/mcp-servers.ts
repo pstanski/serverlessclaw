@@ -12,7 +12,10 @@ import { existsSync, readFileSync, realpathSync } from 'fs';
 const repoRoot = process.cwd();
 const coreNodeModules = join(repoRoot, 'packages/core/node_modules');
 const frameworkCoreNodeModules = join(repoRoot, 'framework/packages/core/node_modules');
+const frameworkRootNodeModules = join(repoRoot, 'framework/node_modules');
+const frameworkPnpmNodeModules = join(repoRoot, 'framework/node_modules/.pnpm/node_modules');
 const rootNodeModules = join(repoRoot, 'node_modules');
+const rootPnpmNodeModules = join(repoRoot, 'node_modules/.pnpm/node_modules');
 
 function resolvePackageRoot(packageName: string, searchDirs: string[]): string {
   for (const searchDir of searchDirs) {
@@ -43,7 +46,14 @@ function getNodeModulesDir(packageRoot: string, packageName: string): string {
 function collectPackageCopyFiles(packageNames: string[]): { from: string; to: string }[] {
   const queue = packageNames.map((packageName) => ({
     packageName,
-    searchDirs: [coreNodeModules, frameworkCoreNodeModules, rootNodeModules],
+    searchDirs: [
+      coreNodeModules,
+      frameworkCoreNodeModules,
+      frameworkRootNodeModules,
+      frameworkPnpmNodeModules,
+      rootNodeModules,
+      rootPnpmNodeModules,
+    ],
   }));
   const visited = new Set<string>();
   const copyFiles: { from: string; to: string }[] = [];
@@ -67,7 +77,10 @@ function collectPackageCopyFiles(packageNames: string[]): { from: string; to: st
       getNodeModulesDir(packageRoot, next.packageName),
       coreNodeModules,
       frameworkCoreNodeModules,
+      frameworkRootNodeModules,
+      frameworkPnpmNodeModules,
       rootNodeModules,
+      rootPnpmNodeModules,
     ];
     for (const dependencyName of Object.keys(packageJson.dependencies ?? {})) {
       queue.push({ packageName: dependencyName, searchDirs: dependencySearchDirs });
