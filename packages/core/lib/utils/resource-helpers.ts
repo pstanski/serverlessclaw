@@ -18,13 +18,12 @@ export function resolveSSTResourceValue(
   fallbackEnvVar?: string,
   defaultValue?: string
 ): string | undefined {
-  // 1. Try explicit override env var (highest priority for testing)
+  // 1. Try explicit override env var (highest priority)
   if (fallbackEnvVar && process.env[fallbackEnvVar]) {
     return process.env[fallbackEnvVar]!;
   }
 
   // 2. Try SST Ion JSON fallback (SST_RESOURCE_<Name>)
-  // Check this before hitting the Resource proxy to avoid triggering Proxy errors
   const ionEnvVar = `SST_RESOURCE_${resourceName}`;
   const ionValue = process.env[ionEnvVar];
   if (ionValue) {
@@ -34,47 +33,28 @@ export function resolveSSTResourceValue(
         return parsed[property];
       }
     } catch {
-      // Not JSON, use as is if it's a simple string and we're looking for 'name' or 'value'
-      if (property === 'name' || property === 'value') {
-        return ionValue;
-      }
+      if (property === 'name' || property === 'value') return ionValue;
     }
   }
 
-  // 3. Try traditional Resource access
-  // We check for active link signals to avoid triggering the Proxy's "links not active" error
-  if (
-    process.env.SST_RESOURCE_App ||
-    process.env.AWS_LAMBDA_FUNCTION_NAME ||
-    process.env.VITEST ||
-    process.env.NODE_ENV === 'test' ||
-    process.env.PLAYWRIGHT ||
-    Object.keys(process.env).some((k) => k.startsWith('SST_RESOURCE_'))
-  ) {
-    try {
-      const resource = Resource as unknown as Record<string, Record<string, string>>;
-      if (resource && typeof resource === 'object') {
-        const item = resource[resourceName];
-        if (item && item[property]) return item[property];
-      }
-    } catch {
-      // ignore
+  // 3. Try traditional Resource access ONLY as a last resort and ONLY if no fallback was found
+  // We wrap this in an extremely aggressive try/catch because the SST proxy can throw ENOENT
+  try {
+    const resource = Resource as any;
+    if (resource && resource[resourceName] && resource[resourceName][property]) {
+      return resource[resourceName][property];
     }
+  } catch (e) {
+    // SST proxy failed (e.g. missing resource.enc), ignore and move to fuzzy match
   }
 
-  // 4. Fuzzy Env Match (Last Resort for maximum resilience)
-  // Look for any env var that contains the resource name and the property
+  // 4. Fuzzy Env Match (Robust Fallback)
   const fuzzyPrefix = resourceName.toUpperCase().replace(/[^A-Z0-9]/g, '_');
   const fuzzyProp = property.toUpperCase();
   const fuzzyMatch = Object.keys(process.env).find(
     (k) => k.includes(fuzzyPrefix) && k.includes(fuzzyProp)
   );
-  if (fuzzyMatch) {
-    logger.debug(
-      `[ResourceHelpers] Found fuzzy env match for ${resourceName}.${property}: ${fuzzyMatch}`
-    );
-    return process.env[fuzzyMatch];
-  }
+  if (fuzzyMatch) return process.env[fuzzyMatch];
 
   return defaultValue;
 }
@@ -99,32 +79,23 @@ export const getConfigTableName = () =>
 export const getPlannerQueueUrl = () =>
   resolveSSTResourceValue('PlannerQueue', 'url', 'PLANNER_QUEUE_URL');
 
-/** Gets application metadata (name and stage) */
 export function getAppInfo(): { name: string; stage: string } {
-  if (
-    process.env.SST_RESOURCE_App ||
-    process.env.AWS_LAMBDA_FUNCTION_NAME ||
-    process.env.SST_STAGE ||
-    process.env.VITEST ||
-    process.env.NODE_ENV === 'test' ||
-    process.env.PLAYWRIGHT ||
-    Object.keys(process.env).some((k) => k.startsWith('SST_RESOURCE_'))
-  ) {
-    try {
-      const resource = Resource as unknown as Record<string, { name: string; stage: string }>;
-      if (resource.App) {
-        return { name: resource.App.name, stage: resource.App.stage };
-      }
-    } catch {
-      // ignore
+  try {
+    const resource = Resource as any;
+    if (resource.App) {
+      return { name: resource.App.name, stage: resource.App.stage };
     }
+  } catch {
+    // ignore
   }
 
   const ionApp = process.env.SST_RESOURCE_App;
   if (ionApp) {
     try {
       const parsed = JSON.parse(ionApp);
-      return { name: parsed.name || 'serverlessclaw', stage: parsed.stage || 'local' };
+      if (parsed.name && parsed.stage) {
+        return { name: parsed.name, stage: parsed.stage };
+      }
     } catch {
       // ignore
     }
