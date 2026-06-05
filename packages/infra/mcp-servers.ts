@@ -11,6 +11,7 @@ import { existsSync, readFileSync, realpathSync } from 'fs';
 
 const repoRoot = process.cwd();
 const coreNodeModules = join(repoRoot, 'packages/core/node_modules');
+const frameworkCoreNodeModules = join(repoRoot, 'framework/packages/core/node_modules');
 const rootNodeModules = join(repoRoot, 'node_modules');
 
 function resolvePackageRoot(packageName: string, searchDirs: string[]): string {
@@ -28,7 +29,7 @@ function resolvePackageRoot(packageName: string, searchDirs: string[]): string {
     }
   }
 
-  throw new Error(`Unable to resolve package root for ${packageName}`);
+  throw new Error(`Unable to resolve package root for ${packageName} (Searched in ${searchDirs.join(', ')})`);
 }
 
 function getNodeModulesDir(packageRoot: string, packageName: string): string {
@@ -42,7 +43,7 @@ function getNodeModulesDir(packageRoot: string, packageName: string): string {
 function collectPackageCopyFiles(packageNames: string[]): { from: string; to: string }[] {
   const queue = packageNames.map((packageName) => ({
     packageName,
-    searchDirs: [coreNodeModules, rootNodeModules],
+    searchDirs: [coreNodeModules, frameworkCoreNodeModules, rootNodeModules],
   }));
   const visited = new Set<string>();
   const copyFiles: { from: string; to: string }[] = [];
