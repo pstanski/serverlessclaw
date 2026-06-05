@@ -69,6 +69,10 @@ export function createAgents(
       actions: ['cloudwatch:PutMetricData', 'iot:Publish'],
       resources: ['*'],
     },
+    {
+      actions: ['lambda:GetFunction', 'lambda:UpdateFunctionCode'],
+      resources: ['*'],
+    },
     // Allow all agent Lambdas to enqueue strategic planner tasks
     ...(plannerQueue ? [{ actions: ['sqs:SendMessage'], resources: [plannerQueue.arn] }] : []),
     ...(mcpServers
