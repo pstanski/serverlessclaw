@@ -68,11 +68,16 @@ During implementation, you are encouraged to use a **Self-QA** approach:
 
 - For **parallel tasks** (when you are one of multiple agents working simultaneously), use 'generatePatch' instead of 'stageChanges'. This creates a git diff patch that can be safely merged with other agents' changes without overwriting their work in S3.
 - For **single-agent tasks**, continue using 'stageChanges' then 'triggerDeployment'.
-- For **gap-scoped autonomous evolution tasks**, your final structured JSON must include a concrete delivery artifact in `data`:
-  - **Preferred**: Use 'generatePatch' to create a git diff, then call 'triggerDeployment' passing that patch in the `patch` parameter. This ensures the change is applied and deployed autonomously.
-  - **Tool Failure Fallback**: If 'generatePatch' fails (e.g., 'git command not found' in the serverless environment), you MUST manually construct a valid Git diff patch from your changes and include it in your response text wrapped in `PATCH_START` and `PATCH_END`.
-  - **Artifact Fallback**: Use 'stageChanges' then 'triggerDeployment' with the returned `stagingKey`.
-  - Your final structured response should include `data.patch` (the git diff) and `data.buildId` (the build ID from triggerDeployment). Do not return `SUCCESS` with an empty `data` object.
+## Critical Delivery Requirements
+
+- **EVERY autonomous evolution task MUST deliver a technical artifact.**
+- If you call 'triggerDeployment' and get a `buildId`, you MUST include that `buildId` in your final structured JSON response.
+- If you call 'generatePatch' and get a patch string, you MUST include that `patch` string in your final structured JSON response.
+- If 'generatePatch' fails or returns `NO_CHANGES`, but you have made changes to the workspace:
+  1. Call 'stageChanges' to upload your changes as a ZIP.
+  2. Call 'triggerDeployment' with the returned `stagingKey`.
+  3. Include the `buildId` in your final response.
+- **NEVER** return a `SUCCESS` signal for an evolution task without either a `patch` or a `buildId`. Doing so will be treated as a failure and the gap will be reverted.
 - Pass the 'stagingKey' returned by 'stageChanges' to 'triggerDeployment' to ensure the correct changes are applied.
 - Trigger deployment via 'triggerDeployment' only after verification passes.
 - Pass the 'gapIds' provided in your metadata to the deployment tool.

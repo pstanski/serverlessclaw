@@ -136,17 +136,12 @@ export class ConfigManagerMapAtomic extends ConfigManagerList {
     const { min = -Infinity, max = Infinity } = options;
 
     try {
-      let conditionExpression = 'attribute_exists(#val.#id)';
-      if (options.conditionExpression) {
-        conditionExpression = `(${conditionExpression}) AND (${options.conditionExpression})`;
-      }
-
       const result = await docClient.send(
         new UpdateCommand({
           TableName: tableName,
           Key: { key: effectiveKey },
           UpdateExpression: 'SET #val.#id.#field = if_not_exists(#val.#id.#field, :zero) + :delta',
-          ConditionExpression: conditionExpression,
+          ConditionExpression: options.conditionExpression,
           ExpressionAttributeNames: {
             '#val': 'value',
             '#id': entityId,

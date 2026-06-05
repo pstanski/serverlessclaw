@@ -172,22 +172,48 @@ export const generatePatch = {
 
       const { execSync } = await import('child_process');
 
-      // Try to get either staged (after stageChanges) or unstaged changes
-      let patch = '';
+      // Check if system git is available
+      let hasSystemGit = false;
       try {
-        // First try staged changes (happens after stageChanges tool is called)
-        patch = execSync('git diff --cached HEAD', {
-          cwd: process.cwd(),
-          encoding: 'utf-8',
-          timeout: 30000,
-        });
-      } catch {
-        // If no staged changes, try unstaged changes
-        patch = execSync('git diff HEAD', {
-          cwd: process.cwd(),
-          encoding: 'utf-8',
-          timeout: 30000,
-        });
+        execSync('git --version', { stdio: 'ignore' });
+        hasSystemGit = true;
+      } catch {}
+
+      let patch = '';
+      if (hasSystemGit) {
+        try {
+          // First try staged changes
+          patch = execSync('git diff --cached HEAD', {
+            cwd: process.cwd(),
+            encoding: 'utf-8',
+            timeout: 30000,
+          });
+          if (!patch) {
+            // If no staged changes, try unstaged changes
+            patch = execSync('git diff HEAD', {
+              cwd: process.cwd(),
+              encoding: 'utf-8',
+              timeout: 30000,
+            });
+          }
+        } catch (e) {
+          logger.warn('[generatePatch] System git diff failed:', e);
+        }
+      }
+
+      // If system git failed or is missing, try isomorphic-git for basic change detection
+      if (!patch) {
+        try {
+          const matrix = await git.statusMatrix({ fs, dir: process.cwd() });
+          const changes = matrix.filter(
+            ([filepath, head, workdir, stage]) => head !== workdir || workdir !== stage
+          );
+          if (changes.length > 0) {
+            return `FAILED_TO_GENERATE_DIFF: System 'git' is missing in this environment. Detected ${changes.length} changed files: ${changes.map((c) => c[0]).join(', ')}. PLEASE USE 'stageChanges' instead, or manually construct the patch if you can.`;
+          }
+        } catch (e) {
+          logger.error('[generatePatch] Isomorphic-git statusMatrix failed:', e);
+        }
       }
 
       if (!patch || patch.trim().length === 0) {
