@@ -83,9 +83,9 @@ export class OpenAIProvider implements IProvider {
     let activeModel = model ?? this.model;
     if (!model && profile) {
       const profileToModel: Record<ReasoningProfile, string> = {
-        [ReasoningProfile.FAST]: OpenAIModel.GPT_5_4_NANO,
-        [ReasoningProfile.STANDARD]: OpenAIModel.GPT_5_MINI,
-        [ReasoningProfile.THINKING]: OpenAIModel.GPT_5_MINI,
+        [ReasoningProfile.FAST]: OpenAIModel.GPT_4O_MINI,
+        [ReasoningProfile.STANDARD]: OpenAIModel.GPT_4O,
+        [ReasoningProfile.THINKING]: OpenAIModel.GPT_4O,
         [ReasoningProfile.DEEP]: OpenAIModel.GPT_5_4,
       };
       activeModel = (profileToModel[profile] ?? activeModel) as string;
@@ -231,9 +231,9 @@ export class OpenAIProvider implements IProvider {
     let activeModel = model ?? this.model;
     if (!model && profile) {
       const profileToModel: Record<ReasoningProfile, string> = {
-        [ReasoningProfile.FAST]: OpenAIModel.GPT_5_4_NANO,
-        [ReasoningProfile.STANDARD]: OpenAIModel.GPT_5_MINI,
-        [ReasoningProfile.THINKING]: OpenAIModel.GPT_5_MINI,
+        [ReasoningProfile.FAST]: OpenAIModel.GPT_4O_MINI,
+        [ReasoningProfile.STANDARD]: OpenAIModel.GPT_4O,
+        [ReasoningProfile.THINKING]: OpenAIModel.GPT_4O,
         [ReasoningProfile.DEEP]: OpenAIModel.GPT_5_4,
       };
       activeModel = (profileToModel[profile] ?? activeModel) as string;
