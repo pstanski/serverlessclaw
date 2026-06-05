@@ -79,8 +79,19 @@ export class OpenAIProvider implements IProvider {
     const client = this.client;
     const requestedProfile = profile;
 
-    // Resolve model if only profile is provided
-    let activeModel = model ?? this.model;
+    // 1. Resolve active model (Priority: Override > Config > Default)
+    const { ConfigManager } = await import('../registry/config');
+    const { CONFIG_KEYS, SYSTEM } = await import('../constants');
+    const { resolveSSTResourceValue } = await import('../utils/resource-helpers');
+
+    let activeModel = model;
+    if (!activeModel) {
+      const sstModel = await resolveSSTResourceValue('ActiveModel', 'value');
+      activeModel = (await ConfigManager.getRawConfig(CONFIG_KEYS.ACTIVE_MODEL)) as string;
+      activeModel = activeModel ?? sstModel ?? this.model;
+    }
+
+    // 2. Map profile to model if no specific model was requested
     if (!model && profile) {
       const profileToModel: Record<ReasoningProfile, string> = {
         [ReasoningProfile.FAST]: OpenAIModel.GPT_4O_MINI,
@@ -91,7 +102,7 @@ export class OpenAIProvider implements IProvider {
       activeModel = (profileToModel[profile] ?? activeModel) as string;
     }
 
-    // Fallback if profile not supported
+    // 3. Resolve capabilities and reasoning effort
     const capabilities = await this.getCapabilities(activeModel);
     profile = normalizeProfile(profile, capabilities, activeModel);
 
@@ -234,7 +245,19 @@ export class OpenAIProvider implements IProvider {
     const client = this.client;
     const requestedProfile = profile;
 
-    let activeModel = model ?? this.model;
+    // 1. Resolve active model (Priority: Override > Config > Default)
+    const { ConfigManager } = await import('../registry/config');
+    const { CONFIG_KEYS, SYSTEM } = await import('../constants');
+    const { resolveSSTResourceValue } = await import('../utils/resource-helpers');
+
+    let activeModel = model;
+    if (!activeModel) {
+      const sstModel = await resolveSSTResourceValue('ActiveModel', 'value');
+      activeModel = (await ConfigManager.getRawConfig(CONFIG_KEYS.ACTIVE_MODEL)) as string;
+      activeModel = activeModel ?? sstModel ?? this.model;
+    }
+
+    // 2. Map profile to model if no specific model was requested
     if (!model && profile) {
       const profileToModel: Record<ReasoningProfile, string> = {
         [ReasoningProfile.FAST]: OpenAIModel.GPT_4O_MINI,
