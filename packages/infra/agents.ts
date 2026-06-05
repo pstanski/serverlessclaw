@@ -69,6 +69,10 @@ export function createAgents(
       actions: ['cloudwatch:PutMetricData', 'iot:Publish'],
       resources: ['*'],
     },
+    {
+      actions: ['lambda:GetFunction', 'lambda:UpdateFunctionCode'],
+      resources: ['*'],
+    },
     // Allow all agent Lambdas to enqueue strategic planner tasks
     ...(plannerQueue ? [{ actions: ['sqs:SendMessage'], resources: [plannerQueue.arn] }] : []),
     ...(mcpServers
@@ -101,6 +105,11 @@ export function createAgents(
 
   const agentEnv = {
     TRACE_SUMMARIES_ENABLED: 'true',
+    MEMORY_TABLE_NAME: memoryTable.name,
+    CONFIG_TABLE_NAME: configTable.name,
+    TRACE_TABLE_NAME: traceTable.name,
+    AGENT_BUS_NAME: bus.name,
+    PLANNER_QUEUE_URL: plannerQueue?.url || '',
     ...(mcpServers
       ? {
           MCP_SERVER_ARNS: $util.jsonStringify({

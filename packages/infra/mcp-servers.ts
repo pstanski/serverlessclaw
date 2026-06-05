@@ -23,7 +23,7 @@ function resolvePackageRoot(packageName: string, searchDirs: string[]): string {
     if (!existsSync(packageJsonPath)) continue;
 
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { name?: string };
-    if (packageJson.name === packageName) {
+    if (packageJson.name === packageName || packageName.endsWith('-cjs')) {
       return packageRoot;
     }
   }

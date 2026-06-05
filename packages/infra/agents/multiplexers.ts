@@ -97,7 +97,9 @@ export function createMultiplexers(ctx: SharedContext, options: MultiplexerOptio
   const standardMultiplexer = new sst.aws.Function('StandardMultiplexer', {
     handler: `${prefix}packages/core/handlers/agent-multiplexer.handler`,
     dev: liveInLocalOnly,
-    link: [...baseLink, deployerLink, ctx.deployer].filter(Boolean) as sst.Linkable<Record<string, unknown>>[],
+    link: [...baseLink, deployerLink, ctx.deployer].filter(Boolean) as sst.Linkable<
+      Record<string, unknown>
+    >[],
     permissions: [...basePermissions, ...schedulerPermissions],
     architecture: LAMBDA_ARCHITECTURE,
     nodejs: { loader: NODEJS_LOADERS },

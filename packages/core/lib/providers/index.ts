@@ -8,7 +8,6 @@ import {
   ResponseFormat,
   MessageRole,
 } from '../types/index';
-import { Resource } from 'sst';
 import { logger } from '../logger';
 
 import { OpenAIProvider } from './openai';
@@ -76,21 +75,22 @@ export class ProviderManager implements IProvider {
     overrideProvider?: string,
     overrideModel?: string
   ): Promise<IProvider> {
-    const resource = Resource as unknown as Record<string, { value: string }>;
+    const { resolveSSTResourceValue } = await import('../utils/resource-helpers');
 
     // Resolve Provider
+    const sstProvider = await resolveSSTResourceValue('ActiveProvider', 'value');
     const providerType = (overrideProvider ??
       (await ConfigManager.getTypedConfig(
         CONFIG_KEYS.ACTIVE_PROVIDER,
-        ('ActiveProvider' in resource ? resource.ActiveProvider.value : undefined) ??
-          SYSTEM.DEFAULT_PROVIDER
+        sstProvider ?? SYSTEM.DEFAULT_PROVIDER
       ))) as LLMProvider;
 
     // Resolve Model
+    const sstModel = await resolveSSTResourceValue('ActiveModel', 'value');
     const model =
       overrideModel ??
       ((await ConfigManager.getRawConfig(CONFIG_KEYS.ACTIVE_MODEL)) as string) ??
-      ('ActiveModel' in resource ? resource.ActiveModel.value : undefined);
+      sstModel;
 
     // B1: When no specific provider override is requested, use fallback chain
     // This wraps the primary provider with automatic failover to secondary providers
@@ -344,12 +344,11 @@ export class ProviderManager implements IProvider {
    * Returns the name of the active provider.
    */
   async getActiveProviderName(): Promise<string> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const resource = Resource as any;
+    const { resolveSSTResourceValue } = await import('../utils/resource-helpers');
+    const sstProvider = await resolveSSTResourceValue('ActiveProvider', 'value');
     return (await ConfigManager.getTypedConfig(
       CONFIG_KEYS.ACTIVE_PROVIDER,
-      ('ActiveProvider' in resource ? resource.ActiveProvider.value : undefined) ??
-        SYSTEM.DEFAULT_PROVIDER
+      sstProvider ?? SYSTEM.DEFAULT_PROVIDER
     )) as string;
   }
 
@@ -357,11 +356,11 @@ export class ProviderManager implements IProvider {
    * Returns the name of the active model.
    */
   async getActiveModelName(): Promise<string> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const resource = Resource as any;
+    const { resolveSSTResourceValue } = await import('../utils/resource-helpers');
+    const sstModel = await resolveSSTResourceValue('ActiveModel', 'value');
     return (
       ((await ConfigManager.getRawConfig(CONFIG_KEYS.ACTIVE_MODEL)) as string) ??
-      ('ActiveModel' in resource ? resource.ActiveModel.value : undefined) ??
+      sstModel ??
       SYSTEM.DEFAULT_MODEL
     );
   }
@@ -378,8 +377,7 @@ export class ProviderManager implements IProvider {
     primary?: LLMProvider,
     fallbacks?: LLMProvider[]
   ): Promise<FallbackProvider> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const resource = Resource as any;
+    const { resolveSSTResourceValue } = await import('../utils/resource-helpers');
 
     // Resolve primary provider, defaulting to configured system default if not found
     let primaryProvider = primary;
@@ -389,8 +387,10 @@ export class ProviderManager implements IProvider {
         undefined
       );
       // Use SST Resource value if available, otherwise fallback to system default
-      const sstProvider =
-        'ActiveProvider' in resource ? (resource.ActiveProvider.value as LLMProvider) : undefined;
+      const sstProvider = (await resolveSSTResourceValue(
+        'ActiveProvider',
+        'value'
+      )) as LLMProvider;
       primaryProvider =
         (configValue as unknown as LLMProvider) ?? sstProvider ?? SYSTEM.DEFAULT_PROVIDER;
     }

@@ -1,9 +1,10 @@
-import { Resource } from 'sst';
+import '../lib/bootstrap-env';
 import { DynamoMemory } from '../lib/memory';
 import { MessageRole, AttachmentType, ButtonType } from '../lib/types/llm';
 import { Attachment } from '../lib/types/agent';
 import { logger } from '../lib/logger';
 import { extractBaseUserId } from '../lib/utils/agent-helpers';
+import { resolveSSTResourceValue } from '../lib/utils/resource-helpers';
 
 const memory = new DynamoMemory();
 
@@ -221,10 +222,7 @@ async function deliverTelegram(
   attachments: Attachment[],
   options: { label: string; value: string }[]
 ): Promise<void> {
-  const res = Resource as unknown as {
-    TelegramBotToken?: { value: string };
-  };
-  const token = res.TelegramBotToken?.value;
+  const token = await resolveSSTResourceValue('TelegramBotToken', 'value', 'TELEGRAM_BOT_TOKEN');
   if (!token) return;
 
   if (attachments.length > 0) {
@@ -277,10 +275,7 @@ async function deliverDiscord(
   attachments: Attachment[],
   options: { label: string; value: string }[]
 ): Promise<void> {
-  const res = Resource as unknown as {
-    DiscordBotToken?: { value: string };
-  };
-  const token = res.DiscordBotToken?.value;
+  const token = await resolveSSTResourceValue('DiscordBotToken', 'value', 'DISCORD_BOT_TOKEN');
   if (!token) return;
 
   const embeds = attachments
@@ -327,10 +322,7 @@ async function deliverSlack(
   attachments: Attachment[],
   options: { label: string; value: string }[]
 ): Promise<void> {
-  const res = Resource as unknown as {
-    SlackBotToken?: { value: string };
-  };
-  const token = res.SlackBotToken?.value;
+  const token = await resolveSSTResourceValue('SlackBotToken', 'value', 'SLACK_BOT_TOKEN');
   if (!token) return;
 
   const blocks: Record<string, unknown>[] = [

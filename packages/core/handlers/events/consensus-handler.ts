@@ -2,8 +2,7 @@ import { EventType } from '../../lib/types/agent';
 import { logger } from '../../lib/logger';
 import { emitEvent } from '../../lib/utils/bus';
 import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { getDocClient } from '../../lib/utils/ddb-client';
-import { Resource } from 'sst';
+import { getDocClient, getMemoryTableName } from '../../lib/utils/ddb-client';
 import { getReputation, computeReputationScore } from '../../lib/memory/reputation-operations';
 import { BaseMemoryProvider } from '../../lib/memory/base';
 
@@ -35,8 +34,11 @@ export async function handleConsensus(
   detailType: string
 ): Promise<void> {
   const docClient = getDocClient();
-  const resource = Resource as unknown as { MemoryTable: { name: string } };
-  const tableName = resource.MemoryTable.name;
+  const tableName = await getMemoryTableName();
+
+  if (!tableName) {
+    throw new Error('MemoryTable name is missing from resources.');
+  }
 
   try {
     if (detailType === EventType.CONSENSUS_REQUEST) {

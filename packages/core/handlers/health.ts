@@ -1,3 +1,4 @@
+import '../lib/bootstrap-env';
 import { logger } from '../lib/logger';
 import { runDeepHealthCheck } from '../lib/lifecycle/health';
 import { DynamoMemory } from '../lib/memory';

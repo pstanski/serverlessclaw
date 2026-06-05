@@ -1,5 +1,5 @@
+import '../lib/bootstrap-env';
 import { IoTDataPlaneClient, PublishCommand } from '@aws-sdk/client-iot-data-plane';
-import { Resource } from 'sst';
 import { Context } from 'aws-lambda';
 import { BRIDGE_EVENT_SCHEMA } from '../lib/schema/events';
 import { logger } from '../lib/logger';
@@ -56,7 +56,9 @@ export async function handler(event: Record<string, unknown>, _context: Context)
 
   // Determine the primary broadcast topic
   // Priority: Collaboration > Workspace > Session > User
-  const prefix = `${Resource.App.name}/${Resource.App.stage}/`;
+  const { getAppInfo } = await import('../lib/utils/resource-helpers');
+  const appInfo = await getAppInfo();
+  const prefix = `${appInfo.name}/${appInfo.stage}/`;
   let subTopic = `users/${safeUserId}/signal`;
 
   if (collaborationId) {
