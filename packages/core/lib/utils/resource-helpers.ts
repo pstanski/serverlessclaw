@@ -36,11 +36,26 @@ export function resolveSSTResourceValue(
     }
   }
 
+  // 2. Try globalResource (for tests and specialized environments)
+  try {
+    const globalResource = (globalThis as any).Resource;
+    if (
+      globalResource &&
+      globalResource[resourceName] &&
+      globalResource[resourceName][property]
+    ) {
+      return globalResource[resourceName][property];
+    }
+  } catch {
+    // ignore (e.g. SST Resource proxy throwing "links not active")
+  }
+
   // 3. Try traditional Resource access
   // We use a require inside the function to avoid module load time crashes.
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { Resource } = require('sst');
+    const sst = require('sst');
+    const Resource = sst.Resource || sst.default?.Resource || sst;
     if (Resource && (Resource as any)[resourceName] && (Resource as any)[resourceName][property]) {
       return (Resource as any)[resourceName][property];
     }
@@ -48,7 +63,12 @@ export function resolveSSTResourceValue(
     // ignore
   }
 
-  // 4. Fuzzy Env Match (Robust Fallback)
+  // 4. Try explicit override env var (e.g. OPENAI_API_KEY)
+  if (fallbackEnvVar && process.env[fallbackEnvVar]) {
+    return process.env[fallbackEnvVar]!;
+  }
+
+  // 5. Fuzzy Env Match (Robust Fallback)
   const fuzzyPrefix = resourceName.toUpperCase().replace(/[^A-Z0-9]/g, '_');
   const fuzzyProp = property.toUpperCase();
   const fuzzyMatch = Object.keys(process.env).find(
