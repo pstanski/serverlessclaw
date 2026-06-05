@@ -177,7 +177,9 @@ export const generatePatch = {
       try {
         execSync('git --version', { stdio: 'ignore' });
         hasSystemGit = true;
-      } catch {}
+      } catch {
+        // ignore
+      }
 
       let patch = '';
       if (hasSystemGit) {
@@ -206,7 +208,7 @@ export const generatePatch = {
         try {
           const matrix = await git.statusMatrix({ fs, dir: process.cwd() });
           const changes = matrix.filter(
-            ([filepath, head, workdir, stage]) => head !== workdir || workdir !== stage
+            ([_filepath, head, workdir, stage]) => head !== workdir || workdir !== stage
           );
           if (changes.length > 0) {
             return `FAILED_TO_GENERATE_DIFF: System 'git' is missing in this environment. Detected ${changes.length} changed files: ${changes.map((c) => c[0]).join(', ')}. PLEASE USE 'stageChanges' instead, or manually construct the patch if you can.`;
@@ -248,6 +250,7 @@ export const triggerDeployment = {
       workspaceId,
       teamId,
       staffId,
+      skipE2e,
     } = args as {
       reason: string;
       userId: string;
@@ -262,10 +265,11 @@ export const triggerDeployment = {
       workspaceId?: string;
       teamId?: string;
       staffId?: string;
+      skipE2e?: boolean;
     };
 
     const { getCircuitBreaker } = await import('../../lib/safety/circuit-breaker');
-    const { getDeployCountToday, incrementDeployCount } =
+    const { incrementDeployCount, rewardDeployLimit } =
       await import('../../lib/metrics/deploy-stats');
     const { SYSTEM, DYNAMO_KEYS, STORAGE } = await import('../../lib/constants');
     const { DynamoDBClient } = await import('@aws-sdk/client-dynamodb');
@@ -353,8 +357,6 @@ export const triggerDeployment = {
         return `CIRCUIT_BREAKER_ACTIVE: ${proceed.reason}`;
       }
 
-      const count = await getDeployCountToday(workspaceId);
-
       let configTable: string | undefined;
       let memoryTable: string | undefined;
       let buildProject = process.env.DEPLOYER_PROJECT_NAME;
@@ -373,7 +375,9 @@ export const triggerDeployment = {
         const availableResources = [];
         try {
           availableResources.push(...Object.keys(Resource));
-        } catch (e) {}
+        } catch {
+          // ignore
+        }
 
         logger.error('[Deployment] Infrastructure resources not fully linked.', {
           availableResources,
@@ -399,7 +403,9 @@ export const triggerDeployment = {
         }
       }
 
-      if (count >= LIMIT) {
+      // Increment/acquire deploy count atomically before starting build to prevent race conditions
+      const incremented = await incrementDeployCount(today, LIMIT, workspaceId);
+      if (!incremented) {
         return `CIRCUIT_BREAKER_ACTIVE: Daily deployment limit reached (${LIMIT}). Autonomous deployment blocked for today (${today}). Reason for attempt: ${reason}`;
       }
 
@@ -423,6 +429,10 @@ export const triggerDeployment = {
                 ? parseInt(rawLastAttempt, 10)
                 : (rawLastAttempt as number);
             if (Date.now() - lastAttempt < backoffTime) {
+              // Reward deploy limit slot back since we are exiting early
+              await rewardDeployLimit(workspaceId).catch((err) =>
+                logger.warn('[Deployment] Failed to reward deploy limit during backoff exit:', err)
+              );
               return `BACKOFF_ACTIVE: Gap ${gapId} is in exponential backoff. Next attempt allowed in ${Math.round((backoffTime - (Date.now() - lastAttempt)) / 60000)} minutes.`;
             }
           }
@@ -434,6 +444,9 @@ export const triggerDeployment = {
       logger.info(`Triggering deployment for reason: ${reason}${warning}`);
 
       const envOverrides = [{ name: 'DEPLOY_REASON', value: reason }];
+      if (skipE2e === true || process.env.SKIP_E2E === 'true') {
+        envOverrides.push({ name: 'SKIP_E2E', value: 'true' });
+      }
       if (effectiveStagingKey) {
         envOverrides.push({ name: 'STAGING_ZIP_KEY', value: effectiveStagingKey });
       } else {
@@ -473,12 +486,21 @@ export const triggerDeployment = {
         envOverrides.push({ name: 'TRACE_ID', value: traceId });
       }
 
-      const build = await codebuild.send(
-        new StartBuildCommand({
-          projectName: buildProject,
-          environmentVariablesOverride: envOverrides,
-        })
-      );
+      let build;
+      try {
+        build = await codebuild.send(
+          new StartBuildCommand({
+            projectName: buildProject,
+            environmentVariablesOverride: envOverrides,
+          })
+        );
+      } catch (buildError) {
+        // Reward deploy limit slot back on failed start
+        await rewardDeployLimit(workspaceId).catch((err) =>
+          logger.warn('[Deployment] Failed to reward deploy limit after failed start:', err)
+        );
+        throw buildError;
+      }
 
       const { emitMetrics, METRICS: metricHelper } = await import('../../lib/metrics');
       await emitMetrics([metricHelper.deploymentStarted({ workspaceId, teamId, staffId })]).catch(
@@ -522,7 +544,6 @@ export const triggerDeployment = {
         }
       }
 
-      await incrementDeployCount(today, LIMIT, workspaceId);
       return `SUCCESS: Deployment triggered. Build ID: ${buildId}. Reasoning: ${reason}${warning}`;
     } catch (error) {
       await cb.recordFailure('deploy', { userId, traceId });
@@ -546,9 +567,13 @@ export const triggerInfraRebuild = {
       let buildProject = process.env.DEPLOYER_PROJECT_NAME;
       try {
         const typedResource = Resource as any;
-        buildProject = typedResource.SelfDeployProject?.name || typedResource.Deployer?.name || buildProject;
+        buildProject =
+          typedResource.SelfDeployProject?.name || typedResource.Deployer?.name || buildProject;
       } catch (e) {
-        logger.warn('[triggerInfraRebuild] Defensive resource access failed, falling back to env:', e);
+        logger.warn(
+          '[triggerInfraRebuild] Defensive resource access failed, falling back to env:',
+          e
+        );
       }
 
       if (!buildProject) return 'FAILED: SelfDeployProject not linked.';

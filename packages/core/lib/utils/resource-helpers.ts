@@ -1,4 +1,3 @@
-import { Resource } from 'sst';
 import { logger } from '../logger';
 
 /**
@@ -37,15 +36,16 @@ export function resolveSSTResourceValue(
     }
   }
 
-  // 3. Try traditional Resource access ONLY as a last resort and ONLY if no fallback was found
-  // We wrap this in an extremely aggressive try/catch because the SST proxy can throw ENOENT
+  // 3. Try traditional Resource access
+  // We use a require inside the function to avoid module load time crashes.
   try {
-    const resource = Resource as any;
-    if (resource && resource[resourceName] && resource[resourceName][property]) {
-      return resource[resourceName][property];
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { Resource } = require('sst');
+    if (Resource && (Resource as any)[resourceName] && (Resource as any)[resourceName][property]) {
+      return (Resource as any)[resourceName][property];
     }
-  } catch (e) {
-    // SST proxy failed (e.g. missing resource.enc), ignore and move to fuzzy match
+  } catch {
+    // ignore
   }
 
   // 4. Fuzzy Env Match (Robust Fallback)
@@ -79,11 +79,13 @@ export const getConfigTableName = () =>
 export const getPlannerQueueUrl = () =>
   resolveSSTResourceValue('PlannerQueue', 'url', 'PLANNER_QUEUE_URL');
 
+/** Gets application metadata (name and stage) */
 export function getAppInfo(): { name: string; stage: string } {
   try {
-    const resource = Resource as any;
-    if (resource.App) {
-      return { name: resource.App.name, stage: resource.App.stage };
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { Resource } = require('sst');
+    if (Resource && (Resource as any).App) {
+      return { name: (Resource as any).App.name, stage: (Resource as any).App.stage };
     }
   } catch {
     // ignore

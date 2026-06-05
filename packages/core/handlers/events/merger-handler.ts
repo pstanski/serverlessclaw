@@ -170,10 +170,13 @@ export async function handlePatchMerge(eventDetail: Record<string, unknown>): Pr
         });
 
         const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
-        const { Resource } = await import('sst');
+        const { resolveSSTResourceValue } = await import('../../lib/utils/resource-helpers');
         const s3Client = new S3Client({});
-        const typedResource = Resource as unknown as import('../../lib/types/system').SSTResource;
-        const stagingBucket = typedResource.StagingBucket?.name;
+        const stagingBucket = await resolveSSTResourceValue(
+          'StagingBucket',
+          'name',
+          'STAGING_BUCKET_NAME'
+        );
 
         if (stagingBucket) {
           const fileBuffer = await fs.readFile(zipPath);

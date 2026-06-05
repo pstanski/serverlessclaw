@@ -1,3 +1,4 @@
+import './bootstrap-env';
 import { logger } from './logger';
 
 let initialized = false;

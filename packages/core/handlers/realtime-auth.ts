@@ -1,4 +1,4 @@
-import { Resource } from 'sst';
+import '../lib/bootstrap-env';
 import { realtime } from 'sst/aws/realtime';
 import { logger } from '../lib/logger';
 
@@ -46,7 +46,9 @@ export const handler = async (event: unknown, context: unknown) => {
 
   // 3. Create the authorizer
   const auth = realtime.authorizer(async (validatedToken) => {
-    const prefix = `${Resource.App.name}/${Resource.App.stage}`;
+    const { getAppInfo } = await import('../lib/utils/resource-helpers');
+    const appInfo = await getAppInfo();
+    const prefix = `${appInfo.name}/${appInfo.stage}`;
     const finalToken = (validatedToken as string | undefined) || token;
 
     // LENIENT FOR DEV: Allow connection even if token is missing but it's a local/dev handshake

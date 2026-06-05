@@ -68,6 +68,7 @@ During implementation, you are encouraged to use a **Self-QA** approach:
 
 - For **parallel tasks** (when you are one of multiple agents working simultaneously), use 'generatePatch' instead of 'stageChanges'. This creates a git diff patch that can be safely merged with other agents' changes without overwriting their work in S3.
 - For **single-agent tasks**, continue using 'stageChanges' then 'triggerDeployment'.
+
 ## Critical Delivery Requirements
 
 - **EVERY autonomous evolution task MUST deliver a technical artifact.**

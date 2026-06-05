@@ -1,5 +1,4 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { Resource } from 'sst';
 import { logger } from '../logger';
 import type { TokenUsageRecord } from '../metrics/token-usage';
 import { filterPIIFromObject } from '../utils/pii';
@@ -18,9 +17,14 @@ export async function exportToDataLake(
   tokenUsage?: TokenUsageRecord
 ): Promise<void> {
   try {
+    const { resolveSSTResourceValue } = await import('../utils/resource-helpers');
+
     // 1. Check if DataLakeBucket is configured
-    const bucketName = (Resource as unknown as Record<string, { name: string }>).DataLakeBucket
-      ?.name;
+    const bucketName = await resolveSSTResourceValue(
+      'DataLakeBucket',
+      'name',
+      'DATA_LAKE_BUCKET_NAME'
+    );
     if (!bucketName) {
       logger.debug('[DataLake] DataLakeBucket not configured, skipping export.');
       return;
