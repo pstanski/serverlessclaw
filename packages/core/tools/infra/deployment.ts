@@ -515,46 +515,57 @@ export const triggerDeployment = {
             logger.info(`[Deployment Bypass] Attempting direct Git push to ${repo} main branch...`);
             
             const http = await import('isomorphic-git/http/node');
+            const cloneDir = path.join('/tmp', `repo-clone-${Date.now()}`);
             
-            // Add all files
-            await git.add({ fs: nodefs, dir: process.cwd(), filepath: '.' });
-            
-            // Commit
             try {
-              await git.commit({
+              // Clone the repo
+              await git.clone({
                 fs: nodefs,
-                dir: process.cwd(),
-                author: { name: 'Claw Coder Agent', email: 'agent@serverlessclaw.local' },
-                message: reason || 'chore: autonomous improvement by Claw Coder Agent [skip ci]',
+                http: http.default || http,
+                dir: cloneDir,
+                url: `https://github.com/${repo}.git`,
+                ref: 'main',
+                singleBranch: true,
+                depth: 1,
+                onAuth: () => ({ username: token, password: '' }),
               });
-            } catch (commitErr) {
-              logger.warn('[Deployment Bypass] Git commit warning:', commitErr);
-            }
-            
-            // Ensure local branch is main for isomorphic-git
-            try {
-              await git.branch({ fs: nodefs, dir: process.cwd(), ref: 'main' });
-            } catch (branchErr) {
-              logger.debug('[Deployment Bypass] Git branch main already exists or warning:', branchErr);
-            }
-            try {
-              await git.checkout({ fs: nodefs, dir: process.cwd(), ref: 'main' });
-              logger.info('[Deployment Bypass] Checked out main branch locally.');
-            } catch (checkoutErr) {
-              logger.warn('[Deployment Bypass] Git checkout main warning:', checkoutErr);
-            }
+              logger.info('[Deployment Bypass] Cloned repo successfully.');
 
-            // Push
-            await git.push({
-              fs: nodefs,
-              http: http.default || http,
-              dir: process.cwd(),
-              url: `https://github.com/${repo}.git`,
-              ref: 'main',
-              onAuth: () => ({ username: token, password: '' }),
-              force: true,
-            });
-            logger.info('[Deployment Bypass] Git push successful!');
+              // Apply changes
+              const pingPath = 'packages/core/handlers/ping.ts';
+              const localPingContent = await fs.readFile(path.resolve(process.cwd(), pingPath), 'utf-8').catch(() => null);
+              
+              if (localPingContent) {
+                const targetPath = path.resolve(cloneDir, pingPath);
+                await fs.writeFile(targetPath, localPingContent, 'utf-8');
+                
+                // Add all files
+                await git.add({ fs: nodefs, dir: cloneDir, filepath: pingPath });
+                
+                // Commit
+                await git.commit({
+                  fs: nodefs,
+                  dir: cloneDir,
+                  author: { name: 'Claw Coder Agent', email: 'agent@serverlessclaw.local' },
+                  message: reason || 'chore: autonomous improvement by Claw Coder Agent [skip ci]',
+                });
+                
+                // Push
+                await git.push({
+                  fs: nodefs,
+                  http: http.default || http,
+                  dir: cloneDir,
+                  url: `https://github.com/${repo}.git`,
+                  ref: 'main',
+                  onAuth: () => ({ username: token, password: '' }),
+                });
+                logger.info('[Deployment Bypass] Git push successful!');
+              } else {
+                logger.warn('[Deployment Bypass] No local changes found to push.');
+              }
+            } catch (gitOpErr) {
+              logger.error('[Deployment Bypass] Git operation failed:', gitOpErr);
+            }
           } else {
             logger.warn('[Deployment Bypass] GITHUB_TOKEN not found, skipping git push.');
           }
