@@ -2,6 +2,7 @@ import { logger } from '../../lib/logger';
 import { AGENT_TYPES, EvolutionMode } from '../../lib/types/agent';
 import { sendOutboundMessage } from '../../lib/outbound';
 import { TRACE_TYPES } from '../../lib/constants';
+import { isTaskPaused } from '../../lib/utils/agent-helpers';
 import { getEvolutionMode } from './evolution';
 import { IMemory } from '../../lib/types/memory';
 import { PlannerResult } from './types';
@@ -112,7 +113,7 @@ export async function handleCouncilReviewResult(
       );
 
       const { dispatchTask: dispatcher } = await import('../../tools/knowledge/agent');
-      await dispatcher.execute({
+      const dispatchResult = await dispatcher.execute({
         agentId: AGENT_TYPES.CODER,
         userId: baseUserId,
         task: originalPlan,
@@ -120,6 +121,11 @@ export async function handleCouncilReviewResult(
         traceId,
         sessionId: originalSessionId,
       });
+
+      if (!isTaskPaused(dispatchResult)) {
+        logger.error(`[PLANNER] Council-approved coder dispatch failed: ${dispatchResult}`);
+        throw new Error(`Council-approved dispatch failed: ${dispatchResult}`);
+      }
     } else {
       logger.info('[PLANNER] Evolution mode is hitl, asking for human approval.');
       await sendOutboundMessage(

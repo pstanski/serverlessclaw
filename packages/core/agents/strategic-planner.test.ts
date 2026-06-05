@@ -92,7 +92,35 @@ const registryUtilsMocks = vi.hoisted(() => ({
   getAgentTools: vi.fn().mockResolvedValue([]),
 }));
 
+const decomposePlanMock = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ wasDecomposed: false, subTasks: [] })
+);
+
+const evolutionMocks = vi.hoisted(() => ({
+  getEvolutionMode: vi.fn().mockResolvedValue('auto'),
+  recordCooldown: vi.fn().mockResolvedValue(undefined),
+  isGapInCooldown: vi.fn().mockResolvedValue(false),
+}));
+
+const dispatchTaskExecuteMock = vi.hoisted(() =>
+  vi
+    .fn()
+    .mockResolvedValue(
+      'TASK_PAUSED: I have successfully dispatched this task to the **coder** agent.'
+    )
+);
+
 vi.mock('../tools/registry-utils', () => registryUtilsMocks);
+
+vi.mock('../lib/agent/decomposer', () => ({
+  decomposePlan: decomposePlanMock,
+}));
+
+vi.mock('./strategic-planner/evolution', () => evolutionMocks);
+
+vi.mock('../tools/knowledge/agent', () => ({
+  dispatchTask: { execute: dispatchTaskExecuteMock },
+}));
 
 vi.mock('../lib/outbound', () => ({
   sendOutboundMessage: vi.fn().mockResolvedValue(undefined),
@@ -176,6 +204,13 @@ const OPEN_GAP_B = {
 describe('Strategic Planner — selective PLANNED marking', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    evolutionMocks.getEvolutionMode.mockResolvedValue('auto');
+    evolutionMocks.recordCooldown.mockResolvedValue(undefined);
+    evolutionMocks.isGapInCooldown.mockResolvedValue(false);
+    decomposePlanMock.mockResolvedValue({ wasDecomposed: false, subTasks: [] });
+    dispatchTaskExecuteMock.mockResolvedValue(
+      'TASK_PAUSED: I have successfully dispatched this task to the **coder** agent.'
+    );
     // No cooldown by default
     memoryMocks.getDistilledMemory.mockResolvedValue(null);
     // Default: solo gap mode, not scheduled review
@@ -285,6 +320,7 @@ describe('Strategic Planner — selective PLANNED marking', () => {
       { gapId: 'GAP#5001', expiresAt: Date.now() + 3_600_000 }, // still active
     ]);
     memoryMocks.getDistilledMemory.mockResolvedValue(cooldownStore);
+    evolutionMocks.isGapInCooldown.mockResolvedValueOnce(true);
 
     const event = {
       detail: {
@@ -431,5 +467,57 @@ describe('Strategic Planner — tool loading (Bug 1 regression)', () => {
 
     expect(registryUtilsMocks.getAgentTools).toHaveBeenCalledWith(AGENT_TYPES.STRATEGIC_PLANNER);
     expect(registryUtilsMocks.getAgentTools).not.toHaveBeenCalledWith('planner');
+  });
+
+  it('should skip tool loading for gap-specific planning', async () => {
+    const event = {
+      detail: {
+        userId: 'user-1',
+        gapId: 'GAP#1001',
+        task: 'Add a small targeted improvement',
+      },
+    };
+
+    await handler(event as any, {} as any);
+
+    expect(processEventWithAgent).toHaveBeenCalledWith(
+      'user-1',
+      AGENT_TYPES.STRATEGIC_PLANNER,
+      expect.any(String),
+      expect.objectContaining({ skipToolLoading: true })
+    );
+  });
+
+  it('skips fallback decomposition for single-gap auto evolution', async () => {
+    const longPlan =
+      'Implement a minimal change to the existing GET /api/ping handler so the JSON response includes service: "serverlessclaw" while preserving pong and ts. ' +
+      'Update the existing handler only, add a focused assertion in the current ping test coverage, and keep the change additive with no new endpoints, no refactors, and no infrastructure work. ' +
+      'Locate the current ping handler and modify the returned object to include service: "serverlessclaw" without changing status codes or surrounding control flow. ' +
+      'Keep the implementation to the current endpoint, preserve existing response keys, and add one narrow automated assertion that verifies pong, ts, and service are all present in the response payload. ' +
+      'Run the targeted tests and any required formatting so the implementation remains ready for autonomous application and deployment without adding any unrelated edits or management workflow steps.';
+
+    vi.mocked(processEventWithAgent).mockResolvedValueOnce({
+      responseText: longPlan,
+      attachments: [],
+      parsedData: {
+        status: 'SUCCESS',
+        plan: longPlan,
+        coveredGapIds: ['GAP#1001'],
+      },
+    });
+
+    const event = {
+      detail: {
+        userId: 'user-1',
+        gapId: 'GAP#1001',
+        task: 'Add the service field to /api/ping',
+        traceId: 'trace-single-gap-1',
+        sessionId: 'session-single-gap-1',
+      },
+    };
+
+    await handler(event as any, {} as any);
+
+    expect(decomposePlanMock).not.toHaveBeenCalled();
   });
 });

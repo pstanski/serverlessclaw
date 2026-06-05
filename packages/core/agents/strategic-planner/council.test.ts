@@ -47,7 +47,13 @@ const gapOperationsMocks = vi.hoisted(() => ({
 const emitTypedEventMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const sendOutboundMessageMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const emitTaskEventMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
-const dispatchTaskMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const dispatchTaskMock = vi.hoisted(() =>
+  vi
+    .fn()
+    .mockResolvedValue(
+      'TASK_PAUSED: I have successfully dispatched this task to the **coder** agent.'
+    )
+);
 
 vi.mock('sst', () => ({
   Resource: {
@@ -409,6 +415,31 @@ describe('Council of Agents — Threshold Logic', () => {
         userId: 'dashboard-user',
       })
     );
+  });
+
+  it('should fail when direct coder dispatch is not acknowledged', async () => {
+    dispatchTaskMock.mockResolvedValueOnce('Failed to dispatch task: DLQ');
+    const { handler } = await import('../strategic-planner');
+
+    await expect(
+      handler(
+        {
+          detail: {
+            userId: 'user-1',
+            gapId: 'GAP#1001',
+            task: 'Add Slack integration',
+            metadata: {
+              impact: 5,
+              risk: 5,
+              complexity: 5,
+            },
+            traceId: 'trace-dispatch-failure',
+            sessionId: 'session-1',
+          },
+        } as any,
+        {} as any
+      )
+    ).rejects.toThrow('Planner auto-dispatch failed: Failed to dispatch task: DLQ');
   });
 });
 

@@ -163,4 +163,22 @@ describe('processEventWithAgent', () => {
       data: { key: 'value' },
     });
   });
+
+  it('should skip tool loading when requested', async () => {
+    const userId = 'user-1';
+    const agentId = 'agent-1';
+    const task = 'do something';
+    const options = {
+      traceId: 'trace-1',
+      sessionId: 'sess-1',
+      handlerTitle: 'TEST',
+      skipToolLoading: true,
+    };
+
+    const { getAgentTools } = await import('../../tools/index');
+
+    await processEventWithAgent(userId, agentId, task, options as any);
+
+    expect(getAgentTools).not.toHaveBeenCalled();
+  });
 });

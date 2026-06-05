@@ -72,7 +72,7 @@ export const AGENT_CONFIG = {
     SHORT: '30 seconds',
     MEDIUM: '60 seconds',
     LONG: '300 seconds',
-    MAX: '600 seconds',
+    MAX: '900 seconds',
   },
 } as const;
 
@@ -83,7 +83,8 @@ export const LAMBDA_ARCHITECTURE = 'arm64';
 export const NODEJS_LOADERS = { '.md': 'text' } as const;
 
 /** Default log retention period for Lambda functions */
-export const LOG_RETENTION_PERIOD = '1 week';
+export const LOG_RETENTION_PERIOD =
+  $app.stage === 'prod' ? ('3 days' as const) : ('1 week' as const);
 
 /** Deployment stage identifiers */
 export const STAGES = {

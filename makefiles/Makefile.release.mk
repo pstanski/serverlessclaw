@@ -42,7 +42,7 @@ release-all: ## Release to both dev and prod sequentially
 pre-release-check: ## [FAIL-FAST #1/3] Validate environment and credentials before release
 	@$(call log_step,[FAIL-FAST #1/3] Pre-release environment check for $(ENV)...)
 	@$(call load_env); \
-	export AWS_PROFILE=$$AWS_PROFILE; \
+	if [ -n "$$AWS_PROFILE" ]; then export AWS_PROFILE=$$AWS_PROFILE; fi; \
 	export AWS_REGION=$${AWS_REGION:-$(AWS_REGION)}; \
 	$(call verify_env,EXPECTED_ACCOUNT); \
 	$(call log_info,Verifying AWS identity using profile: $$AWS_PROFILE in region: $$AWS_REGION...); \
@@ -57,7 +57,7 @@ pre-release-check: ## [FAIL-FAST #1/3] Validate environment and credentials befo
 		exit 1; \
 	fi; \
 	$(call log_info,Verifying AWS permissions...); \
-	aws lambda list-functions --max-items 1 --region $$AWS_REGION > /dev/null 2>&1 || { $(call log_error,AWS credentials invalid or Lambda access denied); exit 1; }; \
+	aws s3 ls --region $$AWS_REGION > /dev/null 2>&1 || { $(call log_error,AWS credentials invalid or S3 access denied); exit 1; }; \
 	$(call log_success,Environment validated: Account $$EXPECTED_ACCOUNT, Region $$AWS_REGION)
 
 verify-build-readiness: ## [FAIL-FAST #2/3] Verify the dashboard build will succeed
@@ -108,7 +108,7 @@ tag: ## Create and push a git tag for the current release (for auditing)
 	@npm version patch -m "chore: release version %s [skip ci]"
 	@if [ -n "$$CODEBUILD_BUILD_ID" ]; then \
 		REPO="$${HUB_URL:-$${GITHUB_REPO:-serverlessclaw/serverlessclaw}}"; \
-		git push https://$$GITHUB_TOKEN@github.com/$$REPO.git HEAD:main --follow-tags; \
+		HUSKY=0 git push https://$$GITHUB_TOKEN@github.com/$$REPO.git HEAD:main --follow-tags; \
 	else \
 		git push origin main --follow-tags; \
 	fi

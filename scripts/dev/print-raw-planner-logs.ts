@@ -10,16 +10,20 @@ async function main() {
   const response = await client.send(
     new FilterLogEventsCommand({
       logGroupName,
-      startTime: Date.now() - 2 * 60 * 1000,
-      limit: 1000,
+      startTime: Date.now() - 10 * 60 * 1000,
+      limit: 5000,
     })
   );
 
   const events = response.events || [];
   events.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
-  console.log(`\n📊 Found ${events.length} events in the last 2 minutes:\n`);
-  for (const event of events) {
+  const filteredEvents = events.filter(event => {
+    const msg = event.message || '';
+    return !msg.includes('.delta') && !msg.includes('Type: response.');
+  });
+  console.log(`\n📊 Showing all ${filteredEvents.length} filtered events (out of ${events.length} total events):\n`);
+  for (const event of filteredEvents) {
     const date = new Date(event.timestamp || 0).toISOString();
     console.log(`🕒 [${date}] ${event.message?.trim()}`);
   }

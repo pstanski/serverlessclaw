@@ -11,6 +11,7 @@ vi.mock('./registry', () => ({
   MCP_SERVER_REGISTRY: {
     git: { command: 'npx', args: ['git-server'] },
     filesystem: { command: 'npx', args: ['fs-server', '/tmp'] },
+    ast: { command: 'node', args: ['/opt/ast-server.js'] },
   },
 }));
 
@@ -104,5 +105,30 @@ describe('MCP Multiplexer', () => {
     expect(params.env!.WORKSPACE_ID).toBe('tenant-123');
     expect(params.env!.HOME).toBe('/tmp/ws-tenant-123');
     expect(params.env!.XDG_CACHE_HOME).toBe('/tmp/ws-tenant-123/.cache');
+  });
+
+  it('should preserve non-npx commands while still injecting isolated environment values', async () => {
+    const event: Partial<APIGatewayProxyEvent> = {
+      path: '/mcp/ast',
+      httpMethod: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-workspace-id': 'tenant-ast',
+      },
+      body: JSON.stringify({ jsonrpc: '2.0', method: 'list_tools', id: 1 }),
+    };
+
+    vi.mocked(stdioServerAdapter).mockResolvedValue({ response: 'mocked-ok' } as any);
+
+    await handler(event as APIGatewayProxyEvent, mockContext, () => {});
+
+    expect(stdioServerAdapter).toHaveBeenCalled();
+    const [params] = vi.mocked(stdioServerAdapter).mock.calls[0];
+
+    expect(params.command).toBe('node');
+    expect(params.args).toContain('/opt/ast-server.js');
+    expect(params.env!.WORKSPACE_ID).toBe('tenant-ast');
+    expect(params.env!.HOME).toBe('/tmp/ws-tenant-ast');
+    expect(params.env!.XDG_CACHE_HOME).toBe('/tmp/ws-tenant-ast/.cache');
   });
 });

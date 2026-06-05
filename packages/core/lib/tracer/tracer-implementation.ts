@@ -307,6 +307,15 @@ export class ClawTracer {
         );
         return;
       }
+      if (
+        e instanceof Error &&
+        (e.name === 'ValidationException' || (e.message && e.message.includes('Item size')))
+      ) {
+        logger.warn(
+          `[Tracer] addStep: trace node ${this.traceId}/${this.nodeId} exceeded DDB item size limit. Dropping step to prevent agent crash.`
+        );
+        return;
+      }
       throw e;
     }
 
@@ -377,6 +386,16 @@ export class ClawTracer {
       if (e instanceof Error && e.name === 'ConditionalCheckFailedException') {
         logger.warn(
           `[Tracer] batchAddSteps: trace node ${this.traceId}/${this.nodeId} not found or workspaceId mismatch, skipping steps.`
+        );
+        return;
+      }
+      if (
+        e instanceof Error &&
+        (e.name === 'ValidationException' ||
+          (e.message && e.message.includes('Item size to update has exceeded')))
+      ) {
+        logger.warn(
+          `[Tracer] batchAddSteps: trace node ${this.traceId}/${this.nodeId} exceeded DDB item size limit (400KB). Dropping ${steps.length} steps to prevent agent crash.`
         );
         return;
       }
@@ -455,6 +474,13 @@ export class ClawTracer {
       if (e instanceof Error && e.name === 'ConditionalCheckFailedException') {
         logger.warn(
           `[Tracer] endTrace: trace node ${this.traceId}/${this.nodeId} not found or workspaceId mismatch, skipping update.`
+        );
+      } else if (
+        e instanceof Error &&
+        (e.name === 'ValidationException' || (e.message && e.message.includes('Item size')))
+      ) {
+        logger.warn(
+          `[Tracer] endTrace: trace node ${this.traceId}/${this.nodeId} exceeded DDB item size limit. Skipping final update.`
         );
       } else {
         throw e;

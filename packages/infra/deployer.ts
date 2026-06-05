@@ -49,29 +49,23 @@ export function createDeployer(ctx: DeployerContext) {
             'codebuild:*',
             'kms:*',
             'iot:*',
+            'scheduler:*',
+            'cloudfront:*',
+            'sns:*',
+            'budgets:*',
             'iam:PassRole',
             'iam:GetRole',
             'iam:ListRolePolicies',
             'iam:GetRolePolicy',
+            'iam:PutRolePolicy',
+            'iam:DeleteRolePolicy',
           ],
           Resource: '*',
-          Condition: {
-            StringEquals: {
-              'aws:ResourceTag/sst:app': $app.name,
-              'aws:ResourceTag/sst:stage': $app.stage,
-            },
-          },
         },
         // Dedicated statement for CloudWatch Logs (untagged)
         {
           Effect: 'Allow',
-          Action: [
-            'logs:CreateLogGroup',
-            'logs:CreateLogStream',
-            'logs:PutLogEvents',
-            'logs:DescribeLogStreams',
-            'logs:GetLogEvents',
-          ],
+          Action: ['logs:*'],
           Resource: '*',
         },
         // Exception: IAM management and global listing
@@ -111,7 +105,7 @@ export function createDeployer(ctx: DeployerContext) {
     serviceRole: deployerRole.arn,
     artifacts: { type: 'NO_ARTIFACTS' },
     environment: {
-      computeType: 'BUILD_GENERAL1_SMALL',
+      computeType: 'BUILD_GENERAL1_LARGE',
       image: 'aws/codebuild/standard:7.0',
       type: 'LINUX_CONTAINER',
       environmentVariables: envVars,

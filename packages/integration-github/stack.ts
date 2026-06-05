@@ -21,6 +21,10 @@ export function createGitHubStack(
   });
 
   bus.subscribe('GitHubReleaseCreated', releaseNotifier.arn, {
+    pattern: {
+      source: ['github.webhook'],
+      detailType: ['github_release_created'],
+    },
     transform: {
       target: {
         deadLetterConfig: dlq ? { arn: dlq.arn } : undefined,

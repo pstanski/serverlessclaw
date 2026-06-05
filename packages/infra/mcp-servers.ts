@@ -6,6 +6,79 @@ import {
   LOG_RETENTION_PERIOD,
   AGENT_CONFIG,
 } from './shared';
+import { dirname, join, relative } from 'path';
+import { existsSync, readFileSync, realpathSync } from 'fs';
+
+const repoRoot = process.cwd();
+const coreNodeModules = join(repoRoot, 'packages/core/node_modules');
+const rootNodeModules = join(repoRoot, 'node_modules');
+
+function resolvePackageRoot(packageName: string, searchDirs: string[]): string {
+  for (const searchDir of searchDirs) {
+    const candidate = join(searchDir, ...packageName.split('/'));
+    if (!existsSync(candidate)) continue;
+
+    const packageRoot = realpathSync(candidate);
+    const packageJsonPath = join(packageRoot, 'package.json');
+    if (!existsSync(packageJsonPath)) continue;
+
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { name?: string };
+    if (packageJson.name === packageName) {
+      return packageRoot;
+    }
+  }
+
+  throw new Error(`Unable to resolve package root for ${packageName}`);
+}
+
+function getNodeModulesDir(packageRoot: string, packageName: string): string {
+  let currentDir = packageRoot;
+  for (const _segment of packageName.split('/')) {
+    currentDir = dirname(currentDir);
+  }
+  return currentDir;
+}
+
+function collectPackageCopyFiles(packageNames: string[]): { from: string; to: string }[] {
+  const queue = packageNames.map((packageName) => ({
+    packageName,
+    searchDirs: [coreNodeModules, rootNodeModules],
+  }));
+  const visited = new Set<string>();
+  const copyFiles: { from: string; to: string }[] = [];
+
+  while (queue.length > 0) {
+    const next = queue.shift();
+    if (!next || visited.has(next.packageName)) continue;
+    visited.add(next.packageName);
+
+    const packageRoot = resolvePackageRoot(next.packageName, next.searchDirs);
+    const packageJson = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')) as {
+      dependencies?: Record<string, string>;
+    };
+
+    copyFiles.push({
+      from: relative(repoRoot, packageRoot),
+      to: `node_modules/${next.packageName}`,
+    });
+
+    const dependencySearchDirs = [
+      getNodeModulesDir(packageRoot, next.packageName),
+      coreNodeModules,
+      rootNodeModules,
+    ];
+    for (const dependencyName of Object.keys(packageJson.dependencies ?? {})) {
+      queue.push({ packageName: dependencyName, searchDirs: dependencySearchDirs });
+    }
+  }
+
+  return copyFiles;
+}
+
+const GENERAL_MULTIPLEXER_COPY_FILES = collectPackageCopyFiles([
+  '@modelcontextprotocol/server-filesystem',
+  '@aiready/ast-mcp-server',
+]);
 
 /**
  * Deploys Granular MCP Multiplexer Lambda functions.
@@ -53,6 +126,7 @@ export function createMCPServers(
   // Low privilege: only needs basic links and CloudWatch metrics.
   const generalMultiplexer = new sst.aws.Function('GeneralMCPMultiplexer', {
     ...commonProps,
+    copyFiles: GENERAL_MULTIPLEXER_COPY_FILES,
     link: [memoryTable, configTable, ...validSecrets],
     permissions: [
       {

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handlePulsePing } from './pulse-handler';
+import { handlePulsePing, handlePulsePong } from './pulse-handler';
 import { emitEvent } from '../../lib/utils/bus';
 import { AGENT_TYPES, EventType } from '../../lib/types/agent';
+import { logger } from '../../lib/logger';
 
 vi.mock('../../lib/utils/bus', () => ({
   emitEvent: vi.fn(),
@@ -13,6 +14,18 @@ vi.mock('../../lib/logger', () => ({
     debug: vi.fn(),
     error: vi.fn(),
   },
+}));
+
+const mocks = vi.hoisted(() => ({
+  updateAgentHealth: vi.fn(),
+}));
+
+vi.mock('../../lib/memory/dynamo-memory', () => ({
+  DynamoMemory: vi.fn().mockImplementation(function () {
+    return {
+      updateAgentHealth: mocks.updateAgentHealth,
+    };
+  }),
 }));
 
 describe('Pulse Handler', () => {
@@ -57,6 +70,40 @@ describe('Pulse Handler', () => {
       await handlePulsePing(payload, {} as any);
 
       expect(emitEvent).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handlePulsePong', () => {
+    it('should log the pong and latency and update memory', async () => {
+      const now = Date.now();
+      const payload = {
+        userId: 'user-123',
+        traceId: 'trace-123',
+        targetAgentId: AGENT_TYPES.CODER,
+        initiatorId: AGENT_TYPES.SUPERCLAW,
+        timestamp: now - 100,
+        responseTimestamp: now,
+        status: 'pong',
+        workspaceId: 'ws-1',
+      };
+
+      await handlePulsePong(payload, {} as any);
+
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.stringContaining('Received pong from coder'),
+        expect.objectContaining({
+          latencyMs: expect.any(Number),
+        })
+      );
+
+      expect(mocks.updateAgentHealth).toHaveBeenCalledWith(
+        AGENT_TYPES.CODER,
+        {
+          status: 'online',
+          latencyMs: 100,
+        },
+        { workspaceId: 'ws-1' }
+      );
     });
   });
 });

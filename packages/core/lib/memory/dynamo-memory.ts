@@ -1,5 +1,5 @@
 import { IMemory } from '../types/index';
-import { DynamoMemoryCollaboration } from './dynamo/collaboration';
+import { DynamoMemoryHealth } from './dynamo/health';
 
 export { CachedMemory } from './cached-memory';
 
@@ -10,9 +10,9 @@ export { CachedMemory } from './cached-memory';
  * This class is now modularized into an inheritance chain in the ./dynamo directory
  * to comply with AI context budget and file length standards.
  *
- * Chain: BaseMemoryProvider -> DynamoMemoryBase -> DynamoMemoryGaps -> DynamoMemoryInsights -> DynamoMemorySessions -> DynamoMemoryCollaboration -> DynamoMemory
+ * Chain: BaseMemoryProvider -> DynamoMemoryBase -> DynamoMemoryGaps -> DynamoMemoryInsights -> DynamoMemorySessions -> DynamoMemoryCollaboration -> DynamoMemoryHealth -> DynamoMemory
  */
-export class DynamoMemory extends DynamoMemoryCollaboration implements IMemory {
+export class DynamoMemory extends DynamoMemoryHealth implements IMemory {
   /**
    * Retrieves a single item by PK and SK.
    */

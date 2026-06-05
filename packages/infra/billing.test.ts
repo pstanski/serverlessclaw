@@ -54,8 +54,10 @@ import { createBilling } from './billing';
 describe('Billing Infrastructure', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal('$app', { stage: 'prod' });
     process.env.BILLING_ALERT_EMAIL = 'test@example.com';
     process.env.BILLING_DAILY_LIMIT = '1';
+    process.env.BILLING_SOURCE_ACCOUNT_ID = '123456789012';
   });
 
   it('should create a budget with the correct absolute thresholds even if limit is lower', () => {
@@ -82,5 +84,27 @@ describe('Billing Infrastructure', () => {
     const result = createBilling();
     expect(result).toEqual({});
     expect(mockBudget).not.toHaveBeenCalled();
+  });
+
+  it('should not include email subscribers when BILLING_ALERT_EMAIL is unset', () => {
+    delete process.env.BILLING_ALERT_EMAIL;
+
+    createBilling();
+
+    expect(mockBudget).toHaveBeenCalled();
+    const budgetArgs = mockBudget.mock.calls[0][1] as any;
+
+    expect(budgetArgs.notifications[0].subscriberEmailAddresses).toEqual([]);
+  });
+
+  it('should default to $1 daily limit when BILLING_DAILY_LIMIT is unset', () => {
+    delete process.env.BILLING_DAILY_LIMIT;
+
+    createBilling();
+
+    expect(mockBudget).toHaveBeenCalled();
+    const budgetArgs = mockBudget.mock.calls[0][1] as any;
+
+    expect(budgetArgs.limitAmount).toBe('1');
   });
 });

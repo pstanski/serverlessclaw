@@ -13,7 +13,8 @@ export function createBilling() {
   }
 
   const alertEmail = process.env.BILLING_ALERT_EMAIL;
-  const dailyLimit = process.env.BILLING_DAILY_LIMIT || '256';
+  const dailyLimit = process.env.BILLING_DAILY_LIMIT || '20';
+  const sourceAccountId = process.env.BILLING_SOURCE_ACCOUNT_ID || process.env.AWS_ACCOUNT_ID;
 
   // Create an SNS Topic for billing alerts
   const billingTopic = new sst.aws.SnsTopic('BillingAlerts', {
@@ -33,20 +34,30 @@ export function createBilling() {
       JSON.stringify({
         Version: '2012-10-17',
         Statement: [
-          {
-            Sid: 'AllowBudgetsPublish',
-            Effect: 'Allow',
-            Principal: {
-              Service: 'budgets.amazonaws.com',
-            },
-            Action: 'SNS:Publish',
-            Resource: arn,
-            Condition: {
-              StringEquals: {
-                'aws:SourceAccount': '316759592139',
+          sourceAccountId
+            ? {
+                Sid: 'AllowBudgetsPublish',
+                Effect: 'Allow',
+                Principal: {
+                  Service: 'budgets.amazonaws.com',
+                },
+                Action: 'SNS:Publish',
+                Resource: arn,
+                Condition: {
+                  StringEquals: {
+                    'aws:SourceAccount': sourceAccountId,
+                  },
+                },
+              }
+            : {
+                Sid: 'AllowBudgetsPublish',
+                Effect: 'Allow',
+                Principal: {
+                  Service: 'budgets.amazonaws.com',
+                },
+                Action: 'SNS:Publish',
+                Resource: arn,
               },
-            },
-          },
         ],
       })
     ),

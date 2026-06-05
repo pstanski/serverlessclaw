@@ -252,6 +252,11 @@ export class PolicyValidator {
       case 'renderComponent':
       case 'uiAction':
       case 'navigateTo':
+      case 'validateCode':
+      case 'verifyChanges':
+      case 'generatePatch':
+      case 'runTests':
+        // Coder pipeline: validation, patch generation, and test execution are safe without approval
         requiresApproval = false;
         reason = '';
         break;

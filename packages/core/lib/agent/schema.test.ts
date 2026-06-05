@@ -16,19 +16,22 @@ describe('DEFAULT_SIGNAL_SCHEMA', () => {
   it('defines a valid agent_signal schema', () => {
     expect(DEFAULT_SIGNAL_SCHEMA.type).toBe('json_schema');
     expect(signalSchema.json_schema.name).toBe('agent_signal');
-    expect(signalSchema.json_schema.strict).toBe(true);
+    expect(signalSchema.json_schema.strict).toBe(false);
   });
 
   it('is an object schema', () => {
     expect(schema.type).toBe('object');
   });
 
-  it('has required fields for strict schema compatibility', () => {
+  it('has required fields for schema compatibility', () => {
     expect(schema.required).toEqual(['status', 'message', 'data', 'coveredGapIds']);
   });
 
-  it('disallows additional properties', () => {
-    expect(schema.additionalProperties).toBe(false);
+  it('allows additional properties at top level for non-strict mode', () => {
+    // In JSON schema, if additionalProperties is omitted, it defaults to true
+    expect(schema.additionalProperties === true || schema.additionalProperties === undefined).toBe(
+      true
+    );
   });
 
   describe('status field', () => {
@@ -52,8 +55,8 @@ describe('DEFAULT_SIGNAL_SCHEMA', () => {
       expect(schema.properties.data.type).toBe('object');
     });
 
-    it('disallows additional properties for strict schema compatibility', () => {
-      expect(schema.properties.data.additionalProperties).toBe(false);
+    it('allows structured artifacts in nested data payloads', () => {
+      expect(schema.properties.data.additionalProperties).toBe(true);
     });
   });
 

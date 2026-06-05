@@ -396,4 +396,20 @@ export interface IMemory extends IHistoryStore, IKnowledgeStore, IGapManager {
     search: { hits: number; misses: number; evictions: number; size: number };
     overallHitRate: number;
   };
+
+  // Agent Health
+  updateAgentHealth(
+    agentId: string,
+    health: Partial<Omit<import('../agent/health').AgentHealth, 'agentId'>>,
+    options?: { workspaceId?: string }
+  ): Promise<void>;
+
+  getAgentHealth(
+    agentId: string,
+    options?: { workspaceId?: string }
+  ): Promise<import('../agent/health').AgentHealth | undefined>;
+
+  getAllAgentHealth(options?: {
+    workspaceId?: string;
+  }): Promise<import('../agent/health').AgentHealth[]>;
 }

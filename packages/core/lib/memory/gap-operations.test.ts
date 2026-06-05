@@ -440,7 +440,7 @@ describe('Gap-Track Assignment', () => {
       expect(secondPutInput.Item?.priority).toBe(3);
     });
 
-    it('should rethrow ConditionalCheckFailedException if the existing track is different', async () => {
+    it('should overwrite gracefully when existing track is different (re-processing same gap)', async () => {
       ddbMock
         .on(QueryCommand)
         .resolvesOnce({
@@ -452,15 +452,19 @@ describe('Gap-Track Assignment', () => {
           Items: [{ userId: 'TRACK#gap-42', timestamp: 0, track: 'performance', priority: 2 }],
         });
       ddbMock.on(UpdateCommand).resolves({});
-      ddbMock.on(PutCommand).rejectsOnce(
-        Object.assign(new Error('ConditionalCheckFailedException'), {
-          name: 'ConditionalCheckFailedException',
-        })
-      );
+      ddbMock
+        .on(PutCommand)
+        .rejectsOnce(
+          Object.assign(new Error('ConditionalCheckFailedException'), {
+            name: 'ConditionalCheckFailedException',
+          })
+        )
+        .resolvesOnce({}); // second put (overwrite) succeeds
 
-      await expect(assignGapToTrack(base, 'gap-42', EvolutionTrack.SECURITY, 3)).rejects.toThrow(
-        'ConditionalCheckFailedException'
-      );
+      // Should resolve without throwing — gap re-processing updates the track
+      await expect(
+        assignGapToTrack(base, 'gap-42', EvolutionTrack.SECURITY, 3)
+      ).resolves.toBeUndefined();
     });
   });
 
