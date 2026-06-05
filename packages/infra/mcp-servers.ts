@@ -66,6 +66,7 @@ function collectPackageCopyFiles(packageNames: string[]): { from: string; to: st
     const dependencySearchDirs = [
       getNodeModulesDir(packageRoot, next.packageName),
       coreNodeModules,
+      frameworkCoreNodeModules,
       rootNodeModules,
     ];
     for (const dependencyName of Object.keys(packageJson.dependencies ?? {})) {
