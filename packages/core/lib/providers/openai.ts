@@ -97,7 +97,7 @@ export class OpenAIProvider implements IProvider {
         [ReasoningProfile.FAST]: OpenAIModel.GPT_4O_MINI,
         [ReasoningProfile.STANDARD]: OpenAIModel.GPT_4O,
         [ReasoningProfile.THINKING]: OpenAIModel.GPT_4O,
-        [ReasoningProfile.DEEP]: OpenAIModel.GPT_5_4,
+        [ReasoningProfile.DEEP]: OpenAIModel.GPT_4O, // Forced fallback for stabilization
       };
       activeModel = (profileToModel[profile] ?? activeModel) as string;
     }
@@ -263,7 +263,7 @@ export class OpenAIProvider implements IProvider {
         [ReasoningProfile.FAST]: OpenAIModel.GPT_4O_MINI,
         [ReasoningProfile.STANDARD]: OpenAIModel.GPT_4O,
         [ReasoningProfile.THINKING]: OpenAIModel.GPT_4O,
-        [ReasoningProfile.DEEP]: OpenAIModel.GPT_5_4,
+        [ReasoningProfile.DEEP]: OpenAIModel.GPT_4O, // Forced fallback for stabilization
       };
       activeModel = (profileToModel[profile] ?? activeModel) as string;
     }
