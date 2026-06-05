@@ -385,14 +385,20 @@ export async function processEventWithAgent(
     let finalMessage = responseText;
     let parsedData: Record<string, unknown> | null = null;
 
-    if (communicationMode === 'json' || responseText.trim().startsWith('{')) {
+    if (communicationMode === 'json' || responseText.trim().includes('{')) {
       try {
-        const trimmed = responseText.trim();
-        if (!trimmed.startsWith('{')) {
-          throw new Error('LLM response did not return a valid JSON object block.');
+        let jsonStr = responseText.trim();
+
+        // Fallback: If text doesn't start with {, try to extract the first JSON block
+        if (!jsonStr.startsWith('{')) {
+          const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            jsonStr = jsonMatch[0];
+            logger.info('[SHARED] Extracted JSON block from responseText.');
+          }
         }
 
-        parsedData = JSON.parse(trimmed);
+        parsedData = JSON.parse(jsonStr);
 
         if (communicationMode === 'json') {
           if (!parsedData || typeof parsedData !== 'object') {
