@@ -1,5 +1,3 @@
-import { logger } from '../logger';
-
 /**
  * Robustly resolves an SST resource property (e.g., 'name', 'value', 'endpoint')
  * from the Resource object or environment fallbacks.
@@ -39,11 +37,7 @@ export function resolveSSTResourceValue(
   // 2. Try globalResource (for tests and specialized environments)
   try {
     const globalResource = (globalThis as any).Resource;
-    if (
-      globalResource &&
-      globalResource[resourceName] &&
-      globalResource[resourceName][property]
-    ) {
+    if (globalResource && globalResource[resourceName] && globalResource[resourceName][property]) {
       return globalResource[resourceName][property];
     }
   } catch {
