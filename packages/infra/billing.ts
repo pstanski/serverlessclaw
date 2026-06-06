@@ -13,7 +13,7 @@ export function createBilling() {
   }
 
   const alertEmail = process.env.BILLING_ALERT_EMAIL;
-  const dailyLimit = process.env.BILLING_DAILY_LIMIT || '20';
+  const dailyLimit = process.env.BILLING_DAILY_LIMIT || '1';
   const sourceAccountId = process.env.BILLING_SOURCE_ACCOUNT_ID || process.env.AWS_ACCOUNT_ID;
 
   // Create an SNS Topic for billing alerts
