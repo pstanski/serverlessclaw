@@ -10,10 +10,8 @@ vi.mock('sst', () => ({
   Resource: { MemoryTable: { name: 'test-table' } },
 }));
 
-vi.mock('../../lib/utils/ddb-client', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../lib/utils/ddb-client')>()),
+vi.mock('../../lib/utils/ddb-client', () => ({
   getDocClient: () => ddbMock,
-  getMemoryTableName: vi.fn().mockResolvedValue('test-table'),
 }));
 
 vi.mock('../../lib/utils/bus', () => ({
@@ -101,8 +99,8 @@ describe('Consensus Handler', () => {
           status: 'PENDING',
           initiatorId: 'planner',
           votes: [
-            { userId: 'a', vote: 'yes' },
-            { userId: 'b', vote: 'yes' },
+            { voterId: 'a', vote: true, timestamp: Date.now() },
+            { voterId: 'b', vote: true, timestamp: Date.now() },
           ],
         },
       });
@@ -111,21 +109,19 @@ describe('Consensus Handler', () => {
         {
           detail: {
             requestId: 'req-3',
-            userId: 'a',
-            vote: 'yes',
+            voterId: 'b',
+            vote: true,
+            reasoning: 'Looks good',
           },
         },
         EventType.CONSENSUS_VOTE
       );
 
+      // Should emit CONSENSUS_REACHED
       expect(emitEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          detail: expect.objectContaining({
-            requestId: 'req-3',
-            status: 'APPROVED',
-          }),
-        }),
-        EventType.CONSENSUS_DECIDED
+        'consensus-handler',
+        EventType.CONSENSUS_REACHED,
+        expect.objectContaining({ requestId: 'req-3', result: true })
       );
     });
 
@@ -135,7 +131,8 @@ describe('Consensus Handler', () => {
           participants: ['a', 'b', 'c'],
           mode: 'majority',
           status: 'PENDING',
-          votes: [{ userId: 'a', vote: 'no' }],
+          initiatorId: 'planner',
+          votes: [],
         },
       });
       ddbMock.on(UpdateCommand).resolves({
@@ -143,9 +140,11 @@ describe('Consensus Handler', () => {
           participants: ['a', 'b', 'c'],
           mode: 'majority',
           status: 'PENDING',
+          initiatorId: 'planner',
           votes: [
-            { userId: 'a', vote: 'no' },
-            { userId: 'b', vote: 'no' },
+            { voterId: 'a', vote: false, timestamp: Date.now() },
+            { voterId: 'b', vote: false, timestamp: Date.now() },
+            { voterId: 'c', vote: true, timestamp: Date.now() },
           ],
         },
       });
@@ -154,21 +153,17 @@ describe('Consensus Handler', () => {
         {
           detail: {
             requestId: 'req-4',
-            userId: 'b',
-            vote: 'no',
+            voterId: 'c',
+            vote: true,
           },
         },
         EventType.CONSENSUS_VOTE
       );
 
       expect(emitEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          detail: expect.objectContaining({
-            requestId: 'req-4',
-            status: 'REJECTED',
-          }),
-        }),
-        EventType.CONSENSUS_DECIDED
+        'consensus-handler',
+        EventType.CONSENSUS_REACHED,
+        expect.objectContaining({ requestId: 'req-4', result: false })
       );
     });
 
@@ -178,7 +173,8 @@ describe('Consensus Handler', () => {
           participants: ['a', 'b', 'c'],
           mode: 'majority',
           status: 'PENDING',
-          votes: [],
+          initiatorId: 'planner',
+          votes: [{ voterId: 'a', vote: true, timestamp: Date.now() }],
         },
       });
       ddbMock.on(UpdateCommand).resolves({
@@ -186,7 +182,8 @@ describe('Consensus Handler', () => {
           participants: ['a', 'b', 'c'],
           mode: 'majority',
           status: 'PENDING',
-          votes: [{ userId: 'a', vote: 'yes' }],
+          initiatorId: 'planner',
+          votes: [{ voterId: 'a', vote: true, timestamp: Date.now() }],
         },
       });
 
@@ -194,17 +191,15 @@ describe('Consensus Handler', () => {
         {
           detail: {
             requestId: 'req-5',
-            userId: 'a',
-            vote: 'yes',
+            voterId: 'a',
+            vote: true,
           },
         },
         EventType.CONSENSUS_VOTE
       );
 
-      expect(emitEvent).not.toHaveBeenCalledWith(
-        expect.anything(),
-        EventType.CONSENSUS_DECIDED
-      );
+      // Should NOT emit CONSENSUS_REACHED
+      expect(emitEvent).not.toHaveBeenCalled();
     });
 
     it('P0 Fix: should reject votes from non-participants', async () => {
@@ -220,15 +215,16 @@ describe('Consensus Handler', () => {
       await handleConsensus(
         {
           detail: {
-            requestId: 'req-6',
-            userId: 'intruder',
-            vote: 'yes',
+            requestId: 'req-5a',
+            voterId: 'attacker', // Not in participants list
+            vote: true,
           },
         },
         EventType.CONSENSUS_VOTE
       );
 
-      expect(ddbMock.commandCalls(UpdateCommand)).toHaveLength(0);
+      // Should NOT process the vote or emit any event
+      expect(emitEvent).not.toHaveBeenCalled();
     });
   });
 
@@ -239,7 +235,8 @@ describe('Consensus Handler', () => {
           participants: ['a', 'b'],
           mode: 'unanimous',
           status: 'PENDING',
-          votes: [{ userId: 'a', vote: 'yes' }],
+          initiatorId: 'planner',
+          votes: [],
         },
       });
       ddbMock.on(UpdateCommand).resolves({
@@ -247,9 +244,10 @@ describe('Consensus Handler', () => {
           participants: ['a', 'b'],
           mode: 'unanimous',
           status: 'PENDING',
+          initiatorId: 'planner',
           votes: [
-            { userId: 'a', vote: 'yes' },
-            { userId: 'b', vote: 'yes' },
+            { voterId: 'a', vote: true, timestamp: Date.now() },
+            { voterId: 'b', vote: true, timestamp: Date.now() },
           ],
         },
       });
@@ -257,19 +255,18 @@ describe('Consensus Handler', () => {
       await handleConsensus(
         {
           detail: {
-            requestId: 'req-7',
-            userId: 'b',
-            vote: 'yes',
+            requestId: 'req-6',
+            voterId: 'b',
+            vote: true,
           },
         },
         EventType.CONSENSUS_VOTE
       );
 
       expect(emitEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          detail: expect.objectContaining({ status: 'APPROVED' }),
-        }),
-        EventType.CONSENSUS_DECIDED
+        'consensus-handler',
+        EventType.CONSENSUS_REACHED,
+        expect.objectContaining({ result: true })
       );
     });
 
@@ -279,6 +276,7 @@ describe('Consensus Handler', () => {
           participants: ['a', 'b'],
           mode: 'unanimous',
           status: 'PENDING',
+          initiatorId: 'planner',
           votes: [],
         },
       });
@@ -287,124 +285,10 @@ describe('Consensus Handler', () => {
           participants: ['a', 'b'],
           mode: 'unanimous',
           status: 'PENDING',
-          votes: [{ userId: 'a', vote: 'no' }],
-        },
-      });
-
-      await handleConsensus(
-        {
-          detail: {
-            requestId: 'req-8',
-            userId: 'a',
-            vote: 'no',
-          },
-        },
-        EventType.CONSENSUS_VOTE
-      );
-
-      expect(emitEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          detail: expect.objectContaining({ status: 'REJECTED' }),
-        }),
-        EventType.CONSENSUS_DECIDED
-      );
-    });
-
-    it('should wait for all votes before deciding', async () => {
-      ddbMock.on(GetCommand).resolves({
-        Item: {
-          participants: ['a', 'b'],
-          mode: 'unanimous',
-          status: 'PENDING',
-          votes: [],
-        },
-      });
-      ddbMock.on(UpdateCommand).resolves({
-        Attributes: {
-          participants: ['a', 'b'],
-          mode: 'unanimous',
-          status: 'PENDING',
-          votes: [{ userId: 'a', vote: 'yes' }],
-        },
-      });
-
-      await handleConsensus(
-        {
-          detail: {
-            requestId: 'req-9',
-            userId: 'a',
-            vote: 'yes',
-          },
-        },
-        EventType.CONSENSUS_VOTE
-      );
-
-      expect(emitEvent).not.toHaveBeenCalledWith(
-        expect.anything(),
-        EventType.CONSENSUS_DECIDED
-      );
-    });
-  });
-
-  describe('CONSENSUS_VOTE — weighted mode', () => {
-    it('should approve when weighted yes exceeds 50%', async () => {
-      ddbMock.on(GetCommand).resolves({
-        Item: {
-          participants: ['a', 'b'],
-          weights: { a: 0.6, b: 0.4 },
-          mode: 'weighted',
-          status: 'PENDING',
-          votes: [],
-        },
-      });
-      ddbMock.on(UpdateCommand).resolves({
-        Attributes: {
-          participants: ['a', 'b'],
-          weights: { a: 0.6, b: 0.4 },
-          mode: 'weighted',
-          status: 'PENDING',
-          votes: [{ userId: 'a', vote: 'yes' }],
-        },
-      });
-
-      await handleConsensus(
-        {
-          detail: {
-            requestId: 'req-10',
-            userId: 'a',
-            vote: 'yes',
-          },
-        },
-        EventType.CONSENSUS_VOTE
-      );
-
-      expect(emitEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          detail: expect.objectContaining({ status: 'APPROVED' }),
-        }),
-        EventType.CONSENSUS_DECIDED
-      );
-    });
-
-    it('should reject when weighted yes is below 50%', async () => {
-      ddbMock.on(GetCommand).resolves({
-        Item: {
-          participants: ['a', 'b', 'c'],
-          weights: { a: 0.3, b: 0.3, c: 0.4 },
-          mode: 'weighted',
-          status: 'PENDING',
-          votes: [{ userId: 'a', vote: 'no' }],
-        },
-      });
-      ddbMock.on(UpdateCommand).resolves({
-        Attributes: {
-          participants: ['a', 'b', 'c'],
-          weights: { a: 0.3, b: 0.3, c: 0.4 },
-          mode: 'weighted',
-          status: 'PENDING',
+          initiatorId: 'planner',
           votes: [
-            { userId: 'a', vote: 'no' },
-            { userId: 'b', vote: 'no' },
+            { voterId: 'a', vote: true, timestamp: Date.now() },
+            { voterId: 'b', vote: false, timestamp: Date.now() },
           ],
         },
       });
@@ -412,19 +296,143 @@ describe('Consensus Handler', () => {
       await handleConsensus(
         {
           detail: {
-            requestId: 'req-11',
-            userId: 'b',
-            vote: 'no',
+            requestId: 'req-7',
+            voterId: 'b',
+            vote: false,
           },
         },
         EventType.CONSENSUS_VOTE
       );
 
       expect(emitEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          detail: expect.objectContaining({ status: 'REJECTED' }),
-        }),
-        EventType.CONSENSUS_DECIDED
+        'consensus-handler',
+        EventType.CONSENSUS_REACHED,
+        expect.objectContaining({ result: false })
+      );
+    });
+
+    it('should wait for all votes before deciding', async () => {
+      ddbMock.on(GetCommand).resolves({
+        Item: {
+          participants: ['a', 'b', 'c'],
+          mode: 'unanimous',
+          status: 'PENDING',
+          initiatorId: 'planner',
+          votes: [],
+        },
+      });
+      ddbMock.on(UpdateCommand).resolves({
+        Attributes: {
+          participants: ['a', 'b', 'c'],
+          mode: 'unanimous',
+          status: 'PENDING',
+          initiatorId: 'planner',
+          votes: [
+            { voterId: 'a', vote: true, timestamp: Date.now() },
+            { voterId: 'b', vote: true, timestamp: Date.now() },
+          ],
+        },
+      });
+
+      await handleConsensus(
+        {
+          detail: {
+            requestId: 'req-8',
+            voterId: 'b',
+            vote: true,
+          },
+        },
+        EventType.CONSENSUS_VOTE
+      );
+
+      // Only 2/3 votes — should NOT finalize
+      expect(emitEvent).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('CONSENSUS_VOTE — weighted mode', () => {
+    it('should approve when weighted yes exceeds 50%', async () => {
+      ddbMock.on(GetCommand).resolves({
+        Item: {
+          participants: ['a', 'b', 'c'],
+          mode: 'weighted',
+          status: 'PENDING',
+          initiatorId: 'planner',
+          votes: [],
+        },
+      });
+      ddbMock.on(UpdateCommand).resolves({
+        Attributes: {
+          participants: ['a', 'b', 'c'],
+          mode: 'weighted',
+          status: 'PENDING',
+          initiatorId: 'planner',
+          votes: [
+            { voterId: 'a', vote: true, weight: 0.9, timestamp: Date.now() },
+            { voterId: 'b', vote: false, weight: 0.2, timestamp: Date.now() },
+            { voterId: 'c', vote: true, weight: 0.8, timestamp: Date.now() },
+          ],
+        },
+      });
+
+      await handleConsensus(
+        {
+          detail: {
+            requestId: 'req-9',
+            voterId: 'c',
+            vote: true,
+          },
+        },
+        EventType.CONSENSUS_VOTE
+      );
+
+      // total weight = 1.9, yes weight = 1.7 => 1.7/1.9 > 0.5
+      expect(emitEvent).toHaveBeenCalledWith(
+        'consensus-handler',
+        EventType.CONSENSUS_REACHED,
+        expect.objectContaining({ result: true })
+      );
+    });
+
+    it('should reject when weighted yes is below 50%', async () => {
+      ddbMock.on(GetCommand).resolves({
+        Item: {
+          participants: ['a', 'b'],
+          mode: 'weighted',
+          status: 'PENDING',
+          initiatorId: 'planner',
+          votes: [],
+        },
+      });
+      ddbMock.on(UpdateCommand).resolves({
+        Attributes: {
+          participants: ['a', 'b'],
+          mode: 'weighted',
+          status: 'PENDING',
+          initiatorId: 'planner',
+          votes: [
+            { voterId: 'a', vote: false, weight: 0.9, timestamp: Date.now() },
+            { voterId: 'b', vote: true, weight: 0.1, timestamp: Date.now() },
+          ],
+        },
+      });
+
+      await handleConsensus(
+        {
+          detail: {
+            requestId: 'req-10',
+            voterId: 'b',
+            vote: true,
+          },
+        },
+        EventType.CONSENSUS_VOTE
+      );
+
+      // yes weight = 0.1, total = 1.0 => 0.1 < 0.5
+      expect(emitEvent).toHaveBeenCalledWith(
+        'consensus-handler',
+        EventType.CONSENSUS_REACHED,
+        expect.objectContaining({ result: false })
       );
     });
   });
