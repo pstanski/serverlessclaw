@@ -1,4 +1,5 @@
-export function init(hub?: unknown) {
-  void hub;
-}
-export function initServer() {}
+'use client';
+
+import * as ext from '/Users/pengcao/projects/voltx/packages/voltx-ui/src/index';
+export const init = ext.init;
+export const initServer = (ext as { initServer?: () => void }).initServer;
