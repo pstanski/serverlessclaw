@@ -1,5 +1,5 @@
 'use client';
 
-import * as ext from '/Users/pengcao/projects/voltx/packages/voltx-ui/src/index';
+import * as ext from 'integration-active';
 export const init = ext.init;
 export const initServer = (ext as { initServer?: () => void }).initServer;

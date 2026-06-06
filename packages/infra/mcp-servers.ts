@@ -9,7 +9,17 @@ import {
 import { dirname, join, relative } from 'path';
 import { existsSync, readFileSync, realpathSync } from 'fs';
 
-const repoRoot = process.cwd();
+import { execSync } from 'child_process';
+
+const getRepoRoot = () => {
+  try {
+    return execSync('git rev-parse --show-toplevel').toString().trim();
+  } catch {
+    return process.cwd();
+  }
+};
+
+const repoRoot = getRepoRoot();
 const coreNodeModules = join(repoRoot, 'packages/core/node_modules');
 const rootNodeModules = join(repoRoot, 'node_modules');
 

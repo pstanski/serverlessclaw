@@ -84,7 +84,7 @@ export const NODEJS_LOADERS = { '.md': 'text' } as const;
 
 /** Default log retention period for Lambda functions */
 export const LOG_RETENTION_PERIOD =
-  $app.stage === 'prod' ? ('3 days' as const) : ('1 week' as const);
+  typeof $app !== 'undefined' && $app.stage === 'prod' ? ('3 days' as const) : ('1 week' as const);
 
 /** Deployment stage identifiers */
 export const STAGES = {
