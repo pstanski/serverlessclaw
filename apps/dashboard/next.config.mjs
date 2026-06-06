@@ -125,6 +125,11 @@ const nextConfig = {
       '**/.aiready/**',
     ],
   },
+  outputFileTracingIncludes: {
+    '**': [
+      './node_modules/next/dist/build/output/log.js',
+    ],
+  },
   webpack: (config, { isServer }) => {
     config.module.rules.push({
       test: /\.md$/,
