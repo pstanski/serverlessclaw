@@ -2,10 +2,11 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "rootDir": "../../",
     "outDir": "./dist",
     "declaration": true,
     "ignoreDeprecations": "6.0"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../core/lib/types/markdown-module.ts"],
   "exclude": ["node_modules", "dist"]
 }
