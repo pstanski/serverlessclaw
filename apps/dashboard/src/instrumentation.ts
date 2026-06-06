@@ -19,7 +19,7 @@ export async function register() {
           await activeExt.initServer();
           logger.info('[Dashboard] Project-specific server extensions initialized.');
         }
-      } catch (_err) {
+      } catch {
         logger.debug('[Dashboard] No server-side initialization found for active extension.');
       }
     }

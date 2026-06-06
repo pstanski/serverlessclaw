@@ -1,5 +1,10 @@
 'use client';
 
-import * as ext from '/Users/pengcao/projects/voltx/packages/voltx-ui/src/index';
-export const init = ext.init;
-export const initServer = (ext as { initServer?: () => void }).initServer;
+/**
+ * Extension Bridge
+ * This file is dynamically updated by next.config.mjs during build.
+ * It provides a stable entry point for domain-specific UI extensions.
+ */
+
+export function init(_hub: unknown) {}
+export function initServer() {}

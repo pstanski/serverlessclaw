@@ -3,11 +3,11 @@ import { PluginManager } from '@claw/core/lib/plugin-manager';
 import { logger } from '@claw/core/lib/logger';
 
 class DefaultModelRegistry implements ModelRegistry {
-  async read(_workspaceId: string): Promise<ModelRegistryPayload> {
+  async read(_: string): Promise<ModelRegistryPayload> {
     return { models: {} };
   }
 
-  async write(_workspaceId: string, _payload: ModelRegistryPayload): Promise<void> {
+  async write(_: string, __: ModelRegistryPayload): Promise<void> {
     // No-op
   }
 }
@@ -26,6 +26,6 @@ export const modelRegistry: ModelRegistry = new Proxy({} as ModelRegistry, {
 /**
  * @deprecated Use PluginManager.register() to register a custom model registry.
  */
-export function setModelRegistry(_registry: ModelRegistry): void {
+export function setModelRegistry(): void {
   logger.warn('[Models API] setModelRegistry is deprecated. Register via PluginManager instead.');
 }
