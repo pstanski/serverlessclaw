@@ -8,7 +8,7 @@ import { getMemoryTableName } from '../lib/utils/ddb-client';
 import { logger } from '../lib/logger';
 import { EventType, GapStatus, AGENT_TYPES } from '../lib/types/agent';
 import { BuildStatus } from '../lib/types/constants';
-import { SSTResource, TopologyNode } from '../lib/types/system';
+import { TopologyNode } from '../lib/types/system';
 import { reportHealthIssue } from '../lib/lifecycle/health';
 import { emitEvent, EventPriority } from '../lib/utils/bus';
 import { getCircuitBreaker } from '../lib/safety/circuit-breaker';
