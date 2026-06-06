@@ -81,7 +81,7 @@ export class OpenAIProvider implements IProvider {
 
     // 1. Resolve active model (Priority: Override > Config > Default)
     const { ConfigManager } = await import('../registry/config');
-    const { CONFIG_KEYS, SYSTEM } = await import('../constants');
+    const { CONFIG_KEYS } = await import('../constants');
     const { resolveSSTResourceValue } = await import('../utils/resource-helpers');
 
     let activeModel = model;
@@ -247,7 +247,7 @@ export class OpenAIProvider implements IProvider {
 
     // 1. Resolve active model (Priority: Override > Config > Default)
     const { ConfigManager } = await import('../registry/config');
-    const { CONFIG_KEYS, SYSTEM } = await import('../constants');
+    const { CONFIG_KEYS } = await import('../constants');
     const { resolveSSTResourceValue } = await import('../utils/resource-helpers');
 
     let activeModel = model;

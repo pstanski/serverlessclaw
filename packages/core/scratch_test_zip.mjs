@@ -1,3 +1,4 @@
+/* eslint-disable */
 import AdmZip from 'adm-zip';
 import * as fs from 'fs';
 import * as path from 'path';
