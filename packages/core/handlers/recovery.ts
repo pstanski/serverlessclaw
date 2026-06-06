@@ -133,9 +133,8 @@ async function cleanupStaleGapLocks(): Promise<number> {
  * @returns A promise that resolves when the recovery check is complete.
  */
 export const handler = async (_event?: { detail: Record<string, unknown> }): Promise<void> => {
-  const { resolveSSTResourceValue, getMemoryTableName: getTableName } = await import(
-    '../lib/utils/resource-helpers'
-  );
+  const { resolveSSTResourceValue, getMemoryTableName: getTableName } =
+    await import('../lib/utils/resource-helpers');
 
   const baseUrl = await resolveSSTResourceValue('WebhookApi', 'url', 'WEBHOOK_API_URL');
   const healthPaths = await getHealthPaths();
@@ -309,11 +308,7 @@ export const handler = async (_event?: { detail: Record<string, unknown> }): Pro
       logger.warn('Failed to emit DeploymentStarted metric during recovery:', err)
     );
 
-    const deployerName = await resolveSSTResourceValue(
-      'Deployer',
-      'name',
-      'DEPLOYER_PROJECT_NAME'
-    );
+    const deployerName = await resolveSSTResourceValue('Deployer', 'name', 'DEPLOYER_PROJECT_NAME');
     if (!deployerName) throw new Error('Deployer project not configured.');
 
     const command = new StartBuildCommand({

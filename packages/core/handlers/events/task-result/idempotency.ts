@@ -8,15 +8,12 @@ export async function checkAndMarkProcessed(
   workspaceId?: string
 ): Promise<boolean> {
   try {
-    const [
-      { DynamoDBClient },
-      { DynamoDBDocumentClient, PutCommand },
-      { getMemoryTableName },
-    ] = await Promise.all([
-      import('@aws-sdk/client-dynamodb'),
-      import('@aws-sdk/lib-dynamodb'),
-      import('../../../lib/utils/ddb-client'),
-    ]);
+    const [{ DynamoDBClient }, { DynamoDBDocumentClient, PutCommand }, { getMemoryTableName }] =
+      await Promise.all([
+        import('@aws-sdk/client-dynamodb'),
+        import('@aws-sdk/lib-dynamodb'),
+        import('../../../lib/utils/ddb-client'),
+      ]);
 
     const tableName = await getMemoryTableName();
     if (!tableName) throw new Error('MemoryTable not configured.');

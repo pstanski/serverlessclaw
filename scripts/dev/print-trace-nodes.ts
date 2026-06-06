@@ -25,7 +25,7 @@ async function main() {
   );
 
   const items = result.Items || [];
-  const traceItems = items.filter(item => item.traceId === traceId);
+  const traceItems = items.filter((item) => item.traceId === traceId);
 
   // Sort by timestamp ascending
   traceItems.sort((a, b) => (a.timestamp || a.createdAt || 0) - (b.timestamp || b.createdAt || 0));
@@ -38,7 +38,12 @@ async function main() {
     console.log(`Timestamp: ${item.timestamp} (${new Date(item.timestamp).toISOString()})`);
     console.log(`AgentId: ${item.agentId} | Type: ${item.type} | Status: ${item.status ?? 'N/A'}`);
     if (item.content) {
-      console.log(`Content:`, typeof item.content === 'string' ? item.content.slice(0, 300) : JSON.stringify(item.content).slice(0, 300));
+      console.log(
+        `Content:`,
+        typeof item.content === 'string'
+          ? item.content.slice(0, 300)
+          : JSON.stringify(item.content).slice(0, 300)
+      );
     }
     if (item.metadata) {
       console.log(`Metadata:`, JSON.stringify(item.metadata).slice(0, 300));

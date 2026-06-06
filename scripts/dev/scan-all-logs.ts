@@ -1,4 +1,8 @@
-import { CloudWatchLogsClient, DescribeLogGroupsCommand, FilterLogEventsCommand } from '@aws-sdk/client-cloudwatch-logs';
+import {
+  CloudWatchLogsClient,
+  DescribeLogGroupsCommand,
+  FilterLogEventsCommand,
+} from '@aws-sdk/client-cloudwatch-logs';
 
 async function main() {
   const region = process.env.AWS_REGION || 'ap-southeast-2';
@@ -9,14 +13,16 @@ async function main() {
     '/aws/lambda/serverlessclaw-prod-',
     '/aws/lambda/serverlesscla-prod-',
     '/aws/lambda/serverles-prod-',
-    '/aws/lambda/serve-prod-'
+    '/aws/lambda/serve-prod-',
   ];
-  
+
   const logGroups: any[] = [];
   for (const prefix of prefixes) {
-    const describeRes = await client.send(new DescribeLogGroupsCommand({
-      logGroupNamePrefix: prefix
-    }));
+    const describeRes = await client.send(
+      new DescribeLogGroupsCommand({
+        logGroupNamePrefix: prefix,
+      })
+    );
     if (describeRes.logGroups) {
       logGroups.push(...describeRes.logGroups);
     }

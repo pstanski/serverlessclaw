@@ -9,7 +9,16 @@ import {
 import { dirname, join, relative } from 'path';
 import { existsSync, readFileSync, realpathSync } from 'fs';
 
-const repoRoot = process.cwd();
+const repoRoot = (() => {
+  let currentDir = process.cwd();
+  while (
+    currentDir !== dirname(currentDir) &&
+    !existsSync(join(currentDir, 'pnpm-workspace.yaml'))
+  ) {
+    currentDir = dirname(currentDir);
+  }
+  return existsSync(join(currentDir, 'pnpm-workspace.yaml')) ? currentDir : process.cwd();
+})();
 const coreNodeModules = join(repoRoot, 'packages/core/node_modules');
 const frameworkCoreNodeModules = join(repoRoot, 'framework/packages/core/node_modules');
 const frameworkRootNodeModules = join(repoRoot, 'framework/node_modules');
@@ -25,19 +34,25 @@ function resolvePackageRoot(packageName: string, searchDirs: string[]): string {
     const packageRoot = realpathSync(candidate);
     const packageJsonPath = join(packageRoot, 'package.json');
     if (!existsSync(packageJsonPath)) {
-       // If it's a directory and it was exactly what we looked for, 
-       // but maybe it's just a folder without package.json (unlikely for node_modules but...)
-       continue;
+      // If it's a directory and it was exactly what we looked for,
+      // but maybe it's just a folder without package.json (unlikely for node_modules but...)
+      continue;
     }
 
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { name?: string };
     // Relaxed check: if folder name matches OR package.json name matches OR packageName ends with -cjs
-    if (packageJson.name === packageName || candidate.endsWith(packageName) || packageName.endsWith('-cjs')) {
+    if (
+      packageJson.name === packageName ||
+      candidate.endsWith(packageName) ||
+      packageName.endsWith('-cjs')
+    ) {
       return packageRoot;
     }
   }
 
-  throw new Error(`Unable to resolve package root for ${packageName} (Searched in ${searchDirs.join(', ')})`);
+  throw new Error(
+    `Unable to resolve package root for ${packageName} (Searched in ${searchDirs.join(', ')})`
+  );
 }
 
 function getNodeModulesDir(packageRoot: string, packageName: string): string {

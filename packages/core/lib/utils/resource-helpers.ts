@@ -39,11 +39,7 @@ export function resolveSSTResourceValue(
   // 2. Try globalResource (for tests and specialized environments)
   try {
     const globalResource = (globalThis as any).Resource;
-    if (
-      globalResource &&
-      globalResource[resourceName] &&
-      globalResource[resourceName][property]
-    ) {
+    if (globalResource && globalResource[resourceName] && globalResource[resourceName][property]) {
       return globalResource[resourceName][property];
     }
   } catch {

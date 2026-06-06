@@ -100,7 +100,9 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
     // 3. Gap Management - PROGRESS (Phase B2: Atomic Transitions)
     if (gapIds && gapIds.length > 0) {
       for (const gapId of gapIds) {
-        const lockAcquired = await memory.acquireGapLock(gapId, AGENT_TYPES.CODER, undefined, { workspaceId });
+        const lockAcquired = await memory.acquireGapLock(gapId, AGENT_TYPES.CODER, undefined, {
+          workspaceId,
+        });
         if (lockAcquired) {
           try {
             const res = await memory.updateGapStatus(gapId, GapStatus.PROGRESS, { workspaceId });
@@ -108,7 +110,9 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
               logger.warn(`[Coder] Failed to transition gap ${gapId} to PROGRESS: ${res.error}`);
             }
           } finally {
-            await memory.releaseGapLock(gapId, AGENT_TYPES.CODER, undefined, undefined, { workspaceId });
+            await memory.releaseGapLock(gapId, AGENT_TYPES.CODER, undefined, undefined, {
+              workspaceId,
+            });
           }
         }
       }
@@ -378,7 +382,9 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
             : GapStatus.DEPLOYED;
 
       for (const gapId of gapIds) {
-        const lockAcquired = await memory.acquireGapLock(gapId, AGENT_TYPES.CODER, undefined, { workspaceId });
+        const lockAcquired = await memory.acquireGapLock(gapId, AGENT_TYPES.CODER, undefined, {
+          workspaceId,
+        });
         if (lockAcquired) {
           try {
             const res = await memory.updateGapStatus(gapId, finalStatus, { workspaceId });
@@ -387,7 +393,9 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
               logger.warn(`[Gaps] Failed to ${step} gap ${gapId} to ${finalStatus}: ${res.error}`);
             }
           } finally {
-            await memory.releaseGapLock(gapId, AGENT_TYPES.CODER, undefined, undefined, { workspaceId });
+            await memory.releaseGapLock(gapId, AGENT_TYPES.CODER, undefined, undefined, {
+              workspaceId,
+            });
           }
         }
       }

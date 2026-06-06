@@ -387,10 +387,7 @@ export class ProviderManager implements IProvider {
         undefined
       );
       // Use SST Resource value if available, otherwise fallback to system default
-      const sstProvider = (await resolveSSTResourceValue(
-        'ActiveProvider',
-        'value'
-      )) as LLMProvider;
+      const sstProvider = (await resolveSSTResourceValue('ActiveProvider', 'value')) as LLMProvider;
       primaryProvider =
         (configValue as unknown as LLMProvider) ?? sstProvider ?? SYSTEM.DEFAULT_PROVIDER;
     }

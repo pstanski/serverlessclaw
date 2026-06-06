@@ -1,4 +1,8 @@
-import { CloudWatchLogsClient, DescribeLogGroupsCommand, FilterLogEventsCommand } from '@aws-sdk/client-cloudwatch-logs';
+import {
+  CloudWatchLogsClient,
+  DescribeLogGroupsCommand,
+  FilterLogEventsCommand,
+} from '@aws-sdk/client-cloudwatch-logs';
 
 async function main() {
   const region = process.env.AWS_REGION || 'ap-southeast-2';
@@ -9,26 +13,29 @@ async function main() {
     '/aws/lambda/serverlessclaw-prod-',
     '/aws/lambda/serverlesscla-prod-',
     '/aws/lambda/serverles-prod-',
-    '/aws/lambda/serve-prod-'
+    '/aws/lambda/serve-prod-',
   ];
-  
+
   const allGroups: any[] = [];
   for (const prefix of prefixes) {
-    const describeRes = await client.send(new DescribeLogGroupsCommand({
-      logGroupNamePrefix: prefix
-    }));
+    const describeRes = await client.send(
+      new DescribeLogGroupsCommand({
+        logGroupNamePrefix: prefix,
+      })
+    );
     if (describeRes.logGroups) {
       allGroups.push(...describeRes.logGroups);
     }
   }
 
-  const logGroups = allGroups.filter(g => 
-    g.logGroupName?.toLowerCase().includes('multiplexer') || 
-    g.logGroupName?.toLowerCase().includes('runner') ||
-    g.logGroupName?.toLowerCase().includes('highpower') ||
-    g.logGroupName?.toLowerCase().includes('lightpower')
+  const logGroups = allGroups.filter(
+    (g) =>
+      g.logGroupName?.toLowerCase().includes('multiplexer') ||
+      g.logGroupName?.toLowerCase().includes('runner') ||
+      g.logGroupName?.toLowerCase().includes('highpower') ||
+      g.logGroupName?.toLowerCase().includes('lightpower')
   );
-  
+
   console.log(`📊 Found ${logGroups.length} multiplexer/runner log groups.`);
   for (const g of logGroups) {
     console.log(`  - ${g.logGroupName}`);

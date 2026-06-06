@@ -97,7 +97,7 @@ describe('Billing Infrastructure', () => {
     expect(budgetArgs.notifications[0].subscriberEmailAddresses).toEqual([]);
   });
 
-  it('should default to $1 daily limit when BILLING_DAILY_LIMIT is unset', () => {
+  it('should default to $20 daily limit when BILLING_DAILY_LIMIT is unset', () => {
     delete process.env.BILLING_DAILY_LIMIT;
 
     createBilling();
@@ -105,6 +105,6 @@ describe('Billing Infrastructure', () => {
     expect(mockBudget).toHaveBeenCalled();
     const budgetArgs = mockBudget.mock.calls[0][1] as any;
 
-    expect(budgetArgs.limitAmount).toBe('1');
+    expect(budgetArgs.limitAmount).toBe('20');
   });
 });

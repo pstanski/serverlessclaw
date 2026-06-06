@@ -121,7 +121,9 @@ async function main() {
   console.log(`   TraceId: trace-final-auto-${now}`);
   console.log(`   GapId: ${rawGapId}`);
   console.log(`\nMonitor using:`);
-  console.log(`   AWS_PROFILE=aiready aws logs tail /aws/lambda/serverlessclaw-prod-HighPowerMultiplexerFunction-baxoaxxb --region ap-southeast-2 --since 1m --follow`);
+  console.log(
+    `   AWS_PROFILE=aiready aws logs tail /aws/lambda/serverlessclaw-prod-HighPowerMultiplexerFunction-baxoaxxb --region ap-southeast-2 --since 1m --follow`
+  );
 }
 
 main().catch((err) => {

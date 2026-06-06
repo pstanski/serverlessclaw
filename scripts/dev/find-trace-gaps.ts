@@ -26,12 +26,18 @@ async function main() {
   const items = result.Items || [];
   console.log(`Total items in TraceTable: ${items.length}`);
 
-  const matched = items.filter(item => {
+  const matched = items.filter((item) => {
     const str = JSON.stringify(item);
-    return str.includes('1780229012902') || str.includes('trace-manual-evolution') || str.includes('PLAN-');
+    return (
+      str.includes('1780229012902') ||
+      str.includes('trace-manual-evolution') ||
+      str.includes('PLAN-')
+    );
   });
 
-  console.log(`Matched ${matched.length} items containing gapId or 'trace-manual-evolution' or 'PLAN-':`);
+  console.log(
+    `Matched ${matched.length} items containing gapId or 'trace-manual-evolution' or 'PLAN-':`
+  );
   for (const item of matched) {
     console.log(`--------------------------------------------------`);
     console.log(`TraceId: ${item.traceId}`);
@@ -40,7 +46,12 @@ async function main() {
     console.log(`Type: ${item.type || item.eventType}`);
     console.log(`Status: ${item.status ?? 'N/A'}`);
     if (item.content) {
-      console.log(`Content:`, typeof item.content === 'string' ? item.content.slice(0, 200) : JSON.stringify(item.content).slice(0, 200));
+      console.log(
+        `Content:`,
+        typeof item.content === 'string'
+          ? item.content.slice(0, 200)
+          : JSON.stringify(item.content).slice(0, 200)
+      );
     }
   }
 }

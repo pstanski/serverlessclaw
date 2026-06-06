@@ -16,9 +16,7 @@ async function testCoderRolePropagation() {
   const testMissionId = `test-mission-${Date.now()}`;
   const testSessionId = `test-session-${Date.now()}`;
 
-  console.log(
-    `\n🧪 TEST: Direct CODER_TASK dispatch without explicit userRole`
-  );
+  console.log(`\n🧪 TEST: Direct CODER_TASK dispatch without explicit userRole`);
   console.log(`   Mission ID: ${testMissionId}`);
   console.log(`   Session ID: ${testSessionId}`);
   console.log(`\n📤 Dispatching CODER_TASK to EventBridge...\n`);
@@ -49,12 +47,9 @@ async function testCoderRolePropagation() {
   };
 
   try {
-    const result = await emitEvent(
-      'pipeline.evolution-coordinator',
-      'CODER_TASK',
-      detail,
-      { maxRetries: 3 }
-    );
+    const result = await emitEvent('pipeline.evolution-coordinator', 'CODER_TASK', detail, {
+      maxRetries: 3,
+    });
 
     if (result.success) {
       console.log(`✅ Event dispatched successfully`);
@@ -71,25 +66,19 @@ async function testCoderRolePropagation() {
 
     console.log(`\n📊 TEST SUMMARY`);
     console.log(`=============`);
-    console.log(
-      `If you see NO "Action blocked for agent 'viewer'" errors in CloudWatch logs,`
-    );
+    console.log(`If you see NO "Action blocked for agent 'viewer'" errors in CloudWatch logs,`);
     console.log(`the role inference fix is working correctly.`);
     console.log(`\n🔍 Check logs:`);
-    console.log(`   aws logs tail /aws/lambda/serverlessclaw-prod-HighPowerMultiplexerFunction-* --since 2m --follow`);
+    console.log(
+      `   aws logs tail /aws/lambda/serverlessclaw-prod-HighPowerMultiplexerFunction-* --since 2m --follow`
+    );
     console.log(`   (Look for CODER_TASK processing and sub-task dispatch)`);
-    console.log(
-      `\n💡 Expected behavior:`
-    );
-    console.log(
-      `   [MULTIPLEXER] Received CODER_TASK for mission: ${testMissionId}`
-    );
+    console.log(`\n💡 Expected behavior:`);
+    console.log(`   [MULTIPLEXER] Received CODER_TASK for mission: ${testMissionId}`);
     console.log(
       `   [ROLE-INFERENCE] Detected internal source 'pipeline.evolution-coordinator', using MEMBER role`
     );
-    console.log(
-      `   [TOOLS] Configured tools for coder agent (no permission denials)`
-    );
+    console.log(`   [TOOLS] Configured tools for coder agent (no permission denials)`);
     console.log(`   [PARALLEL] Dispatching sub-tasks with inherited MEMBER role`);
     console.log(`\n✅ Test dispatch complete!\n`);
   } catch (error) {

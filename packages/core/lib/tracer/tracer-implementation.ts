@@ -302,10 +302,10 @@ export class ClawTracer {
       await this.docClient.send(new UpdateCommand(updateParams));
     } catch (e: unknown) {
       const error = e as Error;
-      const isSizeError = 
-        error.name === 'ValidationException' || 
-        error.name?.includes('Size') || 
-        error.message?.includes('size') || 
+      const isSizeError =
+        error.name === 'ValidationException' ||
+        error.name?.includes('Size') ||
+        error.message?.includes('size') ||
         error.message?.includes('Size');
 
       if (e instanceof Error && e.name === 'ConditionalCheckFailedException') {
@@ -388,10 +388,10 @@ export class ClawTracer {
       await this.docClient.send(new UpdateCommand(updateParams));
     } catch (e: unknown) {
       const error = e as Error;
-      const isSizeError = 
-        error.name === 'ValidationException' || 
-        error.name?.includes('Size') || 
-        error.message?.includes('size') || 
+      const isSizeError =
+        error.name === 'ValidationException' ||
+        error.name?.includes('Size') ||
+        error.message?.includes('size') ||
         error.message?.includes('Size');
 
       if (e instanceof Error && e.name === 'ConditionalCheckFailedException') {
@@ -479,10 +479,10 @@ export class ClawTracer {
       await this.docClient.send(new UpdateCommand(updateParams));
     } catch (e: unknown) {
       const error = e as Error;
-      const isSizeError = 
-        error.name === 'ValidationException' || 
-        error.name?.includes('Size') || 
-        error.message?.includes('size') || 
+      const isSizeError =
+        error.name === 'ValidationException' ||
+        error.name?.includes('Size') ||
+        error.message?.includes('size') ||
         error.message?.includes('Size');
 
       if (e instanceof Error && e.name === 'ConditionalCheckFailedException') {
@@ -569,10 +569,10 @@ export class ClawTracer {
       await this.docClient.send(new UpdateCommand(updateParams));
     } catch (e: unknown) {
       const error = e as Error;
-      const isSizeError = 
-        error.name === 'ValidationException' || 
-        error.name?.includes('Size') || 
-        error.message?.includes('size') || 
+      const isSizeError =
+        error.name === 'ValidationException' ||
+        error.name?.includes('Size') ||
+        error.message?.includes('size') ||
         error.message?.includes('Size');
 
       if (e instanceof Error && e.name === 'ConditionalCheckFailedException') {

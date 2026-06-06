@@ -382,7 +382,7 @@ export const triggerDeployment = {
       }
 
       if (!configTable || !memoryTable || !buildProject) {
-        const availableResources = [];
+        const availableResources: string[] = [];
         try {
           availableResources.push(...Object.keys(Resource));
         } catch {
@@ -505,18 +505,21 @@ export const triggerDeployment = {
           })
         );
       } catch (buildError) {
-        logger.warn('[Deployment] CodeBuild start-build failed, initiating autonomous direct deploy bypass:', buildError);
-        
+        logger.warn(
+          '[Deployment] CodeBuild start-build failed, initiating autonomous direct deploy bypass:',
+          buildError
+        );
+
         // 1. Commit and push changes directly to GitHub
         try {
           const repo = process.env.GITHUB_REPO || 'serverlessclaw/serverlessclaw';
           const token = (Resource as any).GitHubToken?.value || process.env.GITHUB_TOKEN;
           if (token) {
             logger.info(`[Deployment Bypass] Attempting direct Git push to ${repo} main branch...`);
-            
+
             const http = await import('isomorphic-git/http/node');
             const cloneDir = path.join('/tmp', `repo-clone-${Date.now()}`);
-            
+
             try {
               // Clone the repo
               await git.clone({
@@ -533,15 +536,17 @@ export const triggerDeployment = {
 
               // Apply changes
               const pingPath = 'packages/core/handlers/ping.ts';
-              const localPingContent = await fs.readFile(path.resolve(process.cwd(), pingPath), 'utf-8').catch(() => null);
-              
+              const localPingContent = await fs
+                .readFile(path.resolve(process.cwd(), pingPath), 'utf-8')
+                .catch(() => null);
+
               if (localPingContent) {
                 const targetPath = path.resolve(cloneDir, pingPath);
                 await fs.writeFile(targetPath, localPingContent, 'utf-8');
-                
+
                 // Add all files
                 await git.add({ fs: nodefs, dir: cloneDir, filepath: pingPath });
-                
+
                 // Commit
                 await git.commit({
                   fs: nodefs,
@@ -549,7 +554,7 @@ export const triggerDeployment = {
                   author: { name: 'Claw Coder Agent', email: 'agent@serverlessclaw.local' },
                   message: reason || 'chore: autonomous improvement by Claw Coder Agent [skip ci]',
                 });
-                
+
                 // Push
                 await git.push({
                   fs: nodefs,
@@ -575,50 +580,68 @@ export const triggerDeployment = {
 
         // 2. Direct Lambda code update (best effort)
         try {
-          const { LambdaClient, GetFunctionCommand, UpdateFunctionCodeCommand } = await import('@aws-sdk/client-lambda');
+          const { LambdaClient, GetFunctionCommand, UpdateFunctionCodeCommand } =
+            await import('@aws-sdk/client-lambda');
           const lambdaClient = new LambdaClient({});
-          
+
           const pingPath = 'packages/core/handlers/ping.ts';
-          const localPingContent = await fs.readFile(path.resolve(process.cwd(), pingPath), 'utf-8').catch(() => null);
-          
+          const localPingContent = await fs
+            .readFile(path.resolve(process.cwd(), pingPath), 'utf-8')
+            .catch(() => null);
+
           if (localPingContent) {
-            logger.info('[Deployment Bypass] Local ping.ts contents found. Attempting to update Lambda function code directly...');
-            
-            const currentFunc = await lambdaClient.send(new GetFunctionCommand({
-              FunctionName: 'serverlesscla-prod-WebhookApiRouteRxdsztHandlerFunction-mvashdke'
-            }));
-            
+            logger.info(
+              '[Deployment Bypass] Local ping.ts contents found. Attempting to update Lambda function code directly...'
+            );
+
+            const currentFunc = await lambdaClient.send(
+              new GetFunctionCommand({
+                FunctionName: 'serverlesscla-prod-WebhookApiRouteRxdsztHandlerFunction-mvashdke',
+              })
+            );
+
             const codeLocation = currentFunc.Code?.Location;
             if (codeLocation) {
               const fetchRes = await fetch(codeLocation);
               const zipArrayBuffer = await fetchRes.arrayBuffer();
-              
+
               const zipPath = '/tmp/current_ping.zip';
               const extDir = '/tmp/current_ping_ext';
               await fs.writeFile(zipPath, Buffer.from(zipArrayBuffer));
-              
+
               const AdmZip = (await import('adm-zip')).default;
               const zip = new AdmZip(zipPath);
               zip.extractAllTo(extDir, true);
-              
-              const match = localPingContent.match(/\/\/\s*.*VERIF.*$/im) || localPingContent.match(/\/\/\s*.*Autonom.*$/im) || localPingContent.match(/\/\/\s*.*GAP#.*$/im);
-              const commentLine = match ? match[0] : '// Autonomous evolution verification complete.';
-              
+
+              const match =
+                localPingContent.match(/\/\/\s*.*VERIF.*$/im) ||
+                localPingContent.match(/\/\/\s*.*Autonom.*$/im) ||
+                localPingContent.match(/\/\/\s*.*GAP#.*$/im);
+              const commentLine = match
+                ? match[0]
+                : '// Autonomous evolution verification complete.';
+
               if (commentLine) {
                 const bundlePath = path.join(extDir, 'bundle.mjs');
                 if (nodefs.existsSync(bundlePath)) {
                   let bundleContent = await fs.readFile(bundlePath, 'utf-8');
-                  bundleContent = bundleContent.replace('async function handler() {', `async function handler() {\n  ${commentLine}`);
+                  bundleContent = bundleContent.replace(
+                    'async function handler() {',
+                    `async function handler() {\n  ${commentLine}`
+                  );
                   await fs.writeFile(bundlePath, bundleContent);
-                  
+
                   const newZip = new AdmZip();
                   newZip.addLocalFolder(extDir);
                   const newZipBuffer = newZip.toBuffer();
-                  
-                  await lambdaClient.send(new UpdateFunctionCodeCommand({
-                    FunctionName: 'serverlesscla-prod-WebhookApiRouteRxdsztHandlerFunction-mvashdke',
-                    ZipFile: newZipBuffer
-                  }));
+
+                  await lambdaClient.send(
+                    new UpdateFunctionCodeCommand({
+                      FunctionName:
+                        'serverlesscla-prod-WebhookApiRouteRxdsztHandlerFunction-mvashdke',
+                      ZipFile: newZipBuffer,
+                    })
+                  );
                   logger.info('[Deployment Bypass] Direct Lambda function code update successful!');
                 }
               }
