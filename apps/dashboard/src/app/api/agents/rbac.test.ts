@@ -15,7 +15,6 @@ vi.mock('@claw/core/lib/registry', () => ({
     getAllConfigs: mockGetAllConfigs,
   },
 }));
-
 vi.mock('@claw/core/lib/session/identity', () => ({
   getIdentityManager: () => ({
     hasPermission: mockHasPermission,
@@ -26,6 +25,10 @@ vi.mock('@claw/core/lib/session/identity', () => ({
     AGENT_UPDATE: 'agent:update',
     AGENT_DELETE: 'agent:delete',
     TASK_CREATE: 'task:create',
+  },
+  AgentRole: {
+    OPERATOR: 'OPERATOR',
+    ADMIN: 'ADMIN',
   },
 }));
 
