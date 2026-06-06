@@ -1,5 +1,3 @@
-import { logger } from '../logger';
-
 /**
  * Robustly resolves an SST resource property (e.g., 'name', 'value', 'endpoint')
  * from the Resource object or environment fallbacks.

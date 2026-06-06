@@ -1,3 +1,4 @@
+/* global process, console */
 import * as git from 'isomorphic-git';
 import * as fs from 'fs';
 import * as path from 'path';

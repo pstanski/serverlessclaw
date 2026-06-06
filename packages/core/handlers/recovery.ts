@@ -8,7 +8,6 @@ import {
   QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { logger } from '../lib/logger';
-import { SSTResource } from '../lib/types/system';
 import { EventType, OutboundMessageEvent } from '../lib/types/agent';
 import { LockManager } from '../lib/lock/lock-manager';
 import { DynamoMemory } from '../lib/memory';

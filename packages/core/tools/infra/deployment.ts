@@ -61,8 +61,8 @@ export const stageChanges = {
           .map((f) => f.trim())
           .filter(Boolean);
         gitFiles.forEach((f) => allFilesToStage.add(f));
-      } catch (e) {
-        logger.warn('System git failed, falling back to isomorphic-git for statusMatrix', e);
+      } catch (_e) {
+        logger.warn('System git failed, falling back to isomorphic-git for statusMatrix', _e);
         try {
           const matrix = await git.statusMatrix({ fs: nodefs, dir: process.cwd() });
           // statusMatrix returns [filepath, head, workdir, stage]
@@ -198,8 +198,8 @@ export const generatePatch = {
               timeout: 30000,
             });
           }
-        } catch (e) {
-          logger.warn('[generatePatch] System git diff failed:', e);
+        } catch (_e) {
+          logger.warn('[generatePatch] System git diff failed:', _e);
         }
       }
 
@@ -213,8 +213,8 @@ export const generatePatch = {
           if (changes.length > 0) {
             return `FAILED_TO_GENERATE_DIFF: System 'git' is missing in this environment. Detected ${changes.length} changed files: ${changes.map((c) => c[0]).join(', ')}. PLEASE USE 'stageChanges' instead, or manually construct the patch if you can.`;
           }
-        } catch (e) {
-          logger.error('[generatePatch] Isomorphic-git statusMatrix failed:', e);
+        } catch (_e) {
+          logger.error('[generatePatch] Isomorphic-git statusMatrix failed:', _e);
         }
       }
 
@@ -363,16 +363,24 @@ export const triggerDeployment = {
 
       try {
         configTable = (Resource as any).ConfigTable?.name;
-      } catch (e) {}
+      } catch {
+        /* ignore */
+      }
       try {
         memoryTable = (Resource as any).MemoryTable?.name;
-      } catch (e) {}
+      } catch {
+        /* ignore */
+      }
       try {
         buildProject = (Resource as any).Deployer?.name;
-      } catch (e) {}
+      } catch {
+        /* ignore */
+      }
       try {
         buildProject = buildProject || (Resource as any).SelfDeployProject?.name;
-      } catch (e) {}
+      } catch {
+        /* ignore */
+      }
 
       if (!configTable) {
         configTable = process.env.CONFIG_TABLE_NAME;
