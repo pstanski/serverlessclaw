@@ -111,22 +111,12 @@ const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, '../..'),
   outputFileTracingExcludes: {
     '**': [
-      '**/node_modules/puppeteer*/**',
-      '**/node_modules/playwright*/**',
-      '**/node_modules/vitest/**',
-      '**/node_modules/typescript/**',
-      '**/node_modules/@swc/core*/**',
-      '**/node_modules/esbuild*/**',
-      '**/node_modules/tree-sitter*/**',
       '**/.next/cache/**',
       '**/.next/dev/**',
       '**/.sst/**',
       '**/.turbo/**',
       '**/.aiready/**',
     ],
-  },
-  outputFileTracingIncludes: {
-    '**': ['./node_modules/next/dist/build/output/log.js'],
   },
   webpack: (config, { isServer }) => {
     config.module.rules.push({
