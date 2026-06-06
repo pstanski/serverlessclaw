@@ -110,13 +110,7 @@ const nextConfig = {
   // Keep tracing root at the framework monorepo root so OpenNext can locate standalone artifacts.
   outputFileTracingRoot: path.join(__dirname, '../..'),
   outputFileTracingExcludes: {
-    '**': [
-      '**/.next/cache/**',
-      '**/.next/dev/**',
-      '**/.sst/**',
-      '**/.turbo/**',
-      '**/.aiready/**',
-    ],
+    '**': ['**/.next/cache/**', '**/.next/dev/**', '**/.sst/**', '**/.turbo/**', '**/.aiready/**'],
   },
   webpack: (config, { isServer }) => {
     config.module.rules.push({
