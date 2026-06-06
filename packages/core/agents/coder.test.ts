@@ -283,10 +283,26 @@ describe('Coder Agent', () => {
 
     await handler(event, mockContext);
 
-    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.PROGRESS, expect.anything());
-    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap2', GapStatus.PROGRESS, expect.anything());
-    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED, expect.anything());
-    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap2', GapStatus.DEPLOYED, expect.anything());
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.PROGRESS,
+      expect.anything()
+    );
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith(
+      'gap2',
+      GapStatus.PROGRESS,
+      expect.anything()
+    );
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.DEPLOYED,
+      expect.anything()
+    );
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith(
+      'gap2',
+      GapStatus.DEPLOYED,
+      expect.anything()
+    );
   });
 
   it('should not update gap status to DEPLOYED if buildId is returned', async () => {
@@ -311,9 +327,17 @@ describe('Coder Agent', () => {
 
     await handler(event, mockContext);
 
-    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.PROGRESS, expect.anything());
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.PROGRESS,
+      expect.anything()
+    );
     // Should NOT mark as DEPLOYED
-    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED, expect.anything());
+    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.DEPLOYED,
+      expect.anything()
+    );
   });
 
   it('should accept buildId-only evolution outputs as valid technical artifacts', async () => {
@@ -338,8 +362,16 @@ describe('Coder Agent', () => {
     const result = await handler(event, mockContext);
 
     expect(result).not.toContain('FAILED: Evolution task requires a technical artifact');
-    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.PROGRESS, expect.anything());
-    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED, expect.anything());
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.PROGRESS,
+      expect.anything()
+    );
+    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.DEPLOYED,
+      expect.anything()
+    );
     expect(emitTaskEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         metadata: expect.objectContaining({
@@ -368,7 +400,11 @@ describe('Coder Agent', () => {
     await handler(event, mockContext);
 
     // Should not mark as deployed
-    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED, expect.anything());
+    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.DEPLOYED,
+      expect.anything()
+    );
   });
   it('should ignore invalid payload missing task or userId', async () => {
     const event = {
@@ -405,7 +441,11 @@ describe('Coder Agent', () => {
 
     expect(result).toContain('FAILED: Evolution task requires a technical artifact');
     // Ensure it doesn't mark as DEPLOYED
-    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED, expect.anything());
+    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.DEPLOYED,
+      expect.anything()
+    );
   });
 
   it('should extract patch from responseText when parsedData.patch is missing', async () => {
@@ -431,7 +471,11 @@ describe('Coder Agent', () => {
     const result = await handler(event, mockContext);
 
     expect(result).not.toContain('FAILED: Evolution task requires a technical artifact');
-    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED, expect.anything());
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.DEPLOYED,
+      expect.anything()
+    );
     expect(emitTaskEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         metadata: expect.objectContaining({
@@ -465,7 +509,11 @@ describe('Coder Agent', () => {
     const result = await handler(event, mockContext);
 
     expect(result).not.toContain('FAILED: Evolution task requires a technical artifact');
-    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED, expect.anything());
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.DEPLOYED,
+      expect.anything()
+    );
     expect(emitTaskEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         metadata: expect.objectContaining({
@@ -499,8 +547,16 @@ describe('Coder Agent', () => {
 
     await handler(event, mockContext);
 
-    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.PROGRESS, expect.anything());
-    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED, expect.anything());
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.PROGRESS,
+      expect.anything()
+    );
+    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.DEPLOYED,
+      expect.anything()
+    );
     expect(emitTaskEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         metadata: expect.objectContaining({
@@ -561,7 +617,11 @@ describe('Coder Agent', () => {
 
     expect(result).not.toContain('FAILED: Evolution task requires a technical artifact');
     expect(mockMemory.getHistory).toHaveBeenCalledWith('test-session');
-    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED, expect.anything());
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.DEPLOYED,
+      expect.anything()
+    );
     expect(emitTaskEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         metadata: expect.objectContaining({
@@ -602,7 +662,11 @@ describe('Coder Agent', () => {
       sessionId: 'test-session',
       skipValidation: true,
     });
-    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith('gap1', GapStatus.DEPLOYED, expect.anything());
+    expect(mockMemory.updateGapStatus).toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.DEPLOYED,
+      expect.anything()
+    );
     expect(emitTaskEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         metadata: expect.objectContaining({
@@ -633,8 +697,16 @@ describe('Coder Agent', () => {
 
     // Gaps should NEVER have been transitioned to PROGRESS since
     // the transition now happens inside the try block (after initAgent)
-    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith('gap1', GapStatus.PROGRESS, expect.anything());
-    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith('gap2', GapStatus.PROGRESS, expect.anything());
+    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith(
+      'gap1',
+      GapStatus.PROGRESS,
+      expect.anything()
+    );
+    expect(mockMemory.updateGapStatus).not.toHaveBeenCalledWith(
+      'gap2',
+      GapStatus.PROGRESS,
+      expect.anything()
+    );
   });
 
   describe('Transition Failure Logging', () => {
