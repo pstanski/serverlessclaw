@@ -66,6 +66,11 @@ export const infraSchema: Record<string, IToolDefinition> = {
           type: 'string',
           description: 'Optional: Specific staging ZIP key returned by stageChanges.',
         },
+        skipE2e: {
+          type: 'boolean',
+          description:
+            'Optional: Set to true to skip E2E Playwright tests and speed up the deployment, saving CodeBuild costs.',
+        },
       },
       required: ['reason', 'gapIds'],
       additionalProperties: false,

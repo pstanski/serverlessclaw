@@ -1,3 +1,4 @@
+import '../lib/bootstrap-env';
 import { EventBridgeEvent, Context } from 'aws-lambda';
 import { logger } from '../lib/logger';
 import { ChatMessageReceivedPayload } from '../lib/schema/events';

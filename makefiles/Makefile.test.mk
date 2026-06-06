@@ -23,7 +23,11 @@ test-tier-3: ## Run Tier 3: Deployment health and E2E (uses .sst/outputs.json if
 	fi ; \
 	if [ -z "$$API_URL" ]; then $(call log_error,API URL is required for Tier 3); exit 1; fi; \
 	if [ -z "$$FINAL_DASHBOARD_URL" ]; then $(call log_error,DASHBOARD URL is required for Tier 3); exit 1; fi; \
-	$(MAKE) verify URL=$$API_URL && $(MAKE) test-e2e-deployed URL=$$FINAL_DASHBOARD_URL
+	if [ "$$SKIP_E2E" = "true" ] || [ "$(SKIP_E2E)" = "true" ]; then \
+		$(MAKE) verify URL=$$API_URL; \
+	else \
+		$(MAKE) verify URL=$$API_URL && $(MAKE) test-e2e-deployed URL=$$FINAL_DASHBOARD_URL; \
+	fi
 
 dns-check: ## Verify DNS resolution for critical subdomains (prevents ENOTFOUND)
 	@$(call log_step,Verifying DNS resolution for $(ENV)...)

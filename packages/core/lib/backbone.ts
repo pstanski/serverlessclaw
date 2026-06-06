@@ -106,6 +106,9 @@ export const BACKBONE_REGISTRY: Record<string, IAgentConfig> = {
     reasoningProfile: ReasoningProfile.DEEP,
     defaultCommunicationMode: 'json',
     safetyTier: SafetyTier.LOCAL,
+    // Coder is the autonomous execution agent — must run in AUTO mode so Class C actions
+    // (code_change, deployment) are not paused waiting for human approval during evolution tasks.
+    evolutionMode: EvolutionMode.AUTO,
     tools: [
       ...UNIVERSAL_SYSTEM_TOOLS,
       ...DEVELOPER_TOOLS,

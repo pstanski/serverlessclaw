@@ -39,6 +39,7 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@openai/agents-core": "^0.11.0",
     "@serverlessclaw/integration-github": "workspace:*",
+    "adm-zip": "^0.5.17",
     "archiver": "^7.0.1",
     "isomorphic-git": "^1.25.10",
     "http-node": "^1.2.0",

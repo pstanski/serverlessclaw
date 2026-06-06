@@ -278,6 +278,10 @@ export enum OpenAIModel {
   GPT_5_4_NANO = 'gpt-5.4-nano',
   /** Mini reasoning model (GPT-5 family) */
   GPT_5_MINI = 'gpt-5-mini',
+  /** Legacy High-performance model (for stabilization) */
+  GPT_4O = 'gpt-4o',
+  /** Legacy Cost-efficient model (for stabilization) */
+  GPT_4O_MINI = 'gpt-4o-mini',
 }
 
 /**

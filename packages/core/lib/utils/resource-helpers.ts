@@ -1,4 +1,3 @@
-import { Resource } from 'sst';
 import { logger } from '../logger';
 
 /**
@@ -18,13 +17,12 @@ export function resolveSSTResourceValue(
   fallbackEnvVar?: string,
   defaultValue?: string
 ): string | undefined {
-  // 1. Try explicit override env var (highest priority for testing)
+  // 1. Try explicit override env var (highest priority)
   if (fallbackEnvVar && process.env[fallbackEnvVar]) {
     return process.env[fallbackEnvVar]!;
   }
 
   // 2. Try SST Ion JSON fallback (SST_RESOURCE_<Name>)
-  // Check this before hitting the Resource proxy to avoid triggering Proxy errors
   const ionEnvVar = `SST_RESOURCE_${resourceName}`;
   const ionValue = process.env[ionEnvVar];
   if (ionValue) {
@@ -34,47 +32,49 @@ export function resolveSSTResourceValue(
         return parsed[property];
       }
     } catch {
-      // Not JSON, use as is if it's a simple string and we're looking for 'name' or 'value'
-      if (property === 'name' || property === 'value') {
-        return ionValue;
-      }
+      if (property === 'name' || property === 'value') return ionValue;
     }
+  }
+
+  // 2. Try globalResource (for tests and specialized environments)
+  try {
+    const globalResource = (globalThis as any).Resource;
+    if (
+      globalResource &&
+      globalResource[resourceName] &&
+      globalResource[resourceName][property]
+    ) {
+      return globalResource[resourceName][property];
+    }
+  } catch {
+    // ignore (e.g. SST Resource proxy throwing "links not active")
   }
 
   // 3. Try traditional Resource access
-  // We check for active link signals to avoid triggering the Proxy's "links not active" error
-  if (
-    process.env.SST_RESOURCE_App ||
-    process.env.AWS_LAMBDA_FUNCTION_NAME ||
-    process.env.VITEST ||
-    process.env.NODE_ENV === 'test' ||
-    process.env.PLAYWRIGHT ||
-    Object.keys(process.env).some((k) => k.startsWith('SST_RESOURCE_'))
-  ) {
-    try {
-      const resource = Resource as unknown as Record<string, Record<string, string>>;
-      if (resource && typeof resource === 'object') {
-        const item = resource[resourceName];
-        if (item && item[property]) return item[property];
-      }
-    } catch {
-      // ignore
+  // We use a require inside the function to avoid module load time crashes.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const sst = require('sst');
+    const Resource = sst.Resource || sst.default?.Resource || sst;
+    if (Resource && (Resource as any)[resourceName] && (Resource as any)[resourceName][property]) {
+      return (Resource as any)[resourceName][property];
     }
+  } catch {
+    // ignore
   }
 
-  // 4. Fuzzy Env Match (Last Resort for maximum resilience)
-  // Look for any env var that contains the resource name and the property
+  // 4. Try explicit override env var (e.g. OPENAI_API_KEY)
+  if (fallbackEnvVar && process.env[fallbackEnvVar]) {
+    return process.env[fallbackEnvVar]!;
+  }
+
+  // 5. Fuzzy Env Match (Robust Fallback)
   const fuzzyPrefix = resourceName.toUpperCase().replace(/[^A-Z0-9]/g, '_');
   const fuzzyProp = property.toUpperCase();
   const fuzzyMatch = Object.keys(process.env).find(
     (k) => k.includes(fuzzyPrefix) && k.includes(fuzzyProp)
   );
-  if (fuzzyMatch) {
-    logger.debug(
-      `[ResourceHelpers] Found fuzzy env match for ${resourceName}.${property}: ${fuzzyMatch}`
-    );
-    return process.env[fuzzyMatch];
-  }
+  if (fuzzyMatch) return process.env[fuzzyMatch];
 
   return defaultValue;
 }
@@ -101,30 +101,23 @@ export const getPlannerQueueUrl = () =>
 
 /** Gets application metadata (name and stage) */
 export function getAppInfo(): { name: string; stage: string } {
-  if (
-    process.env.SST_RESOURCE_App ||
-    process.env.AWS_LAMBDA_FUNCTION_NAME ||
-    process.env.SST_STAGE ||
-    process.env.VITEST ||
-    process.env.NODE_ENV === 'test' ||
-    process.env.PLAYWRIGHT ||
-    Object.keys(process.env).some((k) => k.startsWith('SST_RESOURCE_'))
-  ) {
-    try {
-      const resource = Resource as unknown as Record<string, { name: string; stage: string }>;
-      if (resource.App) {
-        return { name: resource.App.name, stage: resource.App.stage };
-      }
-    } catch {
-      // ignore
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { Resource } = require('sst');
+    if (Resource && (Resource as any).App) {
+      return { name: (Resource as any).App.name, stage: (Resource as any).App.stage };
     }
+  } catch {
+    // ignore
   }
 
   const ionApp = process.env.SST_RESOURCE_App;
   if (ionApp) {
     try {
       const parsed = JSON.parse(ionApp);
-      return { name: parsed.name || 'serverlessclaw', stage: parsed.stage || 'local' };
+      if (parsed.name && parsed.stage) {
+        return { name: parsed.name, stage: parsed.stage };
+      }
     } catch {
       // ignore
     }

@@ -79,19 +79,30 @@ export class OpenAIProvider implements IProvider {
     const client = this.client;
     const requestedProfile = profile;
 
-    // Resolve model if only profile is provided
-    let activeModel = model ?? this.model;
+    // 1. Resolve active model (Priority: Override > Config > Default)
+    const { ConfigManager } = await import('../registry/config');
+    const { CONFIG_KEYS, SYSTEM } = await import('../constants');
+    const { resolveSSTResourceValue } = await import('../utils/resource-helpers');
+
+    let activeModel = model;
+    if (!activeModel) {
+      const sstModel = await resolveSSTResourceValue('ActiveModel', 'value');
+      activeModel = (await ConfigManager.getRawConfig(CONFIG_KEYS.ACTIVE_MODEL)) as string;
+      activeModel = activeModel ?? sstModel ?? this.model;
+    }
+
+    // 2. Map profile to model if no specific model was requested
     if (!model && profile) {
       const profileToModel: Record<ReasoningProfile, string> = {
-        [ReasoningProfile.FAST]: OpenAIModel.GPT_5_4_NANO,
-        [ReasoningProfile.STANDARD]: OpenAIModel.GPT_5_MINI,
-        [ReasoningProfile.THINKING]: OpenAIModel.GPT_5_MINI,
-        [ReasoningProfile.DEEP]: OpenAIModel.GPT_5_4,
+        [ReasoningProfile.FAST]: OpenAIModel.GPT_4O_MINI,
+        [ReasoningProfile.STANDARD]: OpenAIModel.GPT_4O,
+        [ReasoningProfile.THINKING]: OpenAIModel.GPT_4O,
+        [ReasoningProfile.DEEP]: OpenAIModel.GPT_4O, // Forced fallback for stabilization
       };
       activeModel = (profileToModel[profile] ?? activeModel) as string;
     }
 
-    // Fallback if profile not supported
+    // 3. Resolve capabilities and reasoning effort
     const capabilities = await this.getCapabilities(activeModel);
     profile = normalizeProfile(profile, capabilities, activeModel);
 
@@ -108,14 +119,20 @@ export class OpenAIProvider implements IProvider {
 
     const shouldRequestSummary = shouldRequestReasoningSummary(activeModel, requestedProfile);
 
+    const isReasoningModel = activeModel.includes('gpt-5');
+
     const requestPayload: Record<string, unknown> = {
       model: activeModel as OpenAI.ResponsesModel,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       input: responsesInput as any,
-      reasoning: {
-        effort: reasoningEffort as OpenAI.ReasoningEffort,
-        ...(shouldRequestSummary ? { summary: 'auto' } : {}),
-      },
+      ...(isReasoningModel
+        ? {
+            reasoning: {
+              effort: reasoningEffort as OpenAI.ReasoningEffort,
+              ...(shouldRequestSummary ? { summary: 'auto' } : {}),
+            },
+          }
+        : {}),
       // 2026 Responses API: response_format has moved to text.format
       ...(responseFormat
         ? {
@@ -228,13 +245,25 @@ export class OpenAIProvider implements IProvider {
     const client = this.client;
     const requestedProfile = profile;
 
-    let activeModel = model ?? this.model;
+    // 1. Resolve active model (Priority: Override > Config > Default)
+    const { ConfigManager } = await import('../registry/config');
+    const { CONFIG_KEYS, SYSTEM } = await import('../constants');
+    const { resolveSSTResourceValue } = await import('../utils/resource-helpers');
+
+    let activeModel = model;
+    if (!activeModel) {
+      const sstModel = await resolveSSTResourceValue('ActiveModel', 'value');
+      activeModel = (await ConfigManager.getRawConfig(CONFIG_KEYS.ACTIVE_MODEL)) as string;
+      activeModel = activeModel ?? sstModel ?? this.model;
+    }
+
+    // 2. Map profile to model if no specific model was requested
     if (!model && profile) {
       const profileToModel: Record<ReasoningProfile, string> = {
-        [ReasoningProfile.FAST]: OpenAIModel.GPT_5_4_NANO,
-        [ReasoningProfile.STANDARD]: OpenAIModel.GPT_5_MINI,
-        [ReasoningProfile.THINKING]: OpenAIModel.GPT_5_MINI,
-        [ReasoningProfile.DEEP]: OpenAIModel.GPT_5_4,
+        [ReasoningProfile.FAST]: OpenAIModel.GPT_4O_MINI,
+        [ReasoningProfile.STANDARD]: OpenAIModel.GPT_4O,
+        [ReasoningProfile.THINKING]: OpenAIModel.GPT_4O,
+        [ReasoningProfile.DEEP]: OpenAIModel.GPT_4O, // Forced fallback for stabilization
       };
       activeModel = (profileToModel[profile] ?? activeModel) as string;
     }
@@ -250,14 +279,20 @@ export class OpenAIProvider implements IProvider {
 
     const shouldRequestSummary = shouldRequestReasoningSummary(activeModel, requestedProfile);
 
+    const isReasoningModel = activeModel.includes('gpt-5');
+
     const requestPayload: Record<string, unknown> = {
       model: activeModel as OpenAI.ResponsesModel,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       input: responsesInput as any,
-      reasoning: {
-        effort: reasoningEffort as OpenAI.ReasoningEffort,
-        ...(shouldRequestSummary ? { summary: 'auto' } : {}),
-      },
+      ...(isReasoningModel
+        ? {
+            reasoning: {
+              effort: reasoningEffort as OpenAI.ReasoningEffort,
+              ...(shouldRequestSummary ? { summary: 'auto' } : {}),
+            },
+          }
+        : {}),
       stream: true,
       ...(responseFormat
         ? {

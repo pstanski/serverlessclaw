@@ -1,3 +1,4 @@
+import '../lib/bootstrap-env';
 import { AgentRole, AGENT_TYPES, EventType, UserRole } from '../lib/types/agent';
 import { logger } from '../lib/logger';
 import { Context } from 'aws-lambda';

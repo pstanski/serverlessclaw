@@ -100,15 +100,15 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
     // 3. Gap Management - PROGRESS (Phase B2: Atomic Transitions)
     if (gapIds && gapIds.length > 0) {
       for (const gapId of gapIds) {
-        const lockAcquired = await memory.acquireGapLock(gapId, AGENT_TYPES.CODER);
+        const lockAcquired = await memory.acquireGapLock(gapId, AGENT_TYPES.CODER, undefined, { workspaceId });
         if (lockAcquired) {
           try {
-            const res = await memory.updateGapStatus(gapId, GapStatus.PROGRESS);
+            const res = await memory.updateGapStatus(gapId, GapStatus.PROGRESS, { workspaceId });
             if (!res.success) {
               logger.warn(`[Coder] Failed to transition gap ${gapId} to PROGRESS: ${res.error}`);
             }
           } finally {
-            await memory.releaseGapLock(gapId, AGENT_TYPES.CODER);
+            await memory.releaseGapLock(gapId, AGENT_TYPES.CODER, undefined, undefined, { workspaceId });
           }
         }
       }
@@ -131,7 +131,7 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
     if (gapIds && gapIds.length > 0) {
       for (const gapId of gapIds) {
         try {
-          const planStr = await memory.getDistilledMemory(`PLAN#${gapId}`);
+          const planStr = await memory.getDistilledMemory(`PLAN#${gapId}`, { workspaceId });
           if (planStr) {
             const parsedPlan = JSON.parse(planStr);
             if (parsedPlan.spec) {
@@ -249,7 +249,7 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
         `[Coder] Fallback 2: Attempting to recover from session history (sessionId=${sessionId})`
       );
       try {
-        const history = await memory.getHistory(sessionId);
+        const history = await memory.getHistory(sessionId, { workspaceId });
         logger.debug(`[Coder] Fallback 2: Retrieved history with ${history.length} messages`);
 
         // Find the last generatePatch tool result
@@ -378,16 +378,16 @@ export const handler = async (event: AgentEvent, context: Context): Promise<stri
             : GapStatus.DEPLOYED;
 
       for (const gapId of gapIds) {
-        const lockAcquired = await memory.acquireGapLock(gapId, AGENT_TYPES.CODER);
+        const lockAcquired = await memory.acquireGapLock(gapId, AGENT_TYPES.CODER, undefined, { workspaceId });
         if (lockAcquired) {
           try {
-            const res = await memory.updateGapStatus(gapId, finalStatus);
+            const res = await memory.updateGapStatus(gapId, finalStatus, { workspaceId });
             if (!res.success) {
               const step = finalStatus === GapStatus.OPEN ? 'reset' : 'transition';
               logger.warn(`[Gaps] Failed to ${step} gap ${gapId} to ${finalStatus}: ${res.error}`);
             }
           } finally {
-            await memory.releaseGapLock(gapId, AGENT_TYPES.CODER);
+            await memory.releaseGapLock(gapId, AGENT_TYPES.CODER, undefined, undefined, { workspaceId });
           }
         }
       }

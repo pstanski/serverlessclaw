@@ -8,14 +8,19 @@ export async function checkAndMarkProcessed(
   workspaceId?: string
 ): Promise<boolean> {
   try {
-    const [{ DynamoDBClient }, { DynamoDBDocumentClient, PutCommand }, { Resource }] =
-      await Promise.all([
-        import('@aws-sdk/client-dynamodb'),
-        import('@aws-sdk/lib-dynamodb'),
-        import('sst'),
-      ]);
+    const [
+      { DynamoDBClient },
+      { DynamoDBDocumentClient, PutCommand },
+      { getMemoryTableName },
+    ] = await Promise.all([
+      import('@aws-sdk/client-dynamodb'),
+      import('@aws-sdk/lib-dynamodb'),
+      import('../../../lib/utils/ddb-client'),
+    ]);
 
-    const tableName = (Resource as unknown as { MemoryTable: { name: string } }).MemoryTable.name;
+    const tableName = await getMemoryTableName();
+    if (!tableName) throw new Error('MemoryTable not configured.');
+
     const db = DynamoDBDocumentClient.from(new DynamoDBClient({}));
     const expiresAt = Math.floor(Date.now() / 1000) + 3600; // 1 hour TTL
     const scopePrefix = workspaceId ? `WS#${workspaceId}#` : '';

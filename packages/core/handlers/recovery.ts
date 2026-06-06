@@ -1,3 +1,4 @@
+import '../lib/bootstrap-env';
 import { CodeBuildClient, StartBuildCommand } from '@aws-sdk/client-codebuild';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
@@ -6,7 +7,6 @@ import {
   DeleteCommand,
   QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { Resource } from 'sst';
 import { logger } from '../lib/logger';
 import { SSTResource } from '../lib/types/system';
 import { EventType, OutboundMessageEvent } from '../lib/types/agent';
@@ -22,7 +22,6 @@ import { ConfigManager } from '../lib/registry/config';
 
 const codebuild = new CodeBuildClient({});
 const db = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-const typedResource = Resource as unknown as SSTResource;
 const lockManager = new LockManager();
 const memory = new DynamoMemory();
 
@@ -63,10 +62,14 @@ async function cleanupStaleGapLocks(): Promise<number> {
   let deletedCount = 0;
   let lastEvaluatedKey: Record<string, unknown> | undefined;
 
+  const { getMemoryTableName: getTableName } = await import('../lib/utils/ddb-client');
+  const tableName = await getTableName();
+  if (!tableName) throw new Error('MemoryTable not configured.');
+
   do {
     const queryResult = await db.send(
       new QueryCommand({
-        TableName: typedResource.MemoryTable.name,
+        TableName: tableName,
         IndexName: 'TypeTimestampIndex',
         KeyConditionExpression: '#tp = :lockType AND #ts = :zero',
         FilterExpression: 'expiresAt < :staleThreshold',
@@ -88,7 +91,7 @@ async function cleanupStaleGapLocks(): Promise<number> {
         try {
           await db.send(
             new DeleteCommand({
-              TableName: typedResource.MemoryTable.name,
+              TableName: tableName,
               Key: {
                 userId: (item.userId as string) || '',
                 timestamp: Number((item.timestamp as string) || 0),
@@ -130,7 +133,11 @@ async function cleanupStaleGapLocks(): Promise<number> {
  * @returns A promise that resolves when the recovery check is complete.
  */
 export const handler = async (_event?: { detail: Record<string, unknown> }): Promise<void> => {
-  const baseUrl = typedResource.WebhookApi.url;
+  const { resolveSSTResourceValue, getMemoryTableName: getTableName } = await import(
+    '../lib/utils/resource-helpers'
+  );
+
+  const baseUrl = await resolveSSTResourceValue('WebhookApi', 'url', 'WEBHOOK_API_URL');
   const healthPaths = await getHealthPaths();
   let lastHttpError: Error | undefined;
   let httpHealthy = false;
@@ -157,20 +164,23 @@ export const handler = async (_event?: { detail: Record<string, unknown> }): Pro
     // Combine cognitive health with HTTP reachability for a single overall health flag
     const overallOk = healthResult.ok && httpHealthy;
 
-    await db.send(
-      new PutCommand({
-        TableName: typedResource.MemoryTable.name,
-        Item: {
-          userId: `${MEMORY_KEYS.HEALTH_PREFIX}${Date.now()}`,
-          timestamp: Date.now(),
-          ok: overallOk,
-          summary: healthResult.summary,
-          details: healthResult.results,
-          httpHealthy,
-          expiresAt: Math.floor((Date.now() + RETENTION.HEALTH_DAYS * 86400000) / 1000),
-        },
-      })
-    );
+    const tableName = await getTableName();
+    if (tableName) {
+      await db.send(
+        new PutCommand({
+          TableName: tableName,
+          Item: {
+            userId: `${MEMORY_KEYS.HEALTH_PREFIX}${Date.now()}`,
+            timestamp: Date.now(),
+            ok: overallOk,
+            summary: healthResult.summary,
+            details: healthResult.results,
+            httpHealthy,
+            expiresAt: Math.floor((Date.now() + RETENTION.HEALTH_DAYS * 86400000) / 1000),
+          },
+        })
+      );
+    }
 
     if (httpHealthy && healthResult.ok) {
       logger.info('System is healthy (HTTP and Cognitive Checks PASSED). No action needed.');
@@ -299,8 +309,15 @@ export const handler = async (_event?: { detail: Record<string, unknown> }): Pro
       logger.warn('Failed to emit DeploymentStarted metric during recovery:', err)
     );
 
+    const deployerName = await resolveSSTResourceValue(
+      'Deployer',
+      'name',
+      'DEPLOYER_PROJECT_NAME'
+    );
+    if (!deployerName) throw new Error('Deployer project not configured.');
+
     const command = new StartBuildCommand({
-      projectName: typedResource.Deployer.name,
+      projectName: deployerName,
       environmentVariablesOverride: [
         { name: 'EMERGENCY_ROLLBACK', value: 'true' },
         { name: 'LKG_HASH', value: lkgHash ?? '' },

@@ -7,16 +7,15 @@
  * NOTE: Requires @aws-sdk/client-lambda to be installed for actual monitoring.
  */
 
+import '../lib/bootstrap-env';
 import { DynamoDBClient, ScanCommand } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { Resource } from 'sst';
-import type { SSTResource } from '../lib/types/system';
+import { getMemoryTableName } from '../lib/utils/ddb-client';
 import { logger } from '../lib/logger';
 import { emitEvent } from '../lib/utils/bus';
 import { EventType } from '../lib/types/agent';
 
 const db = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-const typedResource = Resource as unknown as SSTResource;
 
 const ALERT_THRESHOLD_PERCENT = 80;
 const CONCURRENCY_KEY = 'SYSTEM#LAMBDA_CONCURRENCY';
@@ -50,9 +49,12 @@ async function _forceUnlockStuckSessions(): Promise<number> {
   let unlockedCount = 0;
 
   try {
+    const tableName = await getMemoryTableName();
+    if (!tableName) throw new Error('MemoryTable not configured.');
+
     const result = await db.send(
       new ScanCommand({
-        TableName: typedResource.MemoryTable.name,
+        TableName: tableName,
         FilterExpression: 'begins_with(userId, :lockPrefix) AND expiresAt < :now',
         ExpressionAttributeValues: {
           ':lockPrefix': { S: LOCK_PREFIX },
@@ -78,7 +80,7 @@ async function _forceUnlockStuckSessions(): Promise<number> {
         try {
           await db.send(
             new UpdateCommand({
-              TableName: typedResource.MemoryTable.name,
+              TableName: tableName,
               Key: { userId, timestamp: 0 },
               UpdateExpression: 'SET ownerId = :null, expiresAt = :null, lockType = :released',
               ExpressionAttributeValues: {
@@ -128,20 +130,23 @@ export const handler = async (): Promise<void> => {
       const used = Capacity - Remaining;
       const utilizationPercent = Math.round((used / Capacity) * 100);
 
-      await db.send(
-        new PutCommand({
-          TableName: typedResource.MemoryTable.name,
-          Item: {
-            userId: CONCURRENCY_KEY,
-            timestamp: Date.now(),
-            used,
-            capacity: Capacity,
-            remaining: Remaining,
-            utilizationPercent,
-            expiresAt: Math.floor(Date.now() / 1000) + CONCURRENCY_METRICS_TTL_SECONDS,
-          },
-        })
-      );
+      const tableName = await getMemoryTableName();
+      if (tableName) {
+        await db.send(
+          new PutCommand({
+            TableName: tableName,
+            Item: {
+              userId: CONCURRENCY_KEY,
+              timestamp: Date.now(),
+              used,
+              capacity: Capacity,
+              remaining: Remaining,
+              utilizationPercent,
+              expiresAt: Math.floor(Date.now() / 1000) + CONCURRENCY_METRICS_TTL_SECONDS,
+            },
+          })
+        );
+      }
 
       logger.info(`Lambda Concurrency: ${used}/${Capacity} (${utilizationPercent}%)`);
 

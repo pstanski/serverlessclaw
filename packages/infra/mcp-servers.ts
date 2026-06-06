@@ -31,8 +31,8 @@ function resolvePackageRoot(packageName: string, searchDirs: string[]): string {
     }
 
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { name?: string };
-    // Relaxed check: if folder name matches OR package.json name matches
-    if (packageJson.name === packageName || candidate.endsWith(packageName)) {
+    // Relaxed check: if folder name matches OR package.json name matches OR packageName ends with -cjs
+    if (packageJson.name === packageName || candidate.endsWith(packageName) || packageName.endsWith('-cjs')) {
       return packageRoot;
     }
   }

@@ -1,9 +1,10 @@
+import '../lib/bootstrap-env';
 import { CodeBuildClient, BatchGetBuildsCommand } from '@aws-sdk/client-codebuild';
 import { CloudWatchLogsClient, GetLogEventsCommand } from '@aws-sdk/client-cloudwatch-logs';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { Resource } from 'sst';
+import { getMemoryTableName } from '../lib/utils/ddb-client';
 import { logger } from '../lib/logger';
 import { EventType, GapStatus, AGENT_TYPES } from '../lib/types/agent';
 import { BuildStatus } from '../lib/types/constants';
@@ -16,7 +17,6 @@ const codebuild = new CodeBuildClient({});
 const logs = new CloudWatchLogsClient({});
 const s3 = new S3Client({});
 const db = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-const typedResource = Resource as unknown as SSTResource;
 
 /**
  * monitors-codebuild-build-states
@@ -53,10 +53,13 @@ export const handler = async (event: { detail: Record<string, unknown> }): Promi
     );
     const build = buildResponse.builds?.[0];
 
+    const tableName = await getMemoryTableName();
+    if (!tableName) throw new Error('MemoryTable not configured.');
+
     // 2. Get Build Context from DynamoDB (Supplementary source)
     const { Items: buildItems } = await db.send(
       new QueryCommand({
-        TableName: typedResource.MemoryTable.name,
+        TableName: tableName,
         KeyConditionExpression: 'userId = :b',
         ExpressionAttributeValues: { ':b': `BUILD#${buildId}` },
         Limit: 1,
@@ -67,7 +70,7 @@ export const handler = async (event: { detail: Record<string, unknown> }): Promi
 
     const { Items: gapsItems } = await db.send(
       new QueryCommand({
-        TableName: typedResource.MemoryTable.name,
+        TableName: tableName,
         KeyConditionExpression: 'userId = :g',
         ExpressionAttributeValues: { ':g': `BUILD_GAPS#${buildId}` },
         Limit: 1,

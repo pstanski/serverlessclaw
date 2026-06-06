@@ -15,7 +15,32 @@ import { vi } from 'vitest';
 (global as unknown as { IS_CLAW_TEST: boolean }).IS_CLAW_TEST = true;
 process.env.CLAW_TEST = 'true';
 process.env.VITEST = 'true';
+process.env.CLAW_TEST = 'true';
 process.env.CORE_TEST = 'true';
+
+// Expose Resource to globalThis for consistent access in tests
+// Use a dynamic getter so it reflects vitest mocks in individual tests
+Object.defineProperty(globalThis, 'Resource', {
+  get() {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('sst').Resource;
+    } catch {
+      return undefined;
+    }
+  },
+  configurable: true,
+});
+
+process.env.MEMORY_TABLE_NAME = 'TestMemoryTable';
+process.env.CONFIG_TABLE_NAME = 'TestConfigTable';
+process.env.TRACE_TABLE_NAME = 'TestTraceTable';
+process.env.AGENT_BUS_NAME = 'TestAgentBus';
+process.env.STAGING_BUCKET_NAME = 'TestStagingBucket';
+process.env.KNOWLEDGE_BUCKET_NAME = 'TestKnowledgeBucket';
+process.env.DATA_LAKE_BUCKET_NAME = 'TestDataLakeBucket';
+process.env.DEPLOYER_PROJECT_NAME = 'TestDeployer';
+process.env.OPENAI_API_KEY = 'sk-dummy-test-key';
 
 // Global mock for TokenBudgetEnforcer to ensure tests don't fail due to DDB outages
 vi.mock('@claw/core/lib/metrics/token-budget-enforcer', async (importOriginal) => {

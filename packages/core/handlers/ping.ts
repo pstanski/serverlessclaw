@@ -2,11 +2,8 @@
  * Ping handler — lightweight liveness endpoint.
  * Returns `{ pong: true, ts: <epoch ms> }` with no external dependencies.
  */
-export async function handler(): Promise<{
-  statusCode: number;
-  headers: Record<string, string>;
-  body: string;
-}> {
+// Autonomous evolution verified: 2026-06-05T11:41:09Z
+export async function handler(): Promise<{ statusCode: number; headers: Record<string, string>; body: string; }> {
   return {
     statusCode: 200,
     headers: { 'Content-Type': 'application/json' },
