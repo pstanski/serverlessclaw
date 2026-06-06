@@ -13,6 +13,8 @@ export * from './agent/options';
 export * from './agent/validator';
 export * from './agent/executor';
 export * from './agent/mission-orchestrator';
+export * from './agent/state-graph';
+export * from './agent/checkpoint';
 
 /**
  * Core Agent class responsible for orchestrating memory, LLM providers, and tool execution.
