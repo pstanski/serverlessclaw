@@ -107,10 +107,21 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Keep tracing root at the framework monorepo root so OpenNext can locate standalone artifacts.
-  outputFileTracingRoot: path.join(__dirname, '../..'),
+  // Set tracing root to the dashboard directory itself to ensure a standard standalone structure.
+  outputFileTracingRoot: path.join(__dirname, '.'),
   outputFileTracingExcludes: {
-    '**': ['**/.next/cache/**', '**/.next/dev/**', '**/.sst/**', '**/.turbo/**', '**/.aiready/**'],
+    '**': [
+      '**/node_modules/puppeteer*/**',
+      '**/node_modules/playwright*/**',
+      '**/node_modules/vitest/**',
+      '**/node_modules/typescript/**',
+      '**/node_modules/tree-sitter*/**',
+      '**/.next/cache/**',
+      '**/.next/dev/**',
+      '**/.sst/**',
+      '**/.turbo/**',
+      '**/.aiready/**',
+    ],
   },
   webpack: (config, { isServer }) => {
     config.module.rules.push({
