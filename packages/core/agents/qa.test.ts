@@ -257,7 +257,7 @@ describe('QA Agent — REOPEN cap and HITL escalation', () => {
       {} as unknown as Parameters<typeof handler>[1]
     );
 
-    expect(memoryMocks.updateGapStatus).toHaveBeenCalledWith('GAP#1001', GapStatus.DONE);
+    expect(memoryMocks.updateGapStatus).toHaveBeenCalledWith('GAP#1001', GapStatus.DONE, expect.anything());
     expect(memoryMocks.incrementGapAttemptCount).not.toHaveBeenCalled();
     expect(registryMocks.saveRawConfig).not.toHaveBeenCalled();
   });
@@ -307,8 +307,8 @@ describe('QA Agent — REOPEN cap and HITL escalation', () => {
       {} as unknown as Parameters<typeof handler>[1]
     );
 
-    expect(memoryMocks.incrementGapAttemptCount).toHaveBeenCalledWith('GAP#1001');
-    expect(memoryMocks.updateGapStatus).toHaveBeenCalledWith('GAP#1001', GapStatus.OPEN);
+    expect(memoryMocks.incrementGapAttemptCount).toHaveBeenCalledWith('GAP#1001', expect.anything());
+    expect(memoryMocks.updateGapStatus).toHaveBeenCalledWith('GAP#1001', GapStatus.OPEN, expect.anything());
     // No escalation yet
     expect(registryMocks.saveRawConfig).not.toHaveBeenCalledWith(
       'evolution_mode',
@@ -338,7 +338,7 @@ describe('QA Agent — REOPEN cap and HITL escalation', () => {
     );
 
     // Gap is escalated to FAILED
-    expect(memoryMocks.updateGapStatus).toHaveBeenCalledWith('GAP#1001', GapStatus.FAILED);
+    expect(memoryMocks.updateGapStatus).toHaveBeenCalledWith('GAP#1001', GapStatus.FAILED, expect.anything());
     // Evolution mode is NOT forced to HITL
     expect(registryMocks.saveRawConfig).not.toHaveBeenCalledWith(
       'evolution_mode',
@@ -393,7 +393,7 @@ describe('QA Agent — REOPEN cap and HITL escalation', () => {
 
     await handler(BASE_PAYLOAD as any, {} as any);
 
-    expect(memoryMocks.updateGapStatus).toHaveBeenCalledWith('GAP#1001', GapStatus.OPEN);
+    expect(memoryMocks.updateGapStatus).toHaveBeenCalledWith('GAP#1001', GapStatus.OPEN, expect.anything());
   });
 
   it('should handle lock acquisition failure during SUCCESS path', async () => {
@@ -406,7 +406,7 @@ describe('QA Agent — REOPEN cap and HITL escalation', () => {
 
     await handler(BASE_PAYLOAD as any, {} as any);
 
-    expect(memoryMocks.updateGapStatus).not.toHaveBeenCalledWith('GAP#1001', GapStatus.DONE);
+    expect(memoryMocks.updateGapStatus).not.toHaveBeenCalledWith('GAP#1001', GapStatus.DONE, expect.anything());
   });
 
   it('should handle gap status update failure', async () => {
@@ -432,8 +432,9 @@ describe('QA Agent — REOPEN cap and HITL escalation', () => {
 
     await handler(BASE_PAYLOAD as any, {} as any);
 
-    expect(memoryMocks.updateGapStatus).not.toHaveBeenCalledWith('GAP#1001', GapStatus.DONE);
+    expect(memoryMocks.updateGapStatus).not.toHaveBeenCalledWith('GAP#1001', GapStatus.DONE, expect.anything());
   });
+
 
   it('should dispatch task to initiator if initiatorId is present on failure', async () => {
     const { processEventWithAgent } = await import('../handlers/events/shared');
