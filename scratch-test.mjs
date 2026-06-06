@@ -1,4 +1,2 @@
-import fs from 'fs';
-import path from 'path';
-
+/* global console */
 console.log('Testing');
