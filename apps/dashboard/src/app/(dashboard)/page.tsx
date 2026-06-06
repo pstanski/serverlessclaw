@@ -41,7 +41,7 @@ export default function MissionDashboard() {
   const [recentSessions, setRecentSessions] = useState<SessionMetadata[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const userRole = (user?.role as UserRole) || UserRole.MEMBER;
+  const _userRole = (user?.role as UserRole) || UserRole.MEMBER;
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
