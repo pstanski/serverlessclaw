@@ -40,20 +40,6 @@ export async function DELETE(
 async function handleRequest(req: NextRequest, pathSegments: string[]) {
   const path = pathSegments.join('/');
 
-  // On-demand dynamic registration of VoltX VPP plugin routes
-  if (path.startsWith('voltx/')) {
-    const currentRoutes = PluginManager.getApiRoutes();
-    if (!currentRoutes[path]) {
-      try {
-        const { VppPlugin } = await import('@voltx/core/src/vpp/plugin');
-        await PluginManager.register(VppPlugin);
-        logger.info(`[Dynamic API] Lazy registered VppPlugin for route: ${path}`);
-      } catch (err) {
-        logger.error(`[Dynamic API] Failed to lazy register VppPlugin for route ${path}:`, err);
-      }
-    }
-  }
-
   const routes = PluginManager.getApiRoutes();
   const handler = routes[path];
   if (!handler) {
