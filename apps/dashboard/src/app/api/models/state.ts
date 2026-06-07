@@ -3,11 +3,14 @@ import { PluginManager } from '@claw/core/lib/plugin-manager';
 import { logger } from '@claw/core/lib/logger';
 
 class DefaultModelRegistry implements ModelRegistry {
-  async read(_: string): Promise<ModelRegistryPayload> {
+  async read(_workspaceId: string): Promise<ModelRegistryPayload> {
+    void _workspaceId;
     return { models: {} };
   }
 
-  async write(_: string, __: ModelRegistryPayload): Promise<void> {
+  async write(_workspaceId: string, _payload: ModelRegistryPayload): Promise<void> {
+    void _workspaceId;
+    void _payload;
     // No-op
   }
 }

@@ -19,12 +19,13 @@ export const checkAgentHealth = {
       const { DynamoMemory } = await import('../../lib/memory/dynamo-memory');
       const memory = new DynamoMemory();
 
+      const now = new Date().toISOString();
       if (agentId) {
         const health = await memory.getAgentHealth(agentId, { workspaceId });
         if (!health) return `No health data found for agent '${agentId}'.`;
 
         const lastSeenAgo = Math.floor((Date.now() - health.lastSeen) / 1000);
-        return `Health Status for ${agentId}:\n- Status: ${health.status}\n- Latency: ${health.latencyMs}ms\n- Last Seen: ${lastSeenAgo} seconds ago`;
+        return `Health Status for ${agentId} at ${now}:\n- Status: ${health.status}\n- Latency: ${health.latencyMs}ms\n- Last Seen: ${lastSeenAgo} seconds ago`;
       }
 
       const allHealth = await memory.getAllAgentHealth({ workspaceId });
@@ -37,7 +38,7 @@ export const checkAgentHealth = {
         })
         .join('\n');
 
-      return `Swarm Health Status:\n${summary}`;
+      return `Swarm Health Status at ${now}:\n${summary}`;
     } catch (error) {
       return `Failed to check agent health: ${formatErrorMessage(error)}`;
     }

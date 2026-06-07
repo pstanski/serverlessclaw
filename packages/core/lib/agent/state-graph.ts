@@ -44,6 +44,7 @@ export const END = '__END__';
  * Native event-driven StateGraph orchestrator inspired by LangGraph.
  * Lightweight, type-safe, and highly performant for serverless/edge environments.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class StateGraph<T extends Record<string, any>> {
   private nodes: Map<string, NodeFunction<T>> = new Map();
   private edges: Map<string, string> = new Map();
@@ -151,6 +152,7 @@ export class StateGraph<T extends Record<string, any>> {
 /**
  * Runnable compiled state graph.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class CompiledStateGraph<T extends Record<string, any>> {
   constructor(
     private nodes: Map<string, NodeFunction<T>>,

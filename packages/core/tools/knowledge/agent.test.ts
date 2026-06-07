@@ -300,7 +300,7 @@ Deploy the entire application to AWS using SST and verify all resources are acti
   });
 
   describe('checkAgentHealth', () => {
-    it('should return health for a specific agent', async () => {
+    it('should return health for a specific agent with a timestamp', async () => {
       mocks.getAgentHealth.mockResolvedValueOnce({
         agentId: 'coder',
         status: 'online',
@@ -309,7 +309,8 @@ Deploy the entire application to AWS using SST and verify all resources are acti
       });
 
       const result = await checkAgentHealth.execute({ agentId: 'coder' });
-      expect(result).toContain('Health Status for coder');
+      expect(result).toContain('Health Status for coder at');
+      expect(result).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/); // ISO timestamp
       expect(result).toContain('Status: online');
       expect(result).toContain('Latency: 150ms');
       expect(result).toContain('Last Seen: 5 seconds ago');
@@ -322,7 +323,7 @@ Deploy the entire application to AWS using SST and verify all resources are acti
       expect(result).toBe("No health data found for agent 'unknown-agent'.");
     });
 
-    it('should return summary for all agents', async () => {
+    it('should return summary for all agents with a timestamp', async () => {
       mocks.getAllAgentHealth.mockResolvedValueOnce([
         { agentId: 'coder', status: 'online', latencyMs: 100, lastSeen: Date.now() - 2000 },
         {
@@ -334,7 +335,8 @@ Deploy the entire application to AWS using SST and verify all resources are acti
       ]);
 
       const result = await checkAgentHealth.execute({});
-      expect(result).toContain('Swarm Health Status:');
+      expect(result).toContain('Swarm Health Status at');
+      expect(result).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/); // ISO timestamp
       expect(result).toContain('[coder] online');
       expect(result).toContain('[researcher] degraded');
     });

@@ -489,7 +489,11 @@ export async function processEventWithAgent(
     return { responseText: finalMessage, attachments, parsedData };
   } finally {
     if (options.sessionId) {
-      await sessionStateManager.releaseProcessing(options.sessionId, agentId);
+      await sessionStateManager.releaseProcessing(options.sessionId, agentId, {
+        workspaceId: options.workspaceId,
+        teamId: options.teamId,
+        staffId: options.staffId,
+      });
     }
   }
 }

@@ -21,8 +21,6 @@ import PageHeader from '@/components/PageHeader';
 import { ROUTES } from '@/lib/constants';
 import { useTenant } from '@/components/Providers/TenantProvider';
 import { useTranslations } from '@/components/Providers/TranslationsProvider';
-import { useUser } from '@/components/Providers/UserProvider';
-import { UserRole } from '@claw/core/lib/types/common';
 
 interface SessionMetadata {
   sessionId: string;
@@ -37,7 +35,6 @@ interface SessionMetadata {
 export default function MissionDashboard() {
   const { activeWorkspaceId } = useTenant();
   const { t, formatDate, formatTime } = useTranslations();
-  const { user } = useUser();
   const [recentSessions, setRecentSessions] = useState<SessionMetadata[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -10,9 +10,9 @@ import { PlanValidationResult } from './types';
  * @returns An object with isValid flag and optional reason for rejection.
  */
 export function validatePlan(plan: string, _gapIds: string[]): PlanValidationResult {
-  // 1. Minimum length check (500 chars) — matches decomposer threshold and documentation
-  if (plan.length < 500) {
-    return { isValid: false, reason: `Plan too short (${plan.length} chars, minimum 500)` };
+  // 1. Minimum length check (100 chars) — allows concise but actionable plans for small gaps
+  if (plan.length < 100) {
+    return { isValid: false, reason: `Plan too short (${plan.length} chars, minimum 100)` };
   }
 
   // 2. Check for empty response markers

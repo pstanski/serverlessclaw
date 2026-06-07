@@ -297,6 +297,7 @@ export enum BedrockModel {
 export enum OpenRouterModel {
   GLM_5 = 'zhipu/glm-5',
   GEMINI_3_FLASH = 'google/gemini-3-flash-preview',
+  GEMINI_3_PRO = 'google/gemini-3-pro-preview',
 }
 
 /**
