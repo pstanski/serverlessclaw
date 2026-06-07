@@ -352,7 +352,7 @@ export const createAgent = {
         enabled: enabled ?? true,
         isBackbone: false,
         provider: provider ?? LLMProvider.MINIMAX,
-        model: model ?? MiniMaxModel.M2_7,
+        model: model ?? MiniMaxModel.M3,
         tools: [],
       };
 

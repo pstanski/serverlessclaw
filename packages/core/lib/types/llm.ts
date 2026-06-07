@@ -298,6 +298,7 @@ export enum OpenRouterModel {
   GLM_5 = 'zhipu/glm-5',
   GEMINI_3_FLASH = 'google/gemini-3-flash-preview',
   GEMINI_3_PRO = 'google/gemini-3-pro-preview',
+  NEMOTRON_CONTENT_SAFETY = 'nvidia/nemotron-3.5-content-safety:free',
 }
 
 /**
@@ -308,6 +309,8 @@ export enum MiniMaxModel {
   M2_7 = 'MiniMax-M2.7',
   /** M2.7 highspeed variant with same performance but faster output (100 tps). */
   M2_7_HIGHSPEED = 'MiniMax-M2.7-highspeed',
+  /** M3 (latest) with interleaved thinking and advanced reasoning. */
+  M3 = 'minimax/minimax-m3',
 }
 
 /**

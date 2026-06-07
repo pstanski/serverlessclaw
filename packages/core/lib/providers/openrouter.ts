@@ -29,9 +29,9 @@ import { OpenRouterResponse } from './openrouter-types';
 export class OpenRouterProvider implements IProvider {
   /**
    * Initializes the OpenRouter provider.
-   * @param model The model ID to use (defaults to Gemini 3 Flash).
+   * @param model The model ID to use (defaults to Nemotron Content Safety).
    */
-  constructor(private model: string = OpenRouterModel.GEMINI_3_FLASH) {}
+  constructor(private model: string = OpenRouterModel.NEMOTRON_CONTENT_SAFETY) {}
 
   /**
    * Performs a non-streaming chat completion call.
