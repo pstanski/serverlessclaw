@@ -4,6 +4,7 @@ import { runDeepHealthCheck } from '../lib/lifecycle/health';
 import { DynamoMemory } from '../lib/memory';
 import { formatErrorMessage } from '../lib/utils/error';
 import { WarmupManager } from '../lib/warmup';
+import { createResponse } from '../lib/utils/http';
 
 const memory = new DynamoMemory();
 
@@ -79,13 +80,9 @@ export async function handler(): Promise<{
     };
   } catch (error) {
     logger.error('Health check failed:', error);
-    return {
-      statusCode: 503,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        status: 'error',
-        message: formatErrorMessage(error),
-      }),
-    };
+    return createResponse(503, {
+      status: 'error',
+      message: formatErrorMessage(error),
+    });
   }
 }
