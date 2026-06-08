@@ -5,6 +5,8 @@
       "dependsOn": ["^build"]
     },
     "test": {},
+    "test-silent": {},
+    "test-coverage": {},
     "lint": {},
     "type-check": {},
     "format-check": {},
