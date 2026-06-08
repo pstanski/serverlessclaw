@@ -148,6 +148,10 @@ export const filesystem_search_files = {
         type: 'number',
         description: 'Maximum number of matching lines to return (default: 50)',
       },
+      caseInsensitive: {
+        type: 'boolean',
+        description: 'Whether to perform a case-insensitive search (default: false)',
+      },
     },
     required: ['pattern'],
   },
@@ -156,8 +160,10 @@ export const filesystem_search_files = {
       const pattern = String(args.pattern);
       const directory = String(args.directory || '.');
       const maxResults = Number(args.maxResults || 50);
+      const caseInsensitive = !!args.caseInsensitive;
       const searchDir = resolveWorkspacePath(directory);
 
+      const searchPattern = caseInsensitive ? pattern.toLowerCase() : pattern;
       const results: string[] = [];
       let count = 0;
 
@@ -176,7 +182,8 @@ export const filesystem_search_files = {
               const content = await fs.readFile(fullPath, 'utf8');
               const lines = content.split('\n');
               for (let i = 0; i < lines.length; i++) {
-                if (lines[i].includes(pattern)) {
+                const lineToSearch = caseInsensitive ? lines[i].toLowerCase() : lines[i];
+                if (lineToSearch.includes(searchPattern)) {
                   const relPath = path.relative(process.cwd(), fullPath);
                   results.push(`${relPath}:${i + 1}: ${lines[i].trim()}`);
                   count++;
