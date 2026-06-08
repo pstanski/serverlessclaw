@@ -110,6 +110,31 @@ export class AgentRouter {
       };
     }
 
+    try {
+      const { ConfigManager } = await import('../registry/config');
+      const { CONFIG_KEYS } = await import('../constants');
+
+      const globalProvider = (await ConfigManager.getRawConfig(CONFIG_KEYS.ACTIVE_PROVIDER, {
+        workspaceId: config.workspaceId,
+        orgId: config.orgId,
+      })) as string;
+      const globalModel = (await ConfigManager.getRawConfig(CONFIG_KEYS.ACTIVE_MODEL, {
+        workspaceId: config.workspaceId,
+        orgId: config.orgId,
+      })) as string;
+
+      if (globalProvider && globalModel) {
+        return {
+          provider: globalProvider,
+          model: globalModel,
+          tier: PROFILE_TO_TIER[profile] ?? ModelTier.BALANCED,
+        };
+      }
+    } catch (e) {
+      const { logger } = await import('../logger');
+      logger.warn(`[AgentRouter] Failed to fetch global config for model resolution:`, e);
+    }
+
     let tier = PROFILE_TO_TIER[profile] ?? ModelTier.BALANCED;
     if (options.budget === 'low') tier = ModelTier.ECONOMY;
     else if (options.budget === 'high') tier = ModelTier.PREMIUM;

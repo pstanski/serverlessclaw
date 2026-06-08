@@ -64,22 +64,24 @@ export class DocumentationValidator {
 
     try {
       const data = JSON.parse(readFileSync(mappingPath, 'utf-8'));
-      this.docMappings = data.mappings.map((m: any) => {
-        // Convert glob-style patterns to RegExp if they aren't already regex-like
-        let pattern = m.pattern;
-        if (!pattern.startsWith('^') && (pattern.includes('*') || pattern.includes('/**'))) {
-          pattern =
-            '^' +
-            pattern.replace(/\./g, '\\.').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*') +
-            '$';
-        }
+      this.docMappings = data.mappings.map(
+        (m: { pattern: string; docs: string[]; description?: string }) => {
+          // Convert glob-style patterns to RegExp if they aren't already regex-like
+          let pattern = m.pattern;
+          if (!pattern.startsWith('^') && (pattern.includes('*') || pattern.includes('/**'))) {
+            pattern =
+              '^' +
+              pattern.replace(/\./g, '\\.').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*') +
+              '$';
+          }
 
-        return {
-          codePattern: new RegExp(pattern),
-          docFile: m.docs[0],
-          description: m.description || `Changes in ${m.pattern} require documentation updates`,
-        };
-      });
+          return {
+            codePattern: new RegExp(pattern),
+            docFile: m.docs[0],
+            description: m.description || `Changes in ${m.pattern} require documentation updates`,
+          };
+        }
+      );
     } catch (error) {
       console.error('❌ Error parsing doc-mapping.json:', error);
     }

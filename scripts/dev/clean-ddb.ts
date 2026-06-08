@@ -31,7 +31,7 @@ async function main() {
 
   for (const prefix of prefixes) {
     console.log(`Cleaning up items with prefix: ${prefix}...`);
-    let lastEvaluatedKey: any = undefined;
+    let lastEvaluatedKey: Record<string, unknown> | undefined = undefined;
 
     do {
       const scanResult = await docClient.send(

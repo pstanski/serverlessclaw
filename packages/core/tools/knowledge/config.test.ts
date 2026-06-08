@@ -138,7 +138,7 @@ describe('checkConfig', () => {
     });
 
     expect(result).toContain('ACTIVE_PROVIDER: minimax (default)');
-    expect(result).toContain('ACTIVE_MODEL: MiniMax-M2.7 (default)');
+    expect(result).toContain('ACTIVE_MODEL: minimax/minimax-m3 (default)');
   });
 
   it('includes staging bucket name', async () => {

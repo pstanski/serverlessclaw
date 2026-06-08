@@ -14,7 +14,7 @@ async function main() {
     userId: 'dashboard-user',
     traceId: `trace-${gapId}`,
     sessionId: `session-${gapId}`,
-    task: 'I wish I had a tool to check if the self-evolution loop is active and return the health status of all core agents. Currently, I have to inspect them manually.',
+    task: 'Add a timestamp field to checkAgentHealth tool output.',
     gapId: gapId,
     workspaceId: 'default',
     userRole: 'admin',

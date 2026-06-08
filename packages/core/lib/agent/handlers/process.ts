@@ -179,7 +179,7 @@ export async function handleProcess(
       activeModel: resolvedModel,
       activeProvider: resolvedProvider,
       activeProfile: resolvedProfile,
-    } = await resolveAgentConfig(agent.config, profile);
+    } = await resolveAgentConfig(agent.config, profile, scope);
 
     // Fetch global budgets if not explicitly provided in options
     const { ConfigManager } = await import('../../registry/config');

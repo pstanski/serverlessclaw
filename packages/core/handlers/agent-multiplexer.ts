@@ -15,6 +15,7 @@ import { bootstrap } from '../lib/bootstrap';
  * Also handles SQS FIFO events from PlannerQueue: each SQS Record body is a
  * JSON-encoded EventBridge-style payload { source, 'detail-type', detail }.
  */
+// Force rebuild for architectural fixes: 2026-06-06T15:15:00Z
 export const handler = async (
   event: Record<string, unknown>,
   context: Context
@@ -286,6 +287,7 @@ export const handler = async (
       await sessionStateManager.renewProcessing(sessionId, targetAgent, scope);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let agentModule: any;
     switch (targetAgent) {
       case AGENT_TYPES.CODER:

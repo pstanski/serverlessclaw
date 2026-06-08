@@ -32,7 +32,7 @@ Last Updated: 2026-05-18
 | **D**       | Trust Loop          | Eye → Scales → Spine        | 17          | 2026-05-18  |
 | **E**       | Recovery Path       | Shield → Spine → Brain      | 16          | 2026-05-18  |
 | **F**       | Metabolic Loop      | Metabolism ↔ Scales ↔ Spine | 13          | 2026-05-18  |
-| **G**       | Dashboard Integrity | Cross-Silo API Safety       | 6           | 2026-05-22  |
+| **G**       | Dashboard Integrity | Cross-Silo API Safety       | 7           | 2026-06-06  |
 
 ---
 
@@ -40,6 +40,7 @@ Last Updated: 2026-05-18
 
 | Date       | Report                                                    | Silos                                | Perspective | Status/Summary                                                                                                         |
 | :--------- | :-------------------------------------------------------- | :----------------------------------- | :---------- | :--------------------------------------------------------------------------------------------------------------------- |
+| 2026-06-06 | `reports/audit-2026-06-06-dashboard-integrity.md`         | Hand, Eye                            | G           | FIXED: P1 Domain Pollution in Build, P1 Non-Generic Jobs, P1 Fragile Extension Bridge, and all Dashboard lint errors.  |
 | 2026-05-30 | `reports/audit-2026-05-30-evolution-cycle.md`             | Hand, Metabolism, Spine              | B, D        | VERIFIED: Agent-to-agent communication (Swarm) and Git-integrated self-evolution loop. Passed all tests.               |
 | 2026-05-22 | `reports/audit-2026-05-22-dashboard-integrity.md`         | Hand, Eye                            | B, G        | FIXED: P1 Domain Pollution in Dashboard config, P1 Broken Framework Purity Check in DevOps Pipeline.                   |
 | 2026-05-18 | `reports/audit-2026-05-18-metabolic-loop.md`              | Metabolism, Scales, Spine            | F           | FIXED: P1 Path traversal in native audit, P1 Redundant codebase scans, P1 N+1 Query in trust repairs.                  |

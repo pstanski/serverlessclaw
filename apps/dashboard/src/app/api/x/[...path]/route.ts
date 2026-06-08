@@ -39,8 +39,8 @@ export async function DELETE(
 
 async function handleRequest(req: NextRequest, pathSegments: string[]) {
   const path = pathSegments.join('/');
-
   const routes = PluginManager.getApiRoutes();
+
   const handler = routes[path];
   if (!handler) {
     logger.debug(`[Dynamic API] Route not found: ${path}`);

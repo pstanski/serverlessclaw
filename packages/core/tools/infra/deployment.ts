@@ -69,8 +69,10 @@ export const stageChanges = {
           // head=1, workdir=2 means modified
           // head=0, workdir=2 means untracked
           const modified = matrix
-            .filter((row: any[]) => (row[2] as number) === 2 && (row[1] as number) !== 2) // Modified or Untracked
-            .map((row: any[]) => row[0]);
+            .filter(
+              (row: (string | number)[]) => (row[2] as number) === 2 && (row[1] as number) !== 2
+            ) // Modified or Untracked
+            .map((row: (string | number)[]) => row[0] as string);
           modified.forEach((f: string) => allFilesToStage.add(f));
         } catch (matrixError) {
           logger.error('isomorphic-git statusMatrix failed:', matrixError);
@@ -362,21 +364,25 @@ export const triggerDeployment = {
       let buildProject = process.env.DEPLOYER_PROJECT_NAME;
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         configTable = (Resource as any).ConfigTable?.name;
       } catch {
         // ignore
       }
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         memoryTable = (Resource as any).MemoryTable?.name;
       } catch {
         // ignore
       }
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         buildProject = (Resource as any).Deployer?.name;
       } catch {
         // ignore
       }
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         buildProject = buildProject || (Resource as any).SelfDeployProject?.name;
       } catch {
         // ignore
@@ -521,6 +527,7 @@ export const triggerDeployment = {
         // 1. Commit and push changes directly to GitHub
         try {
           const repo = process.env.GITHUB_REPO || 'serverlessclaw/serverlessclaw';
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const token = (Resource as any).GitHubToken?.value || process.env.GITHUB_TOKEN;
           if (token) {
             logger.info(`[Deployment Bypass] Attempting direct Git push to ${repo} main branch...`);
@@ -727,6 +734,7 @@ export const triggerInfraRebuild = {
 
       let buildProject = process.env.DEPLOYER_PROJECT_NAME;
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const typedResource = Resource as any;
         buildProject =
           typedResource.SelfDeployProject?.name || typedResource.Deployer?.name || buildProject;

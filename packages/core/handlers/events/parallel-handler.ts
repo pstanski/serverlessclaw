@@ -35,7 +35,7 @@ const DEFAULT_BARRIER_TIMEOUT_MS = TIME.MS_PER_MINUTE * 5;
 export async function handleParallelDispatch(
   event: EventBridgeEvent<string, ParallelTaskEvent>
 ): Promise<void> {
-  const detail = event.detail || (event as unknown as any);
+  const detail = event.detail || (event as unknown as ParallelTaskEvent);
   const {
     userId,
     tasks,

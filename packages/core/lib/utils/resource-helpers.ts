@@ -36,6 +36,7 @@ export function resolveSSTResourceValue(
 
   // 2. Try globalResource (for tests and specialized environments)
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const globalResource = (globalThis as any).Resource;
     if (globalResource && globalResource[resourceName] && globalResource[resourceName][property]) {
       return globalResource[resourceName][property];
@@ -50,7 +51,9 @@ export function resolveSSTResourceValue(
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const sst = require('sst');
     const Resource = sst.Resource || sst.default?.Resource || sst;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (Resource && (Resource as any)[resourceName] && (Resource as any)[resourceName][property]) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (Resource as any)[resourceName][property];
     }
   } catch {
@@ -98,7 +101,9 @@ export function getAppInfo(): { name: string; stage: string } {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { Resource } = require('sst');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (Resource && (Resource as any).App) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return { name: (Resource as any).App.name, stage: (Resource as any).App.stage };
     }
   } catch {

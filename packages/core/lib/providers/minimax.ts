@@ -36,7 +36,7 @@ const MINIMAX_REASONING_MAP: Record<ReasoningProfile, { budget_tokens: number; e
  * Direct provider for MiniMax API using Anthropic-compatible endpoint.
  */
 export class MiniMaxProvider implements IProvider {
-  constructor(private model: string = MiniMaxModel.M2_7) {}
+  constructor(private model: string = MiniMaxModel.M3) {}
 
   async call(
     messages: Message[],

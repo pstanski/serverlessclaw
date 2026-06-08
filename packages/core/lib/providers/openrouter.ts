@@ -29,9 +29,9 @@ import { OpenRouterResponse } from './openrouter-types';
 export class OpenRouterProvider implements IProvider {
   /**
    * Initializes the OpenRouter provider.
-   * @param model The model ID to use (defaults to Gemini 3 Flash).
+   * @param model The model ID to use (defaults to Nemotron Content Safety).
    */
-  constructor(private model: string = OpenRouterModel.GEMINI_3_FLASH) {}
+  constructor(private model: string = OpenRouterModel.NEMOTRON_CONTENT_SAFETY) {}
 
   /**
    * Performs a non-streaming chat completion call.
@@ -214,111 +214,63 @@ export class OpenRouterProvider implements IProvider {
       });
     }
 
-    try {
-      const response = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-          'HTTP-Referer': PROJECT_REFERER,
-          'X-Title': PROJECT_TITLE,
-          'X-OpenRouter-Caching': 'true',
-        },
-        body: JSON.stringify(body),
-      });
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+        'HTTP-Referer': PROJECT_REFERER,
+        'X-Title': PROJECT_TITLE,
+        'X-OpenRouter-Caching': 'true',
+      },
+      body: JSON.stringify(body),
+    });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`OpenRouter Provider error: ${response.status} - ${error}`);
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`OpenRouter Provider error: ${response.status} - ${error}`);
+    }
+
+    if (!response.body) {
+      yield { content: ' (No stream body)' };
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let streamDone = false;
+
+    const parseChunk = (line: string): (OpenRouterResponse & { done?: boolean }) | null => {
+      if (!line.startsWith('data: ')) return null;
+      const dataStr = line.slice(6).trim();
+      if (dataStr === '[DONE]') return { done: true };
+      try {
+        return JSON.parse(dataStr) as OpenRouterResponse;
+      } catch {
+        return null;
       }
+    };
 
-      if (!response.body) {
-        yield { content: ' (No stream body)' };
-        return;
-      }
+    while (!streamDone) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let streamDone = false;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
 
-      const parseChunk = (line: string): (OpenRouterResponse & { done?: boolean }) | null => {
-        if (!line.startsWith('data: ')) return null;
-        const dataStr = line.slice(6).trim();
-        if (dataStr === '[DONE]') return { done: true };
-        try {
-          return JSON.parse(dataStr) as OpenRouterResponse;
-        } catch {
-          return null;
+      for (const line of lines) {
+        const parsed = parseChunk(line);
+        if (!parsed) continue;
+        if (parsed.done) {
+          streamDone = true;
+          break;
         }
-      };
 
-      while (!streamDone) {
-        const { done, value } = await reader.read();
-        if (done) break;
+        const choice = parsed.choices?.[0];
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
-
-        for (const line of lines) {
-          const parsed = parseChunk(line);
-          if (!parsed) continue;
-          if (parsed.done) {
-            streamDone = true;
-            break;
-          }
-
-          const choice = parsed.choices?.[0];
-
-          if (parsed.usage) {
-            yield {
-              usage: {
-                prompt_tokens: parsed.usage.prompt_tokens ?? 0,
-                completion_tokens: parsed.usage.completion_tokens ?? 0,
-                total_tokens: parsed.usage.total_tokens ?? 0,
-              },
-            };
-          }
-
-          if (!choice) continue;
-
-          const delta = choice.delta;
-          if (!delta) continue;
-
-          if (delta.content) yield { content: delta.content };
-
-          if (delta.reasoning_details && Array.isArray(delta.reasoning_details)) {
-            for (const detail of delta.reasoning_details) {
-              if (detail.text) yield { thought: (detail as { text: string }).text };
-            }
-          }
-
-          if (delta.reasoning && typeof delta.reasoning === 'string')
-            yield { thought: delta.reasoning };
-
-          if (delta.tool_calls && Array.isArray(delta.tool_calls)) {
-            for (const toolCall of delta.tool_calls) {
-              yield {
-                tool_calls: [
-                  {
-                    id: toolCall.id ?? '',
-                    type: OPENROUTER_CONSTANTS.TOOL_TYPES.FUNCTION,
-                    function: {
-                      name: toolCall.function?.name ?? '',
-                      arguments: toolCall.function?.arguments ?? '',
-                    },
-                  },
-                ],
-              };
-            }
-          }
-        }
-      }
-
-      if (buffer.trim()) {
-        const parsed = parseChunk(buffer.trim());
-        if (parsed && !parsed.done && parsed.usage) {
+        if (parsed.usage) {
           yield {
             usage: {
               prompt_tokens: parsed.usage.prompt_tokens ?? 0,
@@ -327,10 +279,53 @@ export class OpenRouterProvider implements IProvider {
             },
           };
         }
+
+        if (!choice) continue;
+
+        const delta = choice.delta;
+        if (!delta) continue;
+
+        if (delta.content) yield { content: delta.content };
+
+        if (delta.reasoning_details && Array.isArray(delta.reasoning_details)) {
+          for (const detail of delta.reasoning_details) {
+            if (detail.text) yield { thought: (detail as { text: string }).text };
+          }
+        }
+
+        if (delta.reasoning && typeof delta.reasoning === 'string')
+          yield { thought: delta.reasoning };
+
+        if (delta.tool_calls && Array.isArray(delta.tool_calls)) {
+          for (const toolCall of delta.tool_calls) {
+            yield {
+              tool_calls: [
+                {
+                  id: toolCall.id ?? '',
+                  type: OPENROUTER_CONSTANTS.TOOL_TYPES.FUNCTION,
+                  function: {
+                    name: toolCall.function?.name ?? '',
+                    arguments: toolCall.function?.arguments ?? '',
+                  },
+                },
+              ],
+            };
+          }
+        }
       }
-    } catch (err) {
-      logger.error('OpenRouter streaming failed:', err);
-      yield { content: ' (Streaming failed)' };
+    }
+
+    if (buffer.trim()) {
+      const parsed = parseChunk(buffer.trim());
+      if (parsed && !parsed.done && parsed.usage) {
+        yield {
+          usage: {
+            prompt_tokens: parsed.usage.prompt_tokens ?? 0,
+            completion_tokens: parsed.usage.completion_tokens ?? 0,
+            total_tokens: parsed.usage.total_tokens ?? 0,
+          },
+        };
+      }
     }
   }
 

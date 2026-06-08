@@ -3,6 +3,7 @@ import { Checkpointer, Checkpoint } from './state-graph';
 /**
  * In-memory implementation of Checkpointer for testing and lightweight local runtimes.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class MemoryCheckpointer<T extends Record<string, any>> implements Checkpointer<T> {
   private storage: Map<string, Checkpoint<T>> = new Map();
 

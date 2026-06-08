@@ -1,7 +1,7 @@
 /**
  * Global Framework Configuration
  * This file centralizes branding and identity for the entire ServerlessClaw ecosystem.
- * Projects like Enerlink Nexus should override these values in their own config injection.
+ * Generic implementations should be overridden via environment variables or plugin registration.
  */
 
 export interface IFrameworkConfig {

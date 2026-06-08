@@ -12,7 +12,7 @@ async function main() {
     '/aws/lambda/serve-prod-'
   ];
   
-  const allGroups: any[] = [];
+  const allGroups: unknown[] = [];
   for (const prefix of prefixes) {
     const describeRes = await client.send(new DescribeLogGroupsCommand({
       logGroupNamePrefix: prefix
@@ -22,7 +22,7 @@ async function main() {
     }
   }
 
-  const logGroups = allGroups.filter(g => 
+  const logGroups = (allGroups as { logGroupName?: string }[]).filter(g => 
     g.logGroupName?.toLowerCase().includes('multiplexer') || 
     g.logGroupName?.toLowerCase().includes('runner') ||
     g.logGroupName?.toLowerCase().includes('highpower') ||
@@ -55,11 +55,11 @@ async function main() {
         const date = new Date(event.timestamp || 0).toISOString();
         console.log(`  🕒 [${date}] ${event.message?.trim()}`);
       }
-    } catch (err: any) {
-      if (err.name !== 'ResourceNotFoundException') {
-        console.error(`❌ Error querying ${logGroupName}:`, err.message);
+      } catch (err) {
+      if ((err as Error).name !== 'ResourceNotFoundException') {
+        console.error(`❌ Error querying ${logGroupName}:`, (err as Error).message);
       }
-    }
+      }
   }
 }
 

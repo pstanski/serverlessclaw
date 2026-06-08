@@ -187,7 +187,7 @@ export async function handler(event: PlannerEvent, _context: Context): Promise<P
           workspaceId,
           teamId,
           staffId,
-          userRole: userRole as UserRole,
+          userRole: userRole as UserRole | undefined,
           metadata: metadata as Record<string, unknown>,
           attachments: (metadata as unknown as AgentPayload | undefined)
             ?.attachments as Attachment[],
@@ -197,7 +197,7 @@ export async function handler(event: PlannerEvent, _context: Context): Promise<P
           formatResponse: (text) => text,
           tokenBudget: config.tokenBudget,
           costLimit: config.costLimit,
-          skipToolLoading: !!gapId,
+          skipToolLoading: false,
           maxTokens: 16000,
         }
       );
@@ -221,7 +221,7 @@ export async function handler(event: PlannerEvent, _context: Context): Promise<P
     let toolOptimizations: Array<{ action: string; toolName: string; reason: string }> = [];
     let structuredTasks: Array<{ agentId: string; task: string; gapIds: string[] }> | undefined;
 
-    if (!isSystemFailure && isProactive) {
+    if (!isSystemFailure) {
       try {
         type PlannerResult = {
           status: string;
@@ -232,16 +232,22 @@ export async function handler(event: PlannerEvent, _context: Context): Promise<P
         };
         const parsed =
           (parsedData as PlannerResult) || parseStructuredResponse<PlannerResult>(responseText);
-        status = parsed.status || 'SUCCESS';
-        plan = parsed.plan || responseText;
-        coveredGapIds = parsed.coveredGapIds ?? [];
-        structuredTasks = parsed.tasks;
-        toolOptimizations = parsed.toolOptimizations ?? [];
-        logger.info(
-          `Parsed Strategic Plan. Status: ${status}, Gaps: ${coveredGapIds.join(', ')}, StructuredTasks: ${structuredTasks?.length ?? 0}`
-        );
+
+        // Only adopt parsed results if it actually looks like a PlannerResult
+        if (parsed.plan || parsed.coveredGapIds) {
+          status = parsed.status || 'SUCCESS';
+          plan = parsed.plan || responseText;
+          coveredGapIds = parsed.coveredGapIds ?? [];
+          structuredTasks = parsed.tasks;
+          toolOptimizations = parsed.toolOptimizations ?? [];
+          logger.info(
+            `Parsed Strategic Plan. Status: ${status}, Gaps: ${coveredGapIds.join(', ')}, StructuredTasks: ${structuredTasks?.length ?? 0}`
+          );
+        }
       } catch (e) {
-        logger.warn('Failed to parse Planner structured response, falling back to raw text.', e);
+        if (isProactive) {
+          logger.warn('Failed to parse Planner structured response, falling back to raw text.', e);
+        }
       }
     }
 

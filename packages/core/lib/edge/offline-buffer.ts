@@ -3,7 +3,7 @@ import { logger } from '../logger';
 export interface BufferedEvent {
   id: string;
   topic: string;
-  payload: any;
+  payload: unknown;
   timestamp: number;
 }
 
@@ -47,7 +47,7 @@ export class OfflineEventBuffer {
 
   constructor(
     private storage: IOfflineStorage = new MemoryOfflineStorage(),
-    private publishFn: (topic: string, payload: any) => Promise<void>
+    private publishFn: (topic: string, payload: unknown) => Promise<void>
   ) {}
 
   /**
@@ -72,7 +72,7 @@ export class OfflineEventBuffer {
    */
   async submit(
     topic: string,
-    payload: any
+    payload: unknown
   ): Promise<{ status: 'published' | 'buffered'; id: string }> {
     const id = `evt-${Math.random().toString(36).substring(2, 11)}`;
     const event: BufferedEvent = {
