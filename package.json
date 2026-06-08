@@ -14,8 +14,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo 'Skipping recursive turbo'",
-    "test-silent": "echo 'Skipping recursive turbo'",
-    "test-coverage": "echo 'Skipping recursive turbo'",
+    "test-silent": "echo 'Bypassing tests for CI' || true",
+    "test-coverage": "echo 'Bypassing tests for CI' || true",
     "test-e2e": "make test-e2e",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
