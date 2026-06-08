@@ -39,7 +39,10 @@ export function resolveSSTResourceValue(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const globalResource = (globalThis as any).Resource;
     if (globalResource && globalResource[resourceName] && globalResource[resourceName][property]) {
-      if (process.env.VITEST) console.error(`[DEBUG] resolveSSTResourceValue found in globalResource: ${resourceName}.${property}=${globalResource[resourceName][property]}`);
+      if (process.env.VITEST)
+        console.error(
+          `[DEBUG] resolveSSTResourceValue found in globalResource: ${resourceName}.${property}=${globalResource[resourceName][property]}`
+        );
       return globalResource[resourceName][property];
     }
   } catch {
@@ -54,12 +57,16 @@ export function resolveSSTResourceValue(
     const Resource = sst.Resource || sst.default?.Resource || sst;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (Resource && (Resource as any)[resourceName] && (Resource as any)[resourceName][property]) {
-      if (process.env.VITEST) console.error(`[DEBUG] resolveSSTResourceValue found in require('sst'): ${resourceName}.${property}=${(Resource as any)[resourceName][property]}`);
+      if (process.env.VITEST)
+        console.error(
+          `[DEBUG] resolveSSTResourceValue found in require('sst'): ${resourceName}.${property}=${(Resource as any)[resourceName][property]}`
+        );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (Resource as any)[resourceName][property];
     }
   } catch (e) {
-    if (process.env.VITEST) console.error(`[DEBUG] resolveSSTResourceValue require('sst') failed:`, e);
+    if (process.env.VITEST)
+      console.error(`[DEBUG] resolveSSTResourceValue require('sst') failed:`, e);
     // ignore
   }
 

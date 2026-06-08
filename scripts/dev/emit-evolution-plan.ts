@@ -30,7 +30,9 @@ async function main() {
     },
   });
 
-  console.log('evolution_plan emitted successfully → strategic planner will pick it up from PlannerQueue');
+  console.log(
+    'evolution_plan emitted successfully → strategic planner will pick it up from PlannerQueue'
+  );
 }
 
 main().catch((err) => {

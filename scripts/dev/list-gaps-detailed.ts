@@ -25,13 +25,13 @@ async function main() {
     lastEvaluatedKey = result.LastEvaluatedKey;
   } while (lastEvaluatedKey);
 
-  const gaps = items.filter(item => {
+  const gaps = items.filter((item) => {
     const key = item.userId ?? '';
     return key.startsWith('GAP#') || item.type === 'GAP' || key.includes('#GAP#');
   });
 
   console.log(`📊 Found ${gaps.length} GAP records.`);
-  
+
   for (const gap of gaps) {
     console.log(`--------------------------------------------------`);
     console.log(`🔑 Key: ${gap.userId} | Timestamp: ${gap.timestamp}`);

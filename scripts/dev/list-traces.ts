@@ -25,9 +25,11 @@ async function main() {
 
   const items = result.Items || [];
 
-  console.log(`\n📊 Trace records containing 'PLAN-', 'coder', or 'evolution' (Total scanned: ${items.length}):\n`);
-  
-  const matched = items.filter(item => {
+  console.log(
+    `\n📊 Trace records containing 'PLAN-', 'coder', or 'evolution' (Total scanned: ${items.length}):\n`
+  );
+
+  const matched = items.filter((item) => {
     const str = JSON.stringify(item).toLowerCase();
     return str.includes('plan-') || str.includes('coder') || str.includes('evolution');
   });

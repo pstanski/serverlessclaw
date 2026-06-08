@@ -35,8 +35,12 @@ const globalResourceMock: Record<string, any> = {
 };
 
 Object.defineProperty(globalThis, 'Resource', {
-  get() { return globalResourceMock; },
-  set(val) { Object.assign(globalResourceMock, val); },
+  get() {
+    return globalResourceMock;
+  },
+  set(val) {
+    Object.assign(globalResourceMock, val);
+  },
   configurable: true,
 });
 

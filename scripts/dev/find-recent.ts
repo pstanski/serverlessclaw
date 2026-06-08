@@ -35,7 +35,9 @@ async function main() {
   for (const item of items.slice(0, 5)) {
     console.log(`==================================================`);
     console.log(`Key (traceId): ${item.traceId}`);
-    console.log(`Timestamp: ${item.timestamp || item.createdAt} (${new Date(item.timestamp || item.createdAt).toISOString()})`);
+    console.log(
+      `Timestamp: ${item.timestamp || item.createdAt} (${new Date(item.timestamp || item.createdAt).toISOString()})`
+    );
     console.log(`Event: ${item.type || item.eventType}`);
     console.log(`Status: ${item.status ?? 'N/A'}`);
     console.log(`Details:`, JSON.stringify(item).slice(0, 300));

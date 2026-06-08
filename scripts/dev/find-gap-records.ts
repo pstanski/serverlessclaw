@@ -26,7 +26,7 @@ async function main() {
   const items = result.Items || [];
   console.log(`Total items in MemoryTable: ${items.length}`);
 
-  const matched = items.filter(item => {
+  const matched = items.filter((item) => {
     const str = JSON.stringify(item);
     return str.includes('1780') || str.toLowerCase().includes('gap') || str.includes('evolution');
   });
@@ -38,7 +38,12 @@ async function main() {
     console.log(`Timestamp: ${item.timestamp}`);
     console.log(`Type: ${item.type} | Status: ${item.status ?? 'N/A'}`);
     if (item.content) {
-      console.log(`Content:`, typeof item.content === 'string' ? item.content.slice(0, 200) : JSON.stringify(item.content).slice(0, 200));
+      console.log(
+        `Content:`,
+        typeof item.content === 'string'
+          ? item.content.slice(0, 200)
+          : JSON.stringify(item.content).slice(0, 200)
+      );
     }
     if (item.metadata) {
       console.log(`Metadata:`, JSON.stringify(item.metadata).slice(0, 200));

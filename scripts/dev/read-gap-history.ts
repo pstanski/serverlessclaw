@@ -56,7 +56,10 @@ async function main() {
       } catch {
         // ignore parse errors; content is treated as a string
       }
-      console.log(`🔹 Content:`, typeof content === 'object' ? JSON.stringify(content, null, 2) : content);
+      console.log(
+        `🔹 Content:`,
+        typeof content === 'object' ? JSON.stringify(content, null, 2) : content
+      );
     }
     if (item.value) {
       console.log(`🔹 Value:`, JSON.stringify(item.value, null, 2));

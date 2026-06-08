@@ -27,17 +27,29 @@ async function main() {
   const memoryItems = memoryResult.Items || [];
 
   console.log(`\n📊 Isolated GAP/gap records in MemoryTable (Total: ${memoryItems.length}):\n`);
-  const matched = memoryItems.filter((item) => {
-    const key = item.userId ?? '';
-    return key.startsWith('GAP#') || key.startsWith('WS#default#GAP#') || key.toLowerCase().includes('gap');
-  }).filter(item => {
-    const key = item.userId ?? '';
-    return key.includes('GAP') || item.type === 'GAP';
-  });
+  const matched = memoryItems
+    .filter((item) => {
+      const key = item.userId ?? '';
+      return (
+        key.startsWith('GAP#') ||
+        key.startsWith('WS#default#GAP#') ||
+        key.toLowerCase().includes('gap')
+      );
+    })
+    .filter((item) => {
+      const key = item.userId ?? '';
+      return key.includes('GAP') || item.type === 'GAP';
+    });
 
   for (const item of matched) {
     console.log(`- Key: ${item.userId} | Type: ${item.type} | Status: ${item.status ?? 'N/A'}`);
-    if (item.content) console.log(`  Content:`, typeof item.content === 'string' ? item.content.slice(0, 100) : JSON.stringify(item.content).slice(0, 100));
+    if (item.content)
+      console.log(
+        `  Content:`,
+        typeof item.content === 'string'
+          ? item.content.slice(0, 100)
+          : JSON.stringify(item.content).slice(0, 100)
+      );
   }
 
   // 2. Scan ConfigTable
@@ -49,7 +61,7 @@ async function main() {
   const configItems = configResult.Items || [];
 
   console.log(`\n⚙️ evolution_mode value in ConfigTable:\n`);
-  const evoModeItem = configItems.find(item => item.key === 'evolution_mode');
+  const evoModeItem = configItems.find((item) => item.key === 'evolution_mode');
   if (evoModeItem) {
     console.log(`- Key: ${evoModeItem.key} | Value:`, JSON.stringify(evoModeItem.value));
   } else {

@@ -8,10 +8,7 @@ async function main() {
     marshallOptions: { removeUndefinedValues: true },
   });
 
-  const sessionKeys = [
-    'CONV#dashboard-user#session-GAP#20260603-05',
-    'GAP#20260603-05'
-  ];
+  const sessionKeys = ['CONV#dashboard-user#session-GAP#20260603-05', 'GAP#20260603-05'];
 
   for (const key of sessionKeys) {
     console.log(`\n🔍 Querying key: ${key}`);

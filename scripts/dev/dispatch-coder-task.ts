@@ -86,7 +86,9 @@ async function main() {
   console.log('   MessageId:', result.Entries?.[0]?.EventId);
   console.log('');
   console.log('📊 Monitor coder execution in AgentRunner logs:');
-  console.log('   aws logs tail /aws/lambda/serverlessclaw-prod-AgentRunnerFunction-nfkkhrnt --follow');
+  console.log(
+    '   aws logs tail /aws/lambda/serverlessclaw-prod-AgentRunnerFunction-nfkkhrnt --follow'
+  );
 }
 
 main().catch((err) => {
