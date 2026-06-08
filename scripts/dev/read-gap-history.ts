@@ -13,8 +13,8 @@ async function main() {
 
   console.log(`🔍 Scanning ${tableName} for ${gapId} and ${sessionId}...`);
 
-  const items: any[] = [];
-  let lastEvaluatedKey: any = undefined;
+  const items: Record<string, unknown>[] = [];
+  let lastEvaluatedKey: Record<string, unknown> | undefined = undefined;
   do {
     const result = await docClient.send(
       new ScanCommand({
