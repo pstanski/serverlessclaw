@@ -3,10 +3,8 @@ packages:
   - 'packages/*'
 
 onlyBuiltDependencies:
-  - '@mcp-server/google-search-mcp'
   - '@swc/core'
   - esbuild
-  - puppeteer
   - sharp
   - tree-sitter-java
   - tree-sitter-python
