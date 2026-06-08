@@ -19,16 +19,24 @@ process.env.CLAW_TEST = 'true';
 process.env.CORE_TEST = 'true';
 
 // Expose Resource to globalThis for consistent access in tests
-// Use a dynamic getter so it reflects vitest mocks in individual tests
+// Use a static object so it doesn't fail on require('sst')
+const globalResourceMock: Record<string, any> = {
+  OpenAIApiKey: { value: 'sk-global-mock-key' },
+  OpenRouterApiKey: { value: 'sk-or-global-mock-key' },
+  AnthropicApiKey: { value: 'sk-ant-global-mock-key' },
+  DataLakeBucket: { name: 'test-data-lake-bucket' },
+  MemoryTable: { name: 'TestMemoryTable' },
+  ConfigTable: { name: 'TestConfigTable' },
+  TraceTable: { name: 'TestTraceTable' },
+  AgentBus: { name: 'TestAgentBus' },
+  StagingBucket: { name: 'TestStagingBucket' },
+  KnowledgeBucket: { name: 'TestKnowledgeBucket' },
+  DeployerProject: { name: 'TestDeployer' },
+};
+
 Object.defineProperty(globalThis, 'Resource', {
-  get() {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      return require('sst').Resource;
-    } catch {
-      return undefined;
-    }
-  },
+  get() { return globalResourceMock; },
+  set(val) { Object.assign(globalResourceMock, val); },
   configurable: true,
 });
 

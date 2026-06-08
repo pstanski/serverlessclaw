@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
@@ -46,7 +47,7 @@ import MissionControl from './MissionControl';
 vi.mock('@claw/ui', async (importOriginal) => {
   const original = await importOriginal<any>();
   const voltxEn = await import('../../../messages/en.json');
-  const dashboardEn = await import('../../../../../framework/apps/dashboard/messages/en.json');
+  const dashboardEn = await import('../../../../../../messages/en.json');
   const allTranslations: Record<string, string> = {
     ...dashboardEn.default,
     ...voltxEn.default,

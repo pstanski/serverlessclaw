@@ -1,4 +1,4 @@
-import { IAgentConfig, ReasoningProfile } from '../types/index';
+import { IAgentConfig, ReasoningProfile, ContextualScope } from '../types/index';
 import { SYSTEM, CONFIG_KEYS, OPTIMIZATION_POLICIES } from '../constants';
 import { ConfigManager } from '../registry/config';
 import { logger } from '../logger';
@@ -41,38 +41,53 @@ function isModelCompatibleWithProvider(provider: string, model: string): boolean
  */
 export async function resolveAgentConfig(
   agentConfig: IAgentConfig | undefined,
-  requestedProfile?: ReasoningProfile
+  requestedProfile?: ReasoningProfile,
+  scope?: string | ContextualScope
 ) {
   let activeModel = agentConfig?.model ?? SYSTEM.DEFAULT_MODEL;
   let activeProvider = agentConfig?.provider ?? SYSTEM.DEFAULT_PROVIDER;
   let activeProfile =
     requestedProfile ?? agentConfig?.reasoningProfile ?? ReasoningProfile.STANDARD;
 
+  const workspaceId = typeof scope === 'string' ? scope : scope?.workspaceId;
+  const orgId = typeof scope === 'string' ? undefined : scope?.orgId;
+
   try {
-    const globalProvider = (await ConfigManager.getRawConfig(
-      CONFIG_KEYS.ACTIVE_PROVIDER
-    )) as string;
-    const globalModel = (await ConfigManager.getRawConfig(CONFIG_KEYS.ACTIVE_MODEL)) as string;
+    const globalProvider = (await ConfigManager.getRawConfig(CONFIG_KEYS.ACTIVE_PROVIDER, {
+      workspaceId,
+      orgId,
+    })) as string;
+    const globalModel = (await ConfigManager.getRawConfig(CONFIG_KEYS.ACTIVE_MODEL, {
+      workspaceId,
+      orgId,
+    })) as string;
 
     if (globalProvider) activeProvider = globalProvider;
     if (globalModel) activeModel = globalModel;
 
     if (!globalProvider && !globalModel && agentConfig) {
       const { AgentRouter } = await import('../routing/AgentRouter');
-      const routed = await AgentRouter.selectModel(agentConfig, { profile: activeProfile });
+      const routed = await AgentRouter.selectModel(agentConfig, {
+        profile: activeProfile,
+        workspaceId,
+      } as any);
       activeProvider = routed.provider;
       activeModel = routed.model;
     }
 
     if (!process.env.VITEST) {
-      const policy = await ConfigManager.getRawConfig(CONFIG_KEYS.OPTIMIZATION_POLICY);
+      const policy = await ConfigManager.getRawConfig(CONFIG_KEYS.OPTIMIZATION_POLICY, {
+        workspaceId,
+        orgId,
+      });
       if (policy === OPTIMIZATION_POLICIES.AGGRESSIVE) activeProfile = ReasoningProfile.DEEP;
       else if (policy === OPTIMIZATION_POLICIES.CONSERVATIVE) activeProfile = ReasoningProfile.FAST;
 
       if (!globalModel && !activeModel) {
-        const profileMap = (await ConfigManager.getRawConfig(
-          CONFIG_KEYS.REASONING_PROFILES
-        )) as Record<string, string>;
+        const profileMap = (await ConfigManager.getRawConfig(CONFIG_KEYS.REASONING_PROFILES, {
+          workspaceId,
+          orgId,
+        })) as Record<string, string>;
         if (profileMap?.[activeProfile]) activeModel = profileMap[activeProfile];
       }
     }
