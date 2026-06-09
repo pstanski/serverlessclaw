@@ -172,9 +172,7 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
                           {getIcon(asset.type)}
                         </div>
                         <div>
-                          <div className="text-xs font-bold text-slate-300">
-                            Unit {asset.id.slice(0, 4)}
-                          </div>
+                          <div className="text-xs font-bold text-slate-300">Unit {asset.id.slice(0, 4)}</div>
                           <div className="text-[9px] text-slate-600 uppercase font-black">
                             {asset.type}
                           </div>

@@ -55,7 +55,7 @@ describe('MissionControl', () => {
     await act(async () => {
       render(<MissionControl />);
     });
-
+    
     expect(screen.getByText('Virtual Power Plant Control Center')).toBeDefined();
     expect(screen.getByText('450')).toBeDefined(); // Total Capacity
     expect(screen.getByText('285')).toBeDefined(); // Current Output
@@ -65,7 +65,7 @@ describe('MissionControl', () => {
     await act(async () => {
       render(<MissionControl />);
     });
-
+    
     expect(screen.getByText('Network Topology')).toBeDefined();
     expect(screen.getByText('Demand Response')).toBeDefined();
     expect(screen.getByText('Revenue Ledger')).toBeDefined();

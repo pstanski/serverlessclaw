@@ -29,15 +29,13 @@ export default function GridStatus({ component }: GridStatusProps) {
         <div className="space-y-1">
           <div className="text-[8px] text-foreground/50 uppercase">Current Load</div>
           <div className="text-xl font-black text-foreground tracking-tighter">
-            {data?.load || '0.00'}{' '}
-            <span className="text-[10px] font-normal text-foreground/40">MW</span>
+            {data?.load || '0.00'} <span className="text-[10px] font-normal text-foreground/40">MW</span>
           </div>
         </div>
         <div className="space-y-1 text-right">
           <div className="text-[8px] text-foreground/50 uppercase">Frequency</div>
           <div className="text-xl font-black text-cyber-green tracking-tighter">
-            {data?.frequency || '50.00'}{' '}
-            <span className="text-[10px] font-normal text-cyber-green/40">Hz</span>
+            {data?.frequency || '50.00'} <span className="text-[10px] font-normal text-cyber-green/40">Hz</span>
           </div>
         </div>
       </div>
@@ -50,7 +48,7 @@ export default function GridStatus({ component }: GridStatusProps) {
               <div key={i} className="w-1.5 h-3 bg-cyber-green/20 rounded-sm overflow-hidden">
                 <div
                   className="w-full bg-cyber-green transition-all duration-1000"
-                  style={{ height: `${20 + ((i * 10) % 80)}%` }}
+                  style={{ height: `${20 + (i * 10) % 80}%` }}
                 />
               </div>
             ))}

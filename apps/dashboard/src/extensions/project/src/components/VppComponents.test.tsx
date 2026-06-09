@@ -61,10 +61,7 @@ describe('VppComponents', () => {
       await act(async () => {
         fireEvent.click(button);
       });
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/x/voltx/dr/trigger'),
-        expect.any(Object)
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/api/x/voltx/dr/trigger'), expect.any(Object));
     });
   });
 
