@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Trash2, Zap, Sun, Battery, Building, MapPin, Activity } from 'lucide-react';
+import { Plus, Trash2, Zap, Sun, Battery, Building, MapPin } from 'lucide-react';
 import { VppSite, DER_TYPE } from '@voltx/core/src/types';
 
 interface AssetManagementProps {
