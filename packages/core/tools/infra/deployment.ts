@@ -114,8 +114,10 @@ export const stageChanges = {
                 Body: fileBuffer,
               })
             );
+
+            // Event-driven: S3 PutObject now triggers CodeBuild via EventBridge rule.
             resolve(
-              `SUCCESS: ${finalFiles.length} files staged for deployment. (DoD Verified) Staging Key: ${zipKey}`
+              `SUCCESS: ${finalFiles.length} files staged and uploaded to S3. (DoD Verified) A CodeBuild deployment has been triggered automatically. Staging Key: ${zipKey}`
             );
           } catch (error) {
             resolve(`FAILED_TO_UPLOAD: ${formatErrorMessage(error)}`);
@@ -334,9 +336,14 @@ export const triggerDeployment = {
               Body: fileBuffer,
             })
           );
+
+          // Event-driven: S3 PutObject triggers CodeBuild via EventBridge rule.
+          // No need to call StartBuild manually when patch is uploaded.
+          return `SUCCESS: Deployment assets uploaded to S3. The CodeBuild project will be triggered automatically. Staging Key: ${effectiveStagingKey}. Reasoning: ${reason}`;
         }
       } catch (error) {
-        logger.error('[Deployment] Failed to stage patch for build:', error);
+        logger.error('[Deployment] Failed to stage patch for event-driven build:', error);
+        return `FAILED_TO_STAGE_PATCH: ${formatErrorMessage(error)}`;
       } finally {
         await unlink(patchFilePath).catch(() => {});
         await unlink(zipPath).catch(() => {});
