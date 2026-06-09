@@ -1,34 +1,37 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Trash2, Zap, Sun, Battery, Building, MapPin } from 'lucide-react';
+import { Plus, Trash2, Zap, Sun, Battery, Building, MapPin, Activity } from 'lucide-react';
 import { VppSite, DER_TYPE } from '@voltx/core/src/types';
 
 interface AssetManagementProps {
   sites?: VppSite[];
+  onAddSite?: (site: Partial<VppSite>) => void;
+  onDeleteSite?: (id: string) => void;
   isAdmin?: boolean;
 }
 
-// Mock workspace context since it varies across environments
 const getWorkspaceId = () => {
   if (typeof window === 'undefined') return 'default';
   const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get('workspaceId') || 'default';
+  return (
+    urlParams.get('workspaceId') ||
+    (typeof localStorage !== 'undefined' ? localStorage.getItem('claw_active_workspace') : null) ||
+    'default'
+  );
 };
 
-/**
- * AssetManagement
- * Handles VPP site registration, lifecycle, and asset mapping.
- */
 export const AssetManagement: React.FC<AssetManagementProps> = ({
-  sites: initialSites,
-  isAdmin = true,
+  sites,
+  onAddSite,
+  onDeleteSite,
+  isAdmin = false,
 }) => {
   const readOnly = !isAdmin;
   const [isAdding, setIsAdding] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
   const [localSites, setLocalSites] = useState<VppSite[]>([]);
-  const [, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
 
   const workspaceId = getWorkspaceId();
 
@@ -48,149 +51,158 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
   }, [workspaceId]);
 
   React.useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchSites();
   }, [fetchSites]);
 
-  const displaySites = initialSites || localSites;
+  const displaySites = sites || localSites;
 
   const handleAdd = async () => {
     if (!newSiteName) return;
+    const newSite: VppSite = {
+      id: 'site-' + Math.random().toString(36).substring(2, 11),
+      name: newSiteName,
+      region: 'GD',
+      status: 'ACTIVE',
+      assets: [],
+      createdAt: new Date().toISOString(),
+    };
     try {
-      const res = await fetch('/api/x/voltx/sites', {
+      await fetch(`/api/x/voltx/sites?workspaceId=${workspaceId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newSiteName, workspaceId }),
+        body: JSON.stringify(newSite),
       });
-      if (res.ok) {
-        setNewSiteName('');
-        setIsAdding(false);
-        fetchSites();
+      if (onAddSite) {
+        onAddSite(newSite);
       }
+      await fetchSites();
     } catch (e) {
-      console.error('Failed to add site:', e);
+      console.error('Failed to register site:', e);
     }
+    setNewSiteName('');
+    setIsAdding(false);
   };
 
-  const getIcon = (type?: DER_TYPE) => {
-    switch (type) {
-      case DER_TYPE.SOLAR:
-        return <Sun className="w-4 h-4 text-amber-400" />;
-      case DER_TYPE.BATTERY:
-        return <Battery className="w-4 h-4 text-emerald-400" />;
-      case DER_TYPE.EV:
-      case DER_TYPE.CHARGING_PILE:
-        return <Zap className="w-4 h-4 text-blue-400" />;
-      default:
-        return <Building className="w-4 h-4 text-slate-400" />;
+  const handleDelete = async (id: string) => {
+    try {
+      await fetch(`/api/x/voltx/sites?siteId=${id}&workspaceId=${workspaceId}`, {
+        method: 'DELETE',
+      });
+      if (onDeleteSite) {
+        onDeleteSite(id);
+      }
+      await fetchSites();
+    } catch (e) {
+      console.error('Failed to delete site:', e);
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-black text-white flex items-center gap-2 italic">
-          <MapPin className="w-5 h-5 text-cyan-400" /> VPP Asset Topology
-        </h2>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <Building className="w-5 h-5 text-cyan-400" />
+          VPP Sites
+        </h3>
         {!readOnly && (
           <button
             onClick={() => setIsAdding(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg font-bold text-xs transition-all shadow-[0_0_15px_rgba(8,145,178,0.3)]"
+            className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/20 rounded-lg text-cyan-400 text-sm hover:bg-cyan-500/20 transition-colors"
           >
-            <Plus className="w-4 h-4" /> Add New Site
+            <Plus className="w-4 h-4" />
+            Add Site
           </button>
         )}
       </div>
 
       {isAdding && (
-        <div className="p-4 bg-slate-900 border border-cyan-500/30 rounded-xl flex gap-3">
+        <div className="p-4 bg-slate-800/50 border border-slate-700 rounded-xl space-y-3 animate-in fade-in slide-in-from-top-2">
           <input
             autoFocus
+            type="text"
+            placeholder="Site Name (e.g. Shenzhen East)"
+            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500"
             value={newSiteName}
             onChange={(e) => setNewSiteName(e.target.value)}
-            placeholder="Enter site name..."
-            className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white outline-none focus:border-cyan-500/50"
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           />
-          <button
-            onClick={handleAdd}
-            className="px-4 py-2 bg-cyan-600 text-white rounded-lg font-bold text-xs"
-          >
-            Register
-          </button>
-          <button
-            onClick={() => setIsAdding(false)}
-            className="px-4 py-2 bg-slate-800 text-slate-400 rounded-lg font-bold text-xs"
-          >
-            Cancel
-          </button>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setIsAdding(false)}
+              className="px-3 py-1.5 text-slate-400 text-sm hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAdd}
+              className="px-4 py-1.5 bg-cyan-600 text-white text-sm font-bold rounded-lg hover:bg-cyan-500 transition-colors"
+            >
+              Create
+            </button>
+          </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {displaySites.map((site) => (
           <div
             key={site.id}
-            className="group relative bg-slate-900/40 border border-slate-800 p-5 rounded-2xl hover:border-cyan-500/30 transition-all duration-300 backdrop-blur-sm"
+            className="group p-4 bg-slate-900/40 border border-slate-800 rounded-xl hover:border-slate-700 transition-all"
           >
-            <div className="flex justify-between items-start mb-4">
-              <div className="space-y-1">
-                <h3 className="text-lg font-black text-slate-100 group-hover:text-cyan-400 transition-colors">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h4 className="font-bold text-white group-hover:text-cyan-400 transition-colors">
                   {site.name}
-                </h3>
-                <div className="text-[10px] font-mono text-slate-500 flex items-center gap-2">
-                  <span className="bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-                    ID: {site.id.slice(0, 8)}
+                </h4>
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="flex items-center gap-1 text-[10px] text-slate-500 uppercase">
+                    <MapPin className="w-3 h-3" />
+                    {site.region}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <div className="w-1 h-1 bg-emerald-500 rounded-full" /> Connected
+                  <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-black italic">
+                    <Activity className="w-3 h-3" />
+                    {site.status}
                   </span>
                 </div>
               </div>
               {!readOnly && (
-                <button className="p-2 text-slate-600 hover:text-rose-500 transition-colors">
+                <button
+                  onClick={() => handleDelete(site.id)}
+                  className="p-1.5 text-slate-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                >
                   <Trash2 className="w-4 h-4" />
                 </button>
               )}
             </div>
 
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                <span>Managed Assets</span>
-                <span className="text-slate-300">{site.assets?.length || 0} units</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">
+                <span>Assets</span>
+                <span>Capacity</span>
               </div>
-
-              {site.assets && site.assets.length > 0 ? (
-                <div className="space-y-2">
-                  {site.assets.map((asset) => (
-                    <div
-                      key={asset.id}
-                      className="flex items-center justify-between p-2 bg-slate-950/50 rounded-lg border border-slate-800/50"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center">
-                          {getIcon(asset.type)}
-                        </div>
-                        <div>
-                          <div className="text-xs font-bold text-slate-300">
-                            Unit {asset.id.slice(0, 4)}
-                          </div>
-                          <div className="text-[9px] text-slate-600 uppercase font-black">
-                            {asset.type}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs font-mono text-emerald-400 font-bold">
-                          {asset.capacityKw}kW
-                        </div>
-                        <div className="text-[8px] text-slate-500 uppercase">Capacity</div>
-                      </div>
-                    </div>
-                  ))}
+              {site.assets.map((asset) => (
+                <div
+                  key={asset.id}
+                  className="flex items-center justify-between py-1 border-t border-slate-800/50"
+                >
+                  <div className="flex items-center gap-2">
+                    {asset.type === DER_TYPE.SOLAR && <Sun className="w-3 h-3 text-emerald-400" />}
+                    {asset.type === DER_TYPE.BATTERY && (
+                      <Battery className="w-3 h-3 text-amber-400" />
+                    )}
+                    {asset.type === DER_TYPE.EV && <Zap className="w-3 h-3 text-cyan-400" />}
+                    <span className="text-xs text-slate-300 capitalize">
+                      {asset.type.toLowerCase()}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-bold text-white">{asset.capacityKw}</span>
+                    <span className="text-[10px] text-slate-500 ml-1">kW</span>
+                  </div>
                 </div>
-              ) : (
-                <div className="py-8 flex flex-center justify-center border border-dashed border-slate-800 rounded-xl bg-slate-950/20">
+              ))}
+              {site.assets.length === 0 && (
+                <div className="text-center py-4 bg-slate-800/20 rounded-lg border border-dashed border-slate-800">
                   <span className="text-[10px] text-slate-600 uppercase">No assets registered</span>
                 </div>
               )}
