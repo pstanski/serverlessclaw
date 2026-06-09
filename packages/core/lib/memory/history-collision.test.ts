@@ -8,7 +8,7 @@ import { MessageRole } from '../types/llm';
 vi.mock('sst', () => ({
   Resource: {
     MemoryTable: {
-      name: 'TestMemoryTable',
+      name: 'MemoryTable',
     },
   },
 }));

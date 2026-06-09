@@ -110,8 +110,8 @@ vi.mock('../../lib/registry/config', () => ({
 vi.mock('sst', () => ({
   Resource: {
     TraceTable: { name: 'test-trace-table' },
-    MemoryTable: { name: 'test-memory-table' },
-    ConfigTable: { name: 'test-config-table' },
+    MemoryTable: { name: 'MemoryTable' },
+    ConfigTable: { name: 'ConfigTable' },
   },
 }));
 

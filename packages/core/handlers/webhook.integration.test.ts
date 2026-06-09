@@ -16,7 +16,7 @@ vi.mock('sst', () => ({
   Resource: {
     TelegramBotToken: { value: 'test-token' },
     StagingBucket: { name: 'test-bucket' },
-    MemoryTable: { name: 'test-memory-table' },
+    MemoryTable: { name: 'MemoryTable' },
     AgentBus: { name: 'test-agent-bus' },
   },
 }));

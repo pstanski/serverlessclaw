@@ -29,8 +29,8 @@ vi.mock('../registry', () => ({
 
 vi.mock('sst', () => ({
   Resource: {
-    MemoryTable: { name: 'test-memory-table' },
-    ConfigTable: { name: 'test-config-table' },
+    MemoryTable: { name: 'MemoryTable' },
+    ConfigTable: { name: 'ConfigTable' },
   },
 }));
 

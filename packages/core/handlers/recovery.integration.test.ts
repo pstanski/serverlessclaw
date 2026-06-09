@@ -42,9 +42,9 @@ vi.mock('sst', () => ({
   Resource: {
     WebhookApi: { url: 'https://test.example.com' },
     Deployer: { name: 'test-deployer' },
-    MemoryTable: { name: 'test-memory-table' },
+    MemoryTable: { name: 'MemoryTable' },
     AgentBus: { name: 'test-bus' },
-    ConfigTable: { name: 'test-config-table' },
+    ConfigTable: { name: 'ConfigTable' },
   },
 }));
 

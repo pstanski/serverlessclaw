@@ -36,7 +36,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => {
 });
 
 vi.mock('sst', () => ({
-  Resource: { ConfigTable: { name: 'test-config-table' } },
+  Resource: { ConfigTable: { name: 'ConfigTable' } },
 }));
 
 vi.mock('../../lib/logger', () => ({

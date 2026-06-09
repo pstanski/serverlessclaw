@@ -5,7 +5,7 @@ import { MCPClientManager } from './client-manager';
 vi.mock('sst', () => ({
   Resource: {
     ConfigTable: {
-      name: 'test-config-table',
+      name: 'ConfigTable',
     },
   },
 }));

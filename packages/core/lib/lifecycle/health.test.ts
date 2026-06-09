@@ -21,7 +21,7 @@ vi.mock('sst', () => ({
     AgentBus: { name: 'test-bus' },
     MemoryTable: { name: 'test-table' },
     TraceTable: { name: 'test-trace-table' },
-    ConfigTable: { name: 'test-config-table' },
+    ConfigTable: { name: 'ConfigTable' },
     StagingBucket: { name: 'test-bucket' },
     KnowledgeBucket: { name: 'test-knowledge-bucket' },
     WebhookApi: { url: 'https://test-api' },

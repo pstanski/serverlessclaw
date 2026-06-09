@@ -23,7 +23,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
 
 vi.mock('sst', () => ({
   Resource: {
-    MemoryTable: { name: 'test-memory-table' },
+    MemoryTable: { name: 'MemoryTable' },
   },
 }));
 

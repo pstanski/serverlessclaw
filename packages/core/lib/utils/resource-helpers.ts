@@ -3,49 +3,51 @@
  * from the Resource object or environment fallbacks.
  * Handles SST Ion (v3/v4) JSON-encoded environment variables.
  *
- * @param resourceName - The name of the resource (e.g., 'MemoryTable').
- * @param property - The property to extract (e.g., 'name', 'value').
- * @param fallbackEnvVar - Optional explicit override env var.
- * @param defaultValue - Fallback if nothing else is found.
- * @returns The resolved resource property string.
+ * @param resourceName - The name of the SST resource (e.g., 'MyTable').
+ * @param property - The property to retrieve (e.g., 'name', 'value', 'url').
+ * @param fallbackEnvVar - Optional environment variable name to check as a fallback.
+ * @param defaultValue - Optional default value if the resource cannot be resolved.
+ * @returns The resolved value or the default value.
  */
 export function resolveSSTResourceValue(
   resourceName: string,
-  property: string = 'name',
+  property: string,
   fallbackEnvVar?: string,
   defaultValue?: string
 ): string | undefined {
-  // 1. Try explicit override env var (highest priority)
+  // 1. Try direct environment override first (most reliable for tests and k8s)
   if (fallbackEnvVar && process.env[fallbackEnvVar]) {
     return process.env[fallbackEnvVar]!;
   }
 
-  // 2. Try SST Ion JSON fallback (SST_RESOURCE_<Name>)
-  const ionEnvVar = `SST_RESOURCE_${resourceName}`;
-  const ionValue = process.env[ionEnvVar];
-  if (ionValue) {
-    try {
-      const parsed = JSON.parse(ionValue);
-      if (parsed && typeof parsed === 'object' && parsed[property]) {
-        return parsed[property];
-      }
-    } catch {
-      if (property === 'name' || property === 'value') return ionValue;
-    }
-  }
-
-  // 2. Try globalResource (for tests and specialized environments)
+  // 2. Try Test Registry (for consistent mocking in Vitest/monorepo)
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const globalResource = (globalThis as any).Resource;
-    if (globalResource && globalResource[resourceName] && globalResource[resourceName][property]) {
-      return globalResource[resourceName][property];
+    const registry = (globalThis as any).SST_RESOURCE_REGISTRY;
+    if (registry && registry[resourceName] && registry[resourceName][property]) {
+      return registry[resourceName][property];
+    }
+    // If explicitly set to null/undefined in registry, treat as unlinked
+    if (registry && Object.prototype.hasOwnProperty.call(registry, resourceName) && registry[resourceName] === null) {
+        return undefined;
     }
   } catch {
     // ignore
   }
 
-  // 3. Try traditional Resource access
+  // 3. Try SST Ion JSON environment variables (v3/v4 standalone mode)
+  const app = process.env.SST_RESOURCE_App;
+  if (app) {
+    try {
+      const parsed = JSON.parse(app);
+      if (parsed[resourceName] && parsed[resourceName][property]) {
+        return parsed[resourceName][property];
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // 4. Try traditional Resource access
   // We use a require inside the function to avoid module load time crashes.
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -57,81 +59,47 @@ export function resolveSSTResourceValue(
       return (Resource as any)[resourceName][property];
     }
   } catch {
-    // ignore
+    // ignore (e.g. "SST links are not active" error)
   }
 
-  // 4. Try explicit override env var (e.g. OPENAI_API_KEY)
-  if (fallbackEnvVar && process.env[fallbackEnvVar]) {
-    return process.env[fallbackEnvVar]!;
-  }
-
-  // 5. Fuzzy Env Match (Robust Fallback)
-  const fuzzyPrefix = resourceName.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-  const fuzzyProp = property.toUpperCase();
-  const fuzzyMatch = Object.keys(process.env).find(
-    (k) => k.includes(fuzzyPrefix) && k.includes(fuzzyProp)
-  );
-  if (fuzzyMatch) return process.env[fuzzyMatch];
-
-  return defaultValue;
+  return defaultValue ?? undefined;
 }
 
-/** Getters for common resources */
-export const getAgentBusName = () =>
-  resolveSSTResourceValue('AgentBus', 'name', 'AGENT_BUS_NAME', 'AgentBus');
-export const getStagingBucketName = () =>
-  resolveSSTResourceValue('StagingBucket', 'name', 'STAGING_BUCKET_NAME', 'StagingBucket');
-export const getKnowledgeBucketName = () =>
-  resolveSSTResourceValue('KnowledgeBucket', 'name', 'KNOWLEDGE_BUCKET_NAME', 'KnowledgeBucket');
+/**
+ * Common resource accessors for convenience and type safety.
+ */
 export const getWebhookApiUrl = () =>
   resolveSSTResourceValue('WebhookApi', 'url', 'WEBHOOK_API_URL');
 export const getAwsRegion = () =>
   resolveSSTResourceValue('AwsRegion', 'value', 'AWS_REGION', 'ap-southeast-2');
 export const getMemoryTableName = () =>
   resolveSSTResourceValue('MemoryTable', 'name', 'MEMORY_TABLE_NAME');
-export const getTraceTableName = () =>
-  resolveSSTResourceValue('TraceTable', 'name', 'TRACE_TABLE_NAME');
 export const getConfigTableName = () =>
   resolveSSTResourceValue('ConfigTable', 'name', 'CONFIG_TABLE_NAME');
+export const getTraceTableName = () =>
+  resolveSSTResourceValue('TraceTable', 'name', 'TRACE_TABLE_NAME');
+export const getStagingBucketName = () =>
+  resolveSSTResourceValue('StagingBucket', 'name', 'STAGING_BUCKET_NAME');
+export const getKnowledgeBucketName = () =>
+  resolveSSTResourceValue('KnowledgeBucket', 'name', 'KNOWLEDGE_BUCKET_NAME');
+export const getAgentBusName = () => resolveSSTResourceValue('AgentBus', 'name', 'AGENT_BUS_NAME');
+export const getDeployerProjectName = () =>
+  resolveSSTResourceValue('Deployer', 'name', 'DEPLOYER_PROJECT_NAME') ||
+  resolveSSTResourceValue('DeployerProject', 'name', 'DEPLOYER_PROJECT_NAME') ||
+  resolveSSTResourceValue('SelfDeployProject', 'name', 'DEPLOYER_PROJECT_NAME');
 export const getPlannerQueueUrl = () =>
   resolveSSTResourceValue('PlannerQueue', 'url', 'PLANNER_QUEUE_URL');
+export const getAppInfo = () => ({
+  name: resolveSSTResourceValue('App', 'name', 'APP_NAME', 'serverlessclaw'),
+  stage: resolveSSTResourceValue('App', 'stage', 'APP_STAGE', 'local'),
+});
 
-/** Gets application metadata (name and stage) */
-export function getAppInfo(): { name: string; stage: string } {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { Resource } = require('sst');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (Resource && (Resource as any).App) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return { name: (Resource as any).App.name, stage: (Resource as any).App.stage };
-    }
-  } catch {
-    // ignore
-  }
-
-  const ionApp = process.env.SST_RESOURCE_App;
-  if (ionApp) {
-    try {
-      const parsed = JSON.parse(ionApp);
-      if (parsed.name && parsed.stage) {
-        return { name: parsed.name, stage: parsed.stage };
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  return {
-    name: process.env.SST_APP || 'serverlessclaw',
-    stage: process.env.SST_STAGE || 'local',
-  };
-}
-
-/** Gets RealtimeBus (IoT) metadata */
-export function getRealtimeInfo(): { url: string | null; authorizer: string | null } {
-  const endpoint = resolveSSTResourceValue('RealtimeBus', 'endpoint', 'IOT_ENDPOINT');
-  const authorizer = resolveSSTResourceValue('RealtimeBus', 'authorizer', 'IOT_AUTHORIZER');
+/**
+ * Resolves the WebSocket URL for the AWS IoT endpoint.
+ */
+export function getRealtimeInfo(): { url: string | null; endpoint: string | null; authorizer: string | null } {
+  const endpoint = resolveSSTResourceValue('IotEndpoint', 'endpoint', 'IOT_ENDPOINT') || null;
+  const authorizer = resolveSSTResourceValue('IotEndpoint', 'authorizer', 'IOT_AUTHORIZER') || null;
 
   const url = endpoint
     ? endpoint.startsWith('wss://')
@@ -141,5 +109,10 @@ export function getRealtimeInfo(): { url: string | null; authorizer: string | nu
         : `wss://${endpoint}`
     : null;
 
-  return { url, authorizer: authorizer ?? null };
+  return { url, endpoint, authorizer };
 }
+
+/**
+ * Legacy wrapper for getRealtimeInfo
+ */
+export const getIotEndpoint = getRealtimeInfo;

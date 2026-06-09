@@ -12,7 +12,7 @@ vi.mock('../lib/logger', () => ({
 }));
 
 vi.mock('sst', () => ({
-  Resource: { MemoryTable: { name: 'test-memory-table' } },
+  Resource: { MemoryTable: { name: 'MemoryTable' } },
 }));
 
 describe('mcp-warmup handler', () => {

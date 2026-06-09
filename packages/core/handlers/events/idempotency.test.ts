@@ -6,7 +6,7 @@ const mockSend = vi.fn();
 
 vi.mock('sst', () => ({
   Resource: {
-    MemoryTable: { name: 'test-memory-table' },
+    MemoryTable: { name: 'MemoryTable' },
   },
 }));
 

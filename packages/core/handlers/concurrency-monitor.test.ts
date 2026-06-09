@@ -33,7 +33,7 @@ vi.mock('@aws-sdk/client-lambda', () => ({
 }));
 
 vi.mock('sst', () => ({
-  Resource: { MemoryTable: { name: 'TestMemoryTable' } },
+  Resource: { MemoryTable: { name: 'MemoryTable' } },
 }));
 
 vi.mock('../lib/logger', () => ({

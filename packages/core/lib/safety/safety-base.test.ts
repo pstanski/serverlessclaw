@@ -9,7 +9,7 @@ const { mockSend } = vi.hoisted(() => ({
 vi.mock('sst', () => ({
   Resource: {
     MemoryTable: {
-      name: 'TestMemoryTable',
+      name: 'MemoryTable',
     },
   },
 }));
@@ -89,7 +89,7 @@ describe('SafetyBase', () => {
       expect(mockSend).toHaveBeenCalledTimes(1);
 
       const callParams = mockSend.mock.calls[0][0].input;
-      expect(callParams.TableName).toBe('TestMemoryTable');
+      expect(callParams.TableName).toBe('MemoryTable');
       expect(callParams.Item.userId).toBe(`SAFETY#VIOLATION#test-agent`);
       expect(callParams.Item.type).toBe('SAFETY_VIOLATION');
       expect(callParams.Item.expiresAt).toBeGreaterThan(Math.floor(Date.now() / 1000));

@@ -94,7 +94,7 @@ vi.mock('../../lib/agent/decomposer', () => ({
 
 vi.mock('sst', () => ({
   Resource: {
-    ConfigTable: { name: 'test-config-table' },
+    ConfigTable: { name: 'ConfigTable' },
   },
 }));
 

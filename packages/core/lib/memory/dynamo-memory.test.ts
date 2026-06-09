@@ -24,8 +24,8 @@ vi.mock('../registry', () => ({
 
 vi.mock('sst', () => ({
   Resource: {
-    MemoryTable: { name: 'test-memory-table' },
-    ConfigTable: { name: 'test-config-table' },
+    MemoryTable: { name: 'MemoryTable' },
+    ConfigTable: { name: 'ConfigTable' },
   },
 }));
 
@@ -98,7 +98,7 @@ describe('DynamoMemory Retention', () => {
       const calls = ddbMock.commandCalls(UpdateCommand);
       expect(calls).toHaveLength(1);
       expect(calls[0].args[0].input).toMatchObject({
-        TableName: 'test-memory-table',
+        TableName: 'MemoryTable',
         Key: {
           userId: `GAP#${timestamp}`,
           timestamp: timestamp,

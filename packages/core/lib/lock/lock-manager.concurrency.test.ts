@@ -4,7 +4,7 @@ import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 // Mock ddb-client
 vi.mock('../utils/ddb-client', () => ({
-  getMemoryTableName: vi.fn(() => 'test-memory-table'),
+  getMemoryTableName: vi.fn(() => 'MemoryTable'),
   getDocClient: vi.fn(() => ({
     send: (...args: any[]) => mockSend(...args),
   })),

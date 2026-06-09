@@ -21,7 +21,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
 
 vi.mock('../lib/utils/ddb-client', () => ({
   getDocClient: () => ({ send: mockSend }),
-  getConfigTableName: () => 'test-config-table',
+  getConfigTableName: () => 'ConfigTable',
 }));
 
 vi.mock('../lib/registry/config', () => ({

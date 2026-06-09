@@ -24,6 +24,7 @@ process.env.CORE_TEST = 'true';
   StagingBucket: { name: 'StagingBucket' },
   KnowledgeBucket: { name: 'KnowledgeBucket' },
   DeployerProject: { name: 'DeployerProject' },
+  Deployer: { name: 'Deployer' }, // Added for deployment tools
   OpenAIApiKey: { value: 'sk-global-mock-key' },
   OpenRouterApiKey: { value: 'sk-or-global-mock-key' },
   AnthropicApiKey: { value: 'sk-ant-global-mock-key' },

@@ -71,8 +71,8 @@ vi.mock('../lib/utils/bus', () => ({
 
 vi.mock('sst', () => ({
   Resource: {
-    MemoryTable: { name: 'test-memory-table' },
-    ConfigTable: { name: 'test-config-table' },
+    MemoryTable: { name: 'MemoryTable' },
+    ConfigTable: { name: 'ConfigTable' },
     AgentBus: { name: 'test-bus' },
     Deployer: { name: 'test-deployer' },
   },

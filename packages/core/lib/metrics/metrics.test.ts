@@ -23,8 +23,8 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
 
 vi.mock('../utils/ddb-client', () => ({
   getDocClient: () => ({ send: mockPutSend }),
-  getMemoryTableName: () => 'TestMemoryTable',
-  getConfigTableName: () => 'TestConfigTable',
+  getMemoryTableName: () => 'MemoryTable',
+  getConfigTableName: () => 'ConfigTable',
 }));
 
 describe('Metrics', () => {
@@ -90,7 +90,7 @@ describe('Metrics', () => {
       // Verify DDB persistence
       expect(mockPutSend).toHaveBeenCalled();
       const putCall = mockPutSend.mock.calls[0][0];
-      expect(putCall.input.TableName).toBe('TestMemoryTable');
+      expect(putCall.input.TableName).toBe('MemoryTable');
       expect(putCall.input.Item.userId).toBe('WS#ws-123#METRIC#AgentInvocations');
       expect(putCall.input.Item.type).toBe('METRIC');
       expect(putCall.input.Item.metricName).toBe('AgentInvocations');

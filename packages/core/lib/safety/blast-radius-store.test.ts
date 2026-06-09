@@ -12,7 +12,7 @@ const { mockSend } = vi.hoisted(() => ({
 vi.mock('sst', () => ({
   Resource: {
     MemoryTable: {
-      name: 'TestMemoryTable',
+      name: 'MemoryTable',
     },
   },
 }));

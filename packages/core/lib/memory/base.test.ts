@@ -14,7 +14,7 @@ import { BaseMemoryProvider } from './base';
 vi.mock('sst', () => ({
   Resource: {
     MemoryTable: {
-      name: 'TestMemoryTable',
+      name: 'MemoryTable',
     },
   },
 }));
@@ -93,11 +93,11 @@ describe('BaseMemoryProvider', () => {
 
       // Verify first batch has 25 items
       const firstBatchCall = ddbMock.call(1);
-      expect((firstBatchCall.args[0].input as any).RequestItems.TestMemoryTable).toHaveLength(25);
+      expect((firstBatchCall.args[0].input as any).RequestItems.MemoryTable).toHaveLength(25);
 
       // Verify second batch has 25 items
       const secondBatchCall = ddbMock.call(2);
-      expect((secondBatchCall.args[0].input as any).RequestItems.TestMemoryTable).toHaveLength(25);
+      expect((secondBatchCall.args[0].input as any).RequestItems.MemoryTable).toHaveLength(25);
     });
 
     it('should handle items not divisible by 25', async () => {
@@ -121,11 +121,11 @@ describe('BaseMemoryProvider', () => {
 
       // Verify first batch has 25 items
       const firstBatchCall = ddbMock.call(1);
-      expect((firstBatchCall.args[0].input as any).RequestItems.TestMemoryTable).toHaveLength(25);
+      expect((firstBatchCall.args[0].input as any).RequestItems.MemoryTable).toHaveLength(25);
 
       // Verify second batch has 12 items
       const secondBatchCall = ddbMock.call(2);
-      expect((secondBatchCall.args[0].input as any).RequestItems.TestMemoryTable).toHaveLength(12);
+      expect((secondBatchCall.args[0].input as any).RequestItems.MemoryTable).toHaveLength(12);
     });
 
     it('should handle empty history gracefully', async () => {
@@ -154,7 +154,7 @@ describe('BaseMemoryProvider', () => {
       await provider.clearHistory('user123');
 
       const batchCall = ddbMock.call(1);
-      const deleteRequests = (batchCall.args[0].input as any).RequestItems.TestMemoryTable;
+      const deleteRequests = (batchCall.args[0].input as any).RequestItems.MemoryTable;
 
       expect(deleteRequests).toEqual([
         { DeleteRequest: { Key: { userId: 'user123', timestamp: 1000 } } },
@@ -359,7 +359,7 @@ describe('BaseMemoryProvider', () => {
 
       const call = ddbMock.call(0);
       expect(call.args[0].input).toMatchObject({
-        TableName: 'TestMemoryTable',
+        TableName: 'MemoryTable',
         Key: { userId: 'user123', timestamp: 1000 },
       });
     });
@@ -400,7 +400,7 @@ describe('BaseMemoryProvider', () => {
 
       const call = ddbMock.call(0);
       expect(call.args[0].input).toMatchObject({
-        TableName: 'TestMemoryTable',
+        TableName: 'MemoryTable',
         Key: { userId: 'user123', timestamp: 1000 },
         UpdateExpression: 'SET content = :content',
         ExpressionAttributeValues: { ':content': 'Updated' },
@@ -472,7 +472,7 @@ describe('BaseMemoryProvider', () => {
 
       const call = ddbMock.call(0);
       expect(call.args[0].input).toMatchObject({
-        TableName: 'TestMemoryTable',
+        TableName: 'MemoryTable',
         Item: item,
       });
     });

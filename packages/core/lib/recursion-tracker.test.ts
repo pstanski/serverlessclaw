@@ -9,8 +9,8 @@ import { UpdateCommand, GetCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb'
 
 vi.mock('sst', () => ({
   Resource: {
-    MemoryTable: { name: 'test-memory-table' },
-    ConfigTable: { name: 'test-config-table' },
+    MemoryTable: { name: 'MemoryTable' },
+    ConfigTable: { name: 'ConfigTable' },
   },
 }));
 
@@ -111,7 +111,7 @@ describe('recursion-tracker', () => {
       await incrementRecursionDepth('trace-resource', 'sess-resource', 'agent-resource');
 
       const cmd = mockSend.mock.calls[0][0];
-      expect(cmd.input.TableName).toBe('test-memory-table');
+      expect(cmd.input.TableName).toBe('MemoryTable');
     });
 
     it('should prefer MEMORY_TABLE_NAME env var over Resource fallback', async () => {

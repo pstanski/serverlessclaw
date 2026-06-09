@@ -5,8 +5,8 @@ const mockGetAgentContext = vi.hoisted(() => vi.fn());
 
 vi.mock('sst', () => ({
   Resource: {
-    ConfigTable: { name: 'test-config-table' },
-    MemoryTable: { name: 'test-memory-table' },
+    ConfigTable: { name: 'ConfigTable' },
+    MemoryTable: { name: 'MemoryTable' },
   },
 }));
 

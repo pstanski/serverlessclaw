@@ -31,7 +31,7 @@ vi.mock('../logger', () => ({
 // Mock SST Resource
 vi.mock('sst', () => ({
   Resource: {
-    MemoryTable: { name: 'test-memory-table' },
+    MemoryTable: { name: 'MemoryTable' },
   },
 }));
 

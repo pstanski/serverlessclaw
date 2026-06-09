@@ -33,7 +33,7 @@ const ddbMock = mockClient(DynamoDBDocumentClient);
 vi.mock('sst', () => ({
   Resource: {
     AgentBus: { name: 'test-bus' },
-    MemoryTable: { name: 'test-memory-table' },
+    MemoryTable: { name: 'MemoryTable' },
   },
 }));
 

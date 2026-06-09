@@ -11,7 +11,7 @@ const { mockDocClient } = vi.hoisted(() => ({
 
 vi.mock('sst', () => ({
   Resource: {
-    ConfigTable: { name: 'test-config-table' },
+    ConfigTable: { name: 'ConfigTable' },
   },
 }));
 

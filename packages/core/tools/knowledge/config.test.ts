@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('sst', () => ({
   Resource: {
-    ConfigTable: { name: 'test-config-table' },
+    ConfigTable: { name: 'ConfigTable' },
     StagingBucket: { name: 'test-bucket' },
   },
 }));

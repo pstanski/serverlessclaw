@@ -7,7 +7,7 @@ import { refineMemory } from './insight-operations';
 vi.mock('sst', () => ({
   Resource: {
     MemoryTable: {
-      name: 'TestMemoryTable',
+      name: 'MemoryTable',
     },
   },
 }));
@@ -43,7 +43,7 @@ describe('Silo 4 Concurrency Hardening', () => {
 
       const updateInput = updateCalls[0].args[0].input;
       expect(updateInput).toMatchObject({
-        TableName: 'TestMemoryTable',
+        TableName: 'MemoryTable',
         Key: { userId: 'user123', timestamp: 1000 },
         UpdateExpression: expect.stringContaining(
           'SET updatedAt = :now, metadata.#priority = :priority, #content = :content'
