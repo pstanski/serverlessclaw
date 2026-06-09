@@ -27,7 +27,7 @@ import { FinancialSettlement } from './FinancialSettlement';
 vi.mock('@claw/ui', async (importOriginal) => {
   const original = await importOriginal<any>();
   const voltxEn = await import('../../messages/en.json');
-  const dashboardEn = await import('../../../../framework/apps/dashboard/messages/en.json');
+  const dashboardEn = await import('../../../../../messages/en.json');
   const allTranslations: Record<string, string> = {
     ...dashboardEn.default,
     ...voltxEn.default,

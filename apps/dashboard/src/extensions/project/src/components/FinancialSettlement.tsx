@@ -29,6 +29,7 @@ export const FinancialSettlement: React.FC = () => {
   });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setData({
       totalRevenue: 3450200.5,
       pendingSettlement: 12500.0,
