@@ -106,8 +106,8 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Keep tracing root at the framework monorepo root so OpenNext can locate standalone artifacts.
-  outputFileTracingRoot: path.join(__dirname, '../../'),
+  // Set tracing root to app directory to avoid including the entire monorepo in the trace.
+  outputFileTracingRoot: __dirname,
   outputFileTracingExcludes: {
     '**': [
       'node_modules/@swifttype/opentelemetry-instrumentation-vitest',
