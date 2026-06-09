@@ -26,6 +26,22 @@ export default defineConfig({
     // when running the full monorepo test suite on CI or local machines.
     testTimeout: 20000,
     setupFiles: [path.resolve(__dirname, './packages/core/tests/setup.ts')],
+    env: {
+      VITEST: 'true',
+      CLAW_TEST: 'true',
+      CORE_TEST: 'true',
+      MEMORY_TABLE_NAME: 'TestMemoryTable',
+      CONFIG_TABLE_NAME: 'TestConfigTable',
+      TRACE_TABLE_NAME: 'TestTraceTable',
+      STAGING_BUCKET_NAME: 'TestStagingBucket',
+      KNOWLEDGE_BUCKET_NAME: 'TestKnowledgeBucket',
+      AGENT_BUS_NAME: 'TestAgentBus',
+      OPENAI_API_KEY: 'sk-global-mock-key',
+      OPENROUTER_API_KEY: 'sk-or-global-mock-key',
+      ANTHROPIC_API_KEY: 'sk-ant-global-mock-key',
+      MINIMAX_API_KEY: 'sk-mini-global-mock-key',
+      DEEPSEEK_API_KEY: 'sk-ds-global-mock-key',
+    },
     alias: {
       '@': path.resolve(__dirname, './apps/dashboard/src'),
       '@claw/core': path.resolve(__dirname, './packages/core'),
