@@ -45,18 +45,30 @@ vi.mock('sst', () => ({
 
 // Mock AWS SDK Clients globally to prevent real calls
 vi.mock('@aws-sdk/client-cloudwatch', () => ({
-  CloudWatchClient: class { send = vi.fn().mockResolvedValue({}); },
-  PutMetricDataCommand: class { constructor(public input: any) {} },
+  CloudWatchClient: class {
+    send = vi.fn().mockResolvedValue({});
+  },
+  PutMetricDataCommand: class {
+    constructor(public input: any) {}
+  },
 }));
 
 vi.mock('@aws-sdk/client-sqs', () => ({
-  SQSClient: class { send = vi.fn().mockResolvedValue({}); },
-  SendMessageCommand: class { constructor(public input: any) {} },
+  SQSClient: class {
+    send = vi.fn().mockResolvedValue({});
+  },
+  SendMessageCommand: class {
+    constructor(public input: any) {}
+  },
 }));
 
 vi.mock('@aws-sdk/client-codebuild', () => ({
-  CodeBuildClient: class { send = vi.fn().mockResolvedValue({}); },
-  StartBuildCommand: class { constructor(public input: any) {} },
+  CodeBuildClient: class {
+    send = vi.fn().mockResolvedValue({});
+  },
+  StartBuildCommand: class {
+    constructor(public input: any) {}
+  },
 }));
 
 // Provide a global mock for RateLimiter
