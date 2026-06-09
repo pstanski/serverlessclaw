@@ -27,8 +27,12 @@ export function resolveSSTResourceValue(
       return registry[resourceName][property];
     }
     // If explicitly set to null/undefined in registry, treat as unlinked
-    if (registry && Object.prototype.hasOwnProperty.call(registry, resourceName) && registry[resourceName] === null) {
-        return undefined;
+    if (
+      registry &&
+      Object.prototype.hasOwnProperty.call(registry, resourceName) &&
+      registry[resourceName] === null
+    ) {
+      return undefined;
     }
   } catch {
     // ignore
@@ -97,7 +101,11 @@ export const getAppInfo = () => ({
 /**
  * Resolves the WebSocket URL for the AWS IoT endpoint.
  */
-export function getRealtimeInfo(): { url: string | null; endpoint: string | null; authorizer: string | null } {
+export function getRealtimeInfo(): {
+  url: string | null;
+  endpoint: string | null;
+  authorizer: string | null;
+} {
   const endpoint = resolveSSTResourceValue('IotEndpoint', 'endpoint', 'IOT_ENDPOINT') || null;
   const authorizer = resolveSSTResourceValue('IotEndpoint', 'authorizer', 'IOT_AUTHORIZER') || null;
 
