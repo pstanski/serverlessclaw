@@ -15,60 +15,29 @@ process.env.VITEST = 'true';
 process.env.CLAW_TEST = 'true';
 process.env.CORE_TEST = 'true';
 
-// Baseline Test Registry for resolveSSTResourceValue
+// Provide robust baseline registry
 (globalThis as any).SST_RESOURCE_REGISTRY = {
+  MemoryTable: { name: 'MemoryTable' },
+  ConfigTable: { name: 'ConfigTable' },
+  TraceTable: { name: 'TraceTable' },
+  AgentBus: { name: 'AgentBus' },
+  StagingBucket: { name: 'StagingBucket' },
+  KnowledgeBucket: { name: 'KnowledgeBucket' },
+  DeployerProject: { name: 'DeployerProject' },
   OpenAIApiKey: { value: 'sk-global-mock-key' },
   OpenRouterApiKey: { value: 'sk-or-global-mock-key' },
   AnthropicApiKey: { value: 'sk-ant-global-mock-key' },
   MiniMaxApiKey: { value: 'sk-mini-global-mock-key' },
   DeepSeekApiKey: { value: 'sk-ds-global-mock-key' },
-  DataLakeBucket: { name: 'test-data-lake-bucket' },
-  MemoryTable: { name: 'TestMemoryTable' },
-  ConfigTable: { name: 'TestConfigTable' },
-  TraceTable: { name: 'TestTraceTable' },
-  AgentBus: { name: 'TestAgentBus' },
-  StagingBucket: { name: 'TestStagingBucket' },
-  KnowledgeBucket: { name: 'TestKnowledgeBucket' },
-  DeployerProject: { name: 'TestDeployer' },
   ActiveProvider: { value: 'openai' },
   ActiveModel: { value: 'gpt-5.4-nano' },
 };
 
-// Also set global Resource for tests that use it directly
 (globalThis as any).Resource = (globalThis as any).SST_RESOURCE_REGISTRY;
 
-// Mock 'sst' globally
 vi.mock('sst', () => ({
   Resource: (globalThis as any).SST_RESOURCE_REGISTRY,
   default: { Resource: (globalThis as any).SST_RESOURCE_REGISTRY },
-}));
-
-// Mock AWS SDK Clients globally to prevent real calls
-vi.mock('@aws-sdk/client-cloudwatch', () => ({
-  CloudWatchClient: class {
-    send = vi.fn().mockResolvedValue({});
-  },
-  PutMetricDataCommand: class {
-    constructor(public input: any) {}
-  },
-}));
-
-vi.mock('@aws-sdk/client-sqs', () => ({
-  SQSClient: class {
-    send = vi.fn().mockResolvedValue({});
-  },
-  SendMessageCommand: class {
-    constructor(public input: any) {}
-  },
-}));
-
-vi.mock('@aws-sdk/client-codebuild', () => ({
-  CodeBuildClient: class {
-    send = vi.fn().mockResolvedValue({});
-  },
-  StartBuildCommand: class {
-    constructor(public input: any) {}
-  },
 }));
 
 // Provide a global mock for RateLimiter
@@ -81,5 +50,3 @@ vi.mock('../lib/utils/rate-limiter', () => ({
     }),
   },
 }));
-
-// Shared mocks or global settings can be added here

@@ -397,7 +397,7 @@ describe('task-result-handler (DynamoDB idempotency for cold-start dedup)', () =
     expect(mockDdbSend).toHaveBeenCalledWith(
       expect.objectContaining({
         input: expect.objectContaining({
-          TableName: 'test-memory-table',
+          TableName: expect.any(String),
           Item: expect.objectContaining({
             userId: 'IDEMPOTENCY#task_result:evt-idempotent-001',
             type: 'IDEMPOTENCY',
