@@ -11,29 +11,32 @@ try {
 import { vi } from 'vitest';
 
 // Provide a robust baseline
-const baselineResource = new Proxy({
-  OpenAIApiKey: { value: 'sk-global-mock-key' },
-  OpenRouterApiKey: { value: 'sk-or-global-mock-key' },
-  AnthropicApiKey: { value: 'sk-ant-global-mock-key' },
-  DataLakeBucket: { name: 'test-data-lake-bucket' },
-  MemoryTable: { name: 'TestMemoryTable' },
-  ConfigTable: { name: 'TestConfigTable' },
-  TraceTable: { name: 'TestTraceTable' },
-  AgentBus: { name: 'TestAgentBus' },
-  StagingBucket: { name: 'TestStagingBucket' },
-  KnowledgeBucket: { name: 'TestKnowledgeBucket' },
-  DeployerProject: { name: 'TestDeployer' },
-}, {
-  get(target: any, prop: string) {
-    if (prop in target) return target[prop];
-    if (prop.toLowerCase().includes('apikey')) return { value: `sk-mock-${prop}` };
-    if (prop.toLowerCase().includes('table')) return { name: `Test${prop}` };
-    if (prop.toLowerCase().includes('bucket')) return { name: `test-${prop.toLowerCase()}` };
-    return { name: prop, value: prop, url: `https://${prop.toLowerCase()}.test` };
+const baselineResource = new Proxy(
+  {
+    OpenAIApiKey: { value: 'sk-global-mock-key' },
+    OpenRouterApiKey: { value: 'sk-or-global-mock-key' },
+    AnthropicApiKey: { value: 'sk-ant-global-mock-key' },
+    DataLakeBucket: { name: 'test-data-lake-bucket' },
+    MemoryTable: { name: 'TestMemoryTable' },
+    ConfigTable: { name: 'TestConfigTable' },
+    TraceTable: { name: 'TestTraceTable' },
+    AgentBus: { name: 'TestAgentBus' },
+    StagingBucket: { name: 'TestStagingBucket' },
+    KnowledgeBucket: { name: 'TestKnowledgeBucket' },
+    DeployerProject: { name: 'TestDeployer' },
+  },
+  {
+    get(target: any, prop: string) {
+      if (prop in target) return target[prop];
+      if (prop.toLowerCase().includes('apikey')) return { value: `sk-mock-${prop}` };
+      if (prop.toLowerCase().includes('table')) return { name: `Test${prop}` };
+      if (prop.toLowerCase().includes('bucket')) return { name: `test-${prop.toLowerCase()}` };
+      return { name: prop, value: prop, url: `https://${prop.toLowerCase()}.test` };
+    },
   }
-});
+);
 
-// Expose Resource to globalThis. 
+// Expose Resource to globalThis.
 // It will prioritize local vi.mock('sst') if available, otherwise use baseline.
 Object.defineProperty(globalThis, 'Resource', {
   get() {
@@ -56,7 +59,7 @@ Object.defineProperty(globalThis, 'Resource', {
 // Also provide a default mock for 'sst' module itself
 vi.mock('sst', () => ({
   Resource: baselineResource,
-  default: { Resource: baselineResource }
+  default: { Resource: baselineResource },
 }));
 
 (globalThis as any).VITEST = true;
