@@ -101,7 +101,7 @@ export const FinancialSettlement: React.FC = () => {
               <div>
                 <div className="text-sm font-bold text-slate-200">{txn.description}</div>
                 <div className="text-[10px] font-mono text-slate-500 mt-1 uppercase tracking-tighter">
-                  {txn.date} // {txn.id}
+                  {txn.date} • {txn.id}
                 </div>
               </div>
               <div className="flex items-center gap-6">
