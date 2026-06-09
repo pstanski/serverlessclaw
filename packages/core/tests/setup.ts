@@ -30,7 +30,6 @@ process.env.CORE_TEST = 'true';
   StagingBucket: { name: 'TestStagingBucket' },
   KnowledgeBucket: { name: 'TestKnowledgeBucket' },
   DeployerProject: { name: 'TestDeployer' },
-  // Map common expected keys to sensible defaults to avoid "ActiveProvider" style string issues
   ActiveProvider: { value: 'openai' },
   ActiveModel: { value: 'gpt-5.4-nano' },
 };
@@ -38,10 +37,26 @@ process.env.CORE_TEST = 'true';
 // Also set global Resource for tests that use it directly
 (globalThis as any).Resource = (globalThis as any).SST_RESOURCE_REGISTRY;
 
-// Mock 'sst' globally to return the same registry
+// Mock 'sst' globally
 vi.mock('sst', () => ({
   Resource: (globalThis as any).SST_RESOURCE_REGISTRY,
   default: { Resource: (globalThis as any).SST_RESOURCE_REGISTRY },
+}));
+
+// Mock AWS SDK Clients globally to prevent real calls
+vi.mock('@aws-sdk/client-cloudwatch', () => ({
+  CloudWatchClient: class { send = vi.fn().mockResolvedValue({}); },
+  PutMetricDataCommand: class { constructor(public input: any) {} },
+}));
+
+vi.mock('@aws-sdk/client-sqs', () => ({
+  SQSClient: class { send = vi.fn().mockResolvedValue({}); },
+  SendMessageCommand: class { constructor(public input: any) {} },
+}));
+
+vi.mock('@aws-sdk/client-codebuild', () => ({
+  CodeBuildClient: class { send = vi.fn().mockResolvedValue({}); },
+  StartBuildCommand: class { constructor(public input: any) {} },
 }));
 
 // Provide a global mock for RateLimiter
