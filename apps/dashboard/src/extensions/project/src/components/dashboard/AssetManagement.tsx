@@ -31,7 +31,7 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
   const [localSites, setLocalSites] = useState<VppSite[]>([]);
-  const [, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
 
   const workspaceId = getWorkspaceId();
 
@@ -51,7 +51,6 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
   }, [workspaceId]);
 
   React.useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchSites();
   }, [fetchSites]);
 

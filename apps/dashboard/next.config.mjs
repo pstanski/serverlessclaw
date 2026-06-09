@@ -107,7 +107,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   // Keep tracing root at the framework monorepo root so OpenNext can locate standalone artifacts.
-  outputFileTracingRoot: path.join(__dirname, '../..'),
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   outputFileTracingExcludes: {
     '**': [
       'node_modules/@swifttype/opentelemetry-instrumentation-vitest',
@@ -122,7 +122,7 @@ const nextConfig = {
       '**/.github/**',
       '**/.husky/**',
       '**/node_modules/.cache/**',
-      // Exclude large native binaries not needed in dashboard Lambda
+      // Exclude large native binaries and redundant packages not needed in dashboard Lambda
       '**/node_modules/tree-sitter*/**',
       '**/node_modules/@swc/core/**',
       '**/node_modules/esbuild/**',
@@ -137,6 +137,11 @@ const nextConfig = {
       '**/packages/infra/**',
       '**/apps/cli/**',
       '**/packages/integration-github/**',
+      // sst and @aws-sdk are very large and can be pruned/externalized
+      '**/node_modules/sst/**',
+      '**/node_modules/.pnpm/sst@*/**',
+      '**/node_modules/@aws-sdk/**',
+      '**/node_modules/.pnpm/@aws-sdk+*/**',
     ],
   },
   webpack: (config, { isServer }) => {
