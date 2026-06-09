@@ -1,10 +1,7 @@
 const config = {
   default: {
-    // Explicitly include runtime dependencies in the Lambda bundle.
-    // This ensures SWC helper deep imports and Next runtime packages are present at runtime.
-    install: {
-      packages: ['@swc/helpers', 'next', 'react', 'react-dom'],
-    },
+    // Rely on Next.js standalone tracing and standalone output.
+    // Explicit install usually inflates the bundle unnecessarily.
   },
 };
 
