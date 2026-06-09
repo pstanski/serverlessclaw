@@ -19,27 +19,36 @@ process.env.CLAW_TEST = 'true';
 process.env.CORE_TEST = 'true';
 
 // Expose Resource to globalThis for consistent access in tests
-// Use a static object so it doesn't fail on require('sst')
-const globalResourceMock: Record<string, any> = {
-  OpenAIApiKey: { value: 'sk-global-mock-key' },
-  OpenRouterApiKey: { value: 'sk-or-global-mock-key' },
-  AnthropicApiKey: { value: 'sk-ant-global-mock-key' },
-  DataLakeBucket: { name: 'test-data-lake-bucket' },
-  MemoryTable: { name: 'TestMemoryTable' },
-  ConfigTable: { name: 'TestConfigTable' },
-  TraceTable: { name: 'TestTraceTable' },
-  AgentBus: { name: 'TestAgentBus' },
-  StagingBucket: { name: 'TestStagingBucket' },
-  KnowledgeBucket: { name: 'TestKnowledgeBucket' },
-  DeployerProject: { name: 'TestDeployer' },
-};
+// Use a proxy to return dummy values for any requested key
+const globalResourceMock = new Proxy(
+  {
+    OpenAIApiKey: { value: 'sk-global-mock-key' },
+    OpenRouterApiKey: { value: 'sk-or-global-mock-key' },
+    AnthropicApiKey: { value: 'sk-ant-global-mock-key' },
+    DataLakeBucket: { name: 'test-data-lake-bucket' },
+    MemoryTable: { name: 'TestMemoryTable' },
+    ConfigTable: { name: 'TestConfigTable' },
+    TraceTable: { name: 'TestTraceTable' },
+    AgentBus: { name: 'TestAgentBus' },
+    StagingBucket: { name: 'TestStagingBucket' },
+    KnowledgeBucket: { name: 'TestKnowledgeBucket' },
+    DeployerProject: { name: 'TestDeployer' },
+  },
+  {
+    get(target: any, prop: string) {
+      if (prop in target) return target[prop];
+      // Auto-mock any missing keys to prevent "links not active" errors
+      if (prop.toLowerCase().includes('apikey')) return { value: `sk-mock-${prop}` };
+      if (prop.toLowerCase().includes('table')) return { name: `Test${prop}` };
+      if (prop.toLowerCase().includes('bucket')) return { name: `test-${prop.toLowerCase()}` };
+      return { name: prop, value: prop, url: `https://${prop.toLowerCase()}.test` };
+    },
+  }
+);
 
 Object.defineProperty(globalThis, 'Resource', {
   get() {
     return globalResourceMock;
-  },
-  set(val) {
-    Object.assign(globalResourceMock, val);
   },
   configurable: true,
 });

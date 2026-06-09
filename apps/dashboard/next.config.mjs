@@ -142,6 +142,12 @@ const nextConfig = {
       '**/node_modules/.pnpm/sst@*/**',
       '**/node_modules/@aws-sdk/**',
       '**/node_modules/.pnpm/@aws-sdk+*/**',
+      '**/node_modules/aws-sdk/**',
+      // Other heavy dev-only or unused packages
+      '**/node_modules/prettier/**',
+      '**/node_modules/eslint/**',
+      '**/node_modules/rimraf/**',
+      '**/node_modules/glob/**',
     ],
   },
   webpack: (config, { isServer }) => {
