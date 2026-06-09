@@ -1,1 +1,37 @@
-[]
+[
+  {
+    "jobType": "generic_analysis",
+    "displayName": "Generic Data Analysis",
+    "description": "A template for analyzing datasets and extracting insights.",
+    "inputs": [
+      {
+        "name": "data_source",
+        "label": "Data Source (S3 URL)",
+        "type": "text",
+        "default": "s3://my-bucket/data.parquet"
+      },
+      {
+        "name": "sample_size",
+        "label": "Sample Size",
+        "type": "number",
+        "default": 1000,
+        "min": 100,
+        "max": 10000,
+        "step": 100
+      }
+    ],
+    "executor": {
+      "type": "subprocess",
+      "command": "python3 analyze.py --source {{data_source}} --size {{sample_size}}",
+      "cwd": "scripts/analysis"
+    },
+    "metricsSchema": [
+      {
+        "key": "rows_processed",
+        "label": "Rows Processed",
+        "format": "integer",
+        "regexPattern": "Rows:\\s+([\\d,]+)"
+      }
+    ]
+  }
+]
