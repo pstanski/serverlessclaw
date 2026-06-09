@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AssetOnboarding } from './AssetOnboarding';
@@ -6,7 +7,8 @@ import React from 'react';
 vi.mock('@claw/ui', async (importOriginal) => {
   const original = await importOriginal<any>();
   const voltxEn = await import('../../messages/en.json');
-  const dashboardEn = await import('../../../../framework/apps/dashboard/messages/en.json');
+  // Use path alias that will be resolved when this component is used in the dashboard extension
+  const dashboardEn = await import('@messages/en.json').catch(() => ({ default: {} }));
   const allTranslations: Record<string, string> = {
     ...dashboardEn.default,
     ...voltxEn.default,
