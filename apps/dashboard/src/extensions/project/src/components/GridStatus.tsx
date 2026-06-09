@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import React from 'react';
@@ -14,7 +13,7 @@ interface GridStatusProps {
 }
 
 export default function GridStatus({ component }: GridStatusProps) {
-  const { data } = component;
+  const data = component?.data;
 
   return (
     <div className="p-4 border border-cyber-green/30 bg-cyber-green/5 rounded-lg font-mono">
@@ -29,18 +28,37 @@ export default function GridStatus({ component }: GridStatusProps) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <div className="text-[8px] text-foreground/50 uppercase">Current Load</div>
-          <div className="text-xl text-foreground font-black">{data?.load || '12.4'} MW</div>
+          <div className="text-xl font-black text-foreground tracking-tighter">
+            {data?.load || '0.00'}{' '}
+            <span className="text-[10px] font-normal text-foreground/40">MW</span>
+          </div>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-1 text-right">
           <div className="text-[8px] text-foreground/50 uppercase">Frequency</div>
-          <div className="text-xl text-foreground font-black">{data?.frequency || '50.02'} Hz</div>
+          <div className="text-xl font-black text-cyber-green tracking-tighter">
+            {data?.frequency || '50.00'}{' '}
+            <span className="text-[10px] font-normal text-cyber-green/40">Hz</span>
+          </div>
         </div>
       </div>
 
-      <div className="mt-4 pt-4 border-t border-cyber-green/10">
-        <div className="flex justify-between items-end">
-          <div>
-            <div className="text-[8px] text-foreground/50 uppercase">Arbitrage Delta</div>
+      <div className="mt-4 pt-4 border-t border-cyber-green/10 flex justify-between items-end">
+        <div className="space-y-1">
+          <div className="text-[8px] text-foreground/50 uppercase">Market Participation</div>
+          <div className="flex gap-1">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="w-1.5 h-3 bg-cyber-green/20 rounded-sm overflow-hidden">
+                <div
+                  className="w-full bg-cyber-green transition-all duration-1000"
+                  style={{ height: `${20 + ((i * 10) % 80)}%` }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="flex items-center gap-1 justify-end">
+            <div className="text-[8px] text-foreground/50 uppercase">Revenue</div>
             <div className="text-sm text-cyber-green font-bold">+$1,240.50</div>
           </div>
           <div className="text-[8px] text-foreground/30 italic">VOLTX AGENT v1.0</div>
