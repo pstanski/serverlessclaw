@@ -114,7 +114,28 @@ export function createDeployer(ctx: DeployerContext) {
       type: 'GITHUB',
       location: `https://github.com/${githubRepo}.git`,
       buildspec: 'buildspec.yml',
+      reportBuildStatus: true,
     },
+  });
+
+  // Enable automatic triggering on push to main
+  new aws.codebuild.Webhook('DeployerWebhook', {
+    projectName: deployer.name,
+    buildType: 'BUILD',
+    filterGroups: [
+      {
+        filters: [
+          {
+            type: 'EVENT',
+            pattern: 'PUSH',
+          },
+          {
+            type: 'HEAD_REF',
+            pattern: '^refs/heads/main$',
+          },
+        ],
+      },
+    ],
   });
 
   // Linkable wrapper to expose Deployer.name and Deployer.arn to other resources via Resource.Deployer
