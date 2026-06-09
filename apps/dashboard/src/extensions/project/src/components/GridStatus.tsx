@@ -48,7 +48,7 @@ export default function GridStatus({ component }: GridStatusProps) {
               <div key={i} className="w-1.5 h-3 bg-cyber-green/20 rounded-sm overflow-hidden">
                 <div
                   className="w-full bg-cyber-green transition-all duration-1000"
-                  style={{ height: `${20 + (i * 20) % 80}%` }}
+                  style={{ height: `${20 + (i * 10) % 80}%` }}
                 />
               </div>
             ))}
