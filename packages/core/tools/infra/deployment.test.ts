@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mockClient } from 'aws-sdk-client-mock';
-import { CodeBuildClient, StartBuildCommand } from '@aws-sdk/client-codebuild';
+import { CodeBuildClient } from '@aws-sdk/client-codebuild';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 
 const codebuildMock = mockClient(CodeBuildClient);
 const ddbMock = mockClient(DynamoDBDocumentClient);
 
 import { triggerDeployment } from './deployment';
-import { getDeployCountToday, incrementDeployCount } from '../../lib/metrics/deploy-stats';
+import { incrementDeployCount } from '../../lib/metrics/deploy-stats';
 import { getCircuitBreaker } from '../../lib/safety/circuit-breaker';
 
 vi.mock('../../lib/metrics/deploy-stats', () => ({
@@ -55,17 +55,17 @@ describe('Deployment Tools', () => {
       } as any);
       vi.mocked(incrementDeployCount).mockResolvedValue(true);
       ddbMock.on(GetCommand).resolves({
-          Item: { 
-              value: { 
-                  'GAP#1': { status: 'FAILED', backoffUntil: Date.now() + 100000 } 
-              } 
-          } 
+        Item: {
+          value: {
+            'GAP#1': { status: 'FAILED', backoffUntil: Date.now() + 100000 },
+          },
+        },
       });
 
       const result = await triggerDeployment.execute({
         reason: 'test deployment',
         userId: 'test-user',
-        gapId: 'GAP#1'
+        gapId: 'GAP#1',
       });
 
       expect(result).toContain('BACKOFF_ACTIVE');
