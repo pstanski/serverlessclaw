@@ -21,6 +21,7 @@
       }
     ],
     "paths": {
+      "@messages/*": ["./messages/*"],
       "@/*": ["./src/*"],
       "@serverlessclaw/core": ["../../packages/core/lib/index.ts"],
       "@serverlessclaw/core/*": ["../../packages/core/*"],

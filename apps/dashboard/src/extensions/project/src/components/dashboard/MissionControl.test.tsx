@@ -29,7 +29,7 @@ import MissionControl from './MissionControl';
 vi.mock('@claw/ui', async (importOriginal) => {
   const original = await importOriginal<any>();
   const voltxEn = await import('../../../messages/en.json');
-  const dashboardEn = await import('../../../../../messages/en.json');
+  const dashboardEn = await import('@messages/en.json');
   const allTranslations: Record<string, string> = {
     ...dashboardEn.default,
     ...voltxEn.default,
@@ -55,7 +55,7 @@ describe('MissionControl', () => {
     await act(async () => {
       render(<MissionControl />);
     });
-
+    
     expect(screen.getByText('Virtual Power Plant Control Center')).toBeDefined();
     expect(screen.getByText('450')).toBeDefined(); // Total Capacity
     expect(screen.getByText('285')).toBeDefined(); // Current Output
@@ -65,7 +65,7 @@ describe('MissionControl', () => {
     await act(async () => {
       render(<MissionControl />);
     });
-
+    
     expect(screen.getByText('Network Topology')).toBeDefined();
     expect(screen.getByText('Demand Response')).toBeDefined();
     expect(screen.getByText('Revenue Ledger')).toBeDefined();
