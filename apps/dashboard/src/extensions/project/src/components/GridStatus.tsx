@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import React from 'react';
@@ -14,7 +13,7 @@ interface GridStatusProps {
 }
 
 export default function GridStatus({ component }: GridStatusProps) {
-  const { data } = component;
+  const data = component?.data;
 
   return (
     <div className="p-4 border border-cyber-green/30 bg-cyber-green/5 rounded-lg font-mono">
