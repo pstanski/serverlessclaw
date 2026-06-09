@@ -148,6 +148,26 @@ const nextConfig = {
       '**/node_modules/eslint/**',
       '**/node_modules/rimraf/**',
       '**/node_modules/glob/**',
+      // Exclude tests, docs, and other non-runtime artifacts
+      '**/*.test.*',
+      '**/*.spec.*',
+      '**/__tests__/**',
+      '**/__mocks__/**',
+      '**/docs/**',
+      '**/makefiles/**',
+      '**/scripts/**',
+      '**/e2e/**',
+      // Exclude other apps and irrelevant packages
+      '**/apps/voltx-landing/**',
+      '**/packages/voltx-core/**',
+      '**/packages/voltx-ui/**',
+      '**/packages/voltx-integration/**',
+      '**/packages/vpp-agents/**',
+      '**/packages/vpp-source/**',
+      // Next.js specific exclusions
+      '**/node_modules/next/dist/compiled/webpack/**',
+      '**/node_modules/next/dist/compiled/terser/**',
+      '**/node_modules/next/dist/compiled/babel*/**',
     ],
   },
   webpack: (config, { isServer }) => {

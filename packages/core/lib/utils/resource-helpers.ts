@@ -42,7 +42,7 @@ export function resolveSSTResourceValue(
       return globalResource[resourceName][property];
     }
   } catch {
-    // ignore (e.g. SST Resource proxy throwing "links not active")
+    // ignore
   }
 
   // 3. Try traditional Resource access
