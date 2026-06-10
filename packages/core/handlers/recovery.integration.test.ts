@@ -73,6 +73,17 @@ describe('Recovery Switch Integration', () => {
     codeBuildMock.reset();
     ebMock.reset();
     vi.clearAllMocks();
+    delete process.env.DEPLOYER_PROJECT_NAME;
+    Object.defineProperty(globalThis, 'Resource', {
+      value: {
+        WebhookApi: { url: 'https://test.example.com' },
+        Deployer: { name: 'test-deployer' },
+        MemoryTable: { name: 'test-memory-table' },
+        AgentBus: { name: 'test-bus' },
+        ConfigTable: { name: 'test-config-table' },
+      },
+      configurable: true,
+    });
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 503 });
     memoryMocks.incrementRecoveryAttemptCount.mockResolvedValue(1);
     lockMocks.acquire.mockResolvedValue(true);

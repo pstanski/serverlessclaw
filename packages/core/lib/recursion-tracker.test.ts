@@ -46,6 +46,13 @@ describe('recursion-tracker', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     delete process.env.MEMORY_TABLE_NAME;
+    Object.defineProperty(globalThis, 'Resource', {
+      value: {
+        MemoryTable: { name: 'test-memory-table' },
+        ConfigTable: { name: 'test-config-table' },
+      },
+      configurable: true,
+    });
     const { ConfigManager } = await import('./registry/config');
     ConfigManager.clearCache();
   });

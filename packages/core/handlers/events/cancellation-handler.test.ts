@@ -94,7 +94,7 @@ describe('cancellation-handler', () => {
       expect(mockDdbSend).toHaveBeenCalledWith(
         expect.objectContaining({
           input: expect.objectContaining({
-            TableName: 'test-memorytable',
+            TableName: 'TestMemoryTable',
             Item: expect.objectContaining({
               userId: 'CANCEL#task-123',
               type: 'TASK_CANCELLATION',
@@ -157,7 +157,7 @@ describe('cancellation-handler', () => {
       expect(mockDdbSend).toHaveBeenCalledWith(
         expect.objectContaining({
           input: expect.objectContaining({
-            TableName: 'test-memorytable',
+            TableName: 'TestMemoryTable',
             KeyConditionExpression: 'userId = :uid AND #ts = :zero',
             ExpressionAttributeNames: { '#ts': 'timestamp' },
             ExpressionAttributeValues: {
@@ -299,7 +299,7 @@ describe('cancellation-handler', () => {
       expect(mockDdbSend).toHaveBeenCalledWith(
         expect.objectContaining({
           input: expect.objectContaining({
-            TableName: 'test-memorytable',
+            TableName: 'TestMemoryTable',
             KeyConditionExpression: 'userId = :uid',
             ExpressionAttributeValues: {
               ':uid': 'CANCEL#task-123',

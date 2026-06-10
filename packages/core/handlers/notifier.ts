@@ -222,7 +222,7 @@ async function deliverTelegram(
   attachments: Attachment[],
   options: { label: string; value: string }[]
 ): Promise<void> {
-  const token = await resolveSSTResourceValue('TelegramBotToken', 'value', 'TELEGRAM_BOT_TOKEN');
+  const token = resolveSSTResourceValue('TelegramBotToken', 'value', 'TELEGRAM_BOT_TOKEN');
   if (!token) return;
 
   if (attachments.length > 0) {
@@ -275,7 +275,7 @@ async function deliverDiscord(
   attachments: Attachment[],
   options: { label: string; value: string }[]
 ): Promise<void> {
-  const token = await resolveSSTResourceValue('DiscordBotToken', 'value', 'DISCORD_BOT_TOKEN');
+  const token = resolveSSTResourceValue('DiscordBotToken', 'value', 'DISCORD_BOT_TOKEN');
   if (!token) return;
 
   const embeds = attachments
@@ -322,7 +322,7 @@ async function deliverSlack(
   attachments: Attachment[],
   options: { label: string; value: string }[]
 ): Promise<void> {
-  const token = await resolveSSTResourceValue('SlackBotToken', 'value', 'SLACK_BOT_TOKEN');
+  const token = resolveSSTResourceValue('SlackBotToken', 'value', 'SLACK_BOT_TOKEN');
   if (!token) return;
 
   const blocks: Record<string, unknown>[] = [

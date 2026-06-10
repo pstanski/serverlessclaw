@@ -37,6 +37,11 @@ vi.mock('./tracer-implementation', () => ({
 describe('DataLake Export', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env.DATA_LAKE_BUCKET_NAME;
+    Object.defineProperty(globalThis, 'Resource', {
+      value: { DataLakeBucket: { name: 'test-data-lake-bucket' } },
+      configurable: true,
+    });
     mockSend.mockResolvedValue({});
   });
 

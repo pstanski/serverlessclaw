@@ -38,51 +38,63 @@ export function resolveSSTResourceValue(
     // ignore
   }
 
-  // 3. Try globalResource (SST Ion Resource proxy)
+  // 3. Try SST Ion JSON fallback (SST_RESOURCE_<Name>)
+  const ionEnvVar = `SST_RESOURCE_${resourceName}`;
+  const ionValue = process.env[ionEnvVar];
+  if (ionValue) {
+    try {
+      const parsed = JSON.parse(ionValue);
+      if (parsed && typeof parsed === 'object' && parsed[property]) {
+        return parsed[property];
+      }
+    } catch {
+      // If not JSON, only return if looking for name/value and it's a direct match
+      if (property === 'name' || property === 'value') return ionValue;
+    }
+  }
+
+  // 4. Try globalResource (for tests and specialized environments)
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const globalResource = (globalThis as any).Resource;
-    if (globalResource && globalResource[resourceName] && globalResource[resourceName][property]) {
-      return globalResource[resourceName][property];
+    if (globalResource && globalResource[resourceName]) {
+      const val = globalResource[resourceName][property];
+      if (val !== undefined) return val;
+      // If resource exists but property doesn't, don't fall back to fuzzy env
+      return defaultValue;
     }
   } catch {
     // ignore
   }
 
-  // 4. Try traditional Resource access
+  // 5. Try traditional Resource access
+  // We use a require inside the function to avoid module load time crashes.
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const sst = require('sst');
     const Resource = sst.Resource || sst.default?.Resource || sst;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (Resource && (Resource as any)[resourceName] && (Resource as any)[resourceName][property]) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (Resource as any)[resourceName][property];
+    if (Resource && (Resource as any)[resourceName]) {
+      const val = (Resource as any)[resourceName][property];
+      if (val !== undefined) return val;
+      return defaultValue;
     }
   } catch {
     // ignore
   }
 
-  // 5. Try SST Ion JSON environment variables (v3/v4 standalone mode)
-  const app = process.env.SST_RESOURCE_App;
-  if (app) {
-    try {
-      const parsed = JSON.parse(app);
-      if (parsed[resourceName] && parsed[resourceName][property]) {
-        return parsed[resourceName][property];
-      }
-    } catch {
-      // ignore
-    }
-  }
-
   // 6. Fuzzy Env Match (Robust Fallback)
-  const fuzzyPrefix = resourceName.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+  // Only if no explicit Resource object was found
+  const snakeCase = resourceName
+    .replace(/([a-z])([A-Z])/g, '$1_$2')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '_');
   const fuzzyProp = property.toUpperCase();
   const fuzzyMatch = Object.keys(process.env).find(
-    (k) => k.includes(fuzzyPrefix) && k.includes(fuzzyProp)
+    (k) => k.includes(snakeCase) && k.includes(fuzzyProp)
   );
-  if (fuzzyMatch) return process.env[fuzzyMatch];
+  if (fuzzyMatch && process.env[fuzzyMatch]) {
+    return process.env[fuzzyMatch];
+  }
 
   return defaultValue ?? undefined;
 }

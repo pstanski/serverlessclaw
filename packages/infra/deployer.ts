@@ -170,7 +170,7 @@ export function createDeployer(ctx: DeployerContext) {
 
   new aws.iam.RolePolicy('DeployerTriggerPolicy', {
     role: triggerRole.name,
-    policy: JSON.stringify({
+    policy: $util.jsonStringify({
       Version: '2012-10-17',
       Statement: [
         {

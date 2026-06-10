@@ -58,6 +58,14 @@ describe('Notifier Handler — Multi-Platform', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAddMessage.mockResolvedValue(true);
+    Object.defineProperty(globalThis, 'Resource', {
+      value: {
+        TelegramBotToken: { value: 'tg-token' },
+        DiscordBotToken: { value: 'ds-token' },
+        SlackBotToken: { value: 'sl-token' },
+      },
+      configurable: true,
+    });
     (global.fetch as any).mockResolvedValue({ ok: true, text: () => Promise.resolve('ok') });
   });
 

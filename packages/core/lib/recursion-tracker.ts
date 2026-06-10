@@ -101,7 +101,7 @@ async function _updateTraceMetadata(
   const expiresAt = Math.floor(Date.now() / 1000) + ttlSeconds;
 
   try {
-    const tableName = await getMemoryTableName();
+    const tableName = getMemoryTableName();
     const response = await docClient.send(
       new UpdateCommand({
         TableName: tableName,
@@ -186,7 +186,7 @@ export async function incrementTokenUsage(
  */
 export async function getTraceUsage(traceId: string, workspaceId?: string): Promise<number> {
   try {
-    const tableName = await getMemoryTableName();
+    const tableName = getMemoryTableName();
     const scopePrefix = workspaceId ? `WS#${workspaceId}#` : '';
     const key = `${scopePrefix}${RECURSION_STACK_PREFIX}${traceId}`;
 
@@ -256,7 +256,7 @@ export async function isBudgetExceeded(traceId: string, workspaceId?: string): P
  */
 export async function getRecursionDepth(traceId: string, workspaceId?: string): Promise<number> {
   try {
-    const tableName = await getMemoryTableName();
+    const tableName = getMemoryTableName();
     const scopePrefix = workspaceId ? `WS#${workspaceId}#` : '';
     const key = `${scopePrefix}${RECURSION_STACK_PREFIX}${traceId}`;
 
@@ -287,7 +287,7 @@ export async function getRecursionDepth(traceId: string, workspaceId?: string): 
  */
 export async function clearRecursionStack(traceId: string, workspaceId?: string): Promise<void> {
   try {
-    const tableName = await getMemoryTableName();
+    const tableName = getMemoryTableName();
     const scopePrefix = workspaceId ? `WS#${workspaceId}#` : '';
     const key = `${scopePrefix}${RECURSION_STACK_PREFIX}${traceId}`;
 

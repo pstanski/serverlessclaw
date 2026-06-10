@@ -491,6 +491,12 @@ describe('BaseMemoryProvider', () => {
       vi.doMock('sst', () => ({
         Resource: {},
       }));
+      const oldEnv = process.env.MEMORY_TABLE_NAME;
+      delete process.env.MEMORY_TABLE_NAME;
+      Object.defineProperty(globalThis, 'Resource', {
+        value: {},
+        configurable: true,
+      });
 
       const { BaseMemoryProvider: BMP } = await import('./base');
       const localProvider = new BMP(ddbMock as any);
@@ -515,6 +521,7 @@ describe('BaseMemoryProvider', () => {
       expect(scanResult).toEqual([]);
       expect(ddbMock.calls()).toHaveLength(0);
 
+      if (oldEnv) process.env.MEMORY_TABLE_NAME = oldEnv;
       vi.doUnmock('sst');
     });
   });

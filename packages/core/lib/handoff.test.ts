@@ -27,6 +27,10 @@ describe('Handoff Protocol', () => {
     ddbMock.reset();
     vi.clearAllMocks();
     vi.restoreAllMocks();
+    Object.defineProperty(globalThis, 'Resource', {
+      value: { MemoryTable: { name: 'test-memory-table' } },
+      configurable: true,
+    });
   });
 
   it('should record handoff in DynamoDB and emit event', async () => {
@@ -89,6 +93,11 @@ describe('Handoff Protocol', () => {
 
   it('should handle missing MemoryTable in requestHandoff', async () => {
     vi.spyOn(Resource as any, 'MemoryTable', 'get').mockReturnValue(undefined);
+    delete process.env.MEMORY_TABLE_NAME;
+    Object.defineProperty(globalThis, 'Resource', {
+      value: {},
+      configurable: true,
+    });
     await requestHandoff('user-1');
     expect(ddbMock.calls()).toHaveLength(0);
   });

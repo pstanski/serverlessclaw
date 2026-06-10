@@ -12,6 +12,7 @@ vi.mock('sst', () => ({
 
 vi.mock('../../lib/utils/ddb-client', () => ({
   getDocClient: () => ddbMock,
+  getMemoryTableName: () => 'TestMemoryTable',
 }));
 
 vi.mock('../../lib/utils/bus', () => ({

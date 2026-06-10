@@ -36,6 +36,14 @@ global.fetch = vi.fn();
 describe('Notifier Remediation Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(globalThis, 'Resource', {
+      value: {
+        TelegramBotToken: { value: 'tg-token' },
+        DiscordBotToken: { value: 'ds-token' },
+        SlackBotToken: { value: 'sl-token' },
+      },
+      configurable: true,
+    });
   });
 
   describe('A.4 Notifier HTML Escaping', () => {
