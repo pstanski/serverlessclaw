@@ -16,6 +16,8 @@ export const system_get_environment_info = {
         nodeVersion: process.version,
         platform: process.platform,
         arch: process.arch,
+        hostname: os.hostname(),
+        loadAvg: os.loadavg(),
         memoryUsage: process.memoryUsage(),
         uptime: process.uptime(),
         freeMemory: os.freemem(),

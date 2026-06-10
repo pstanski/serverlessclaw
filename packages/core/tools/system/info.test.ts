@@ -9,6 +9,8 @@ describe('system_get_environment_info', () => {
     expect(info).toHaveProperty('nodeVersion');
     expect(info).toHaveProperty('platform');
     expect(info).toHaveProperty('arch');
+    expect(info).toHaveProperty('hostname');
+    expect(info).toHaveProperty('loadAvg');
     expect(info).toHaveProperty('memoryUsage');
     expect(info.nodeVersion).toBe(process.version);
   });
