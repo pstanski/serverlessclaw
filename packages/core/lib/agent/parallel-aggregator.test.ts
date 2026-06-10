@@ -40,6 +40,12 @@ describe('ParallelAggregator', () => {
   let aggregator: ParallelAggregator;
 
   beforeEach(() => {
+    vi.clearAllMocks();
+    delete process.env.MEMORY_TABLE_NAME;
+    Object.defineProperty(globalThis, 'Resource', {
+      value: { MemoryTable: { name: 'TestMemoryTable' } },
+      configurable: true,
+    });
     aggregator = new ParallelAggregator();
     mockSend.mockReset();
   });
@@ -95,7 +101,7 @@ describe('ParallelAggregator', () => {
         }) // 3. UpdateCommand
         .mockResolvedValueOnce({
           Responses: {
-            MemoryTable: [{ userId: 'SHARD#2', result: { taskId: 't2', status: 'success' } }],
+            TestMemoryTable: [{ userId: 'SHARD#2', result: { taskId: 't2', status: 'success' } }],
           },
         }); // 4. mergeShardedResults
 
@@ -140,7 +146,7 @@ describe('ParallelAggregator', () => {
         .mockResolvedValueOnce({ Item: mainItem }) // Get main item
         .mockResolvedValueOnce({
           Responses: {
-            MemoryTable: [
+            TestMemoryTable: [
               { userId: 'SHARD#1', result: { taskId: 'shard1', result: 'shard-data' } },
             ],
           },
