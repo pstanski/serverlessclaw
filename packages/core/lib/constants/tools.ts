@@ -78,6 +78,7 @@ export const TOOLS = {
   scanMetabolism: 'scanMetabolism',
   pulseCheck: 'pulseCheck',
   promoteCapability: 'promoteCapability',
+  system_get_environment_info: 'system_get_environment_info',
 } as const;
 
 /**
@@ -123,6 +124,7 @@ export const UNIVERSAL_SYSTEM_TOOLS = [
   TOOLS.seekClarification,
   TOOLS.provideClarification,
   TOOLS.pulseCheck,
+  TOOLS.system_get_environment_info,
 ];
 
 /**
