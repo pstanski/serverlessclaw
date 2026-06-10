@@ -251,6 +251,7 @@ export class PolicyValidator {
       case 'scanMetabolism':
       case 'renderComponent':
       case 'uiAction':
+      case 'system_get_environment_info':
       case 'navigateTo':
       case 'validateCode':
       case 'verifyChanges':
