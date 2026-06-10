@@ -1,8 +1,4 @@
-import {
-  CloudWatchLogsClient,
-  DescribeLogGroupsCommand,
-  FilterLogEventsCommand,
-} from '@aws-sdk/client-cloudwatch-logs';
+import { CloudWatchLogsClient, DescribeLogGroupsCommand, FilterLogEventsCommand } from '@aws-sdk/client-cloudwatch-logs';
 
 async function main() {
   const region = process.env.AWS_REGION || 'ap-southeast-2';
@@ -15,16 +11,14 @@ async function main() {
     '/aws/lambda/serverlessclaw-prod-',
     '/aws/lambda/serverlesscla-prod-',
     '/aws/lambda/serverles-prod-',
-    '/aws/lambda/serve-prod-',
+    '/aws/lambda/serve-prod-'
   ];
-
+  
   const logGroups: unknown[] = [];
   for (const prefix of prefixes) {
-    const describeRes = await client.send(
-      new DescribeLogGroupsCommand({
-        logGroupNamePrefix: prefix,
-      })
-    );
+    const describeRes = await client.send(new DescribeLogGroupsCommand({
+      logGroupNamePrefix: prefix
+    }));
     if (describeRes.logGroups) {
       logGroups.push(...describeRes.logGroups);
     }
@@ -48,26 +42,24 @@ async function main() {
           })
         );
         const events = response.events || [];
-        const filteredEvents = events.filter((e) => {
+        const filteredEvents = events.filter(e => {
           const msg = e.message || '';
           return !msg.includes('.delta') && !msg.includes('Type: response.');
         });
         if (filteredEvents.length > 0) {
-          console.log(
-            `\n✅ Match found in Log Group: ${logGroupName} (${filteredEvents.length} of ${events.length} events)`
-          );
+          console.log(`\n✅ Match found in Log Group: ${logGroupName} (${filteredEvents.length} of ${events.length} events)`);
           filteredEvents.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
           for (const event of filteredEvents) {
             const date = new Date(event.timestamp || 0).toISOString();
             console.log(`  🕒 [${date}] ${event.message?.trim().slice(0, 500)}`);
           }
-        }
-      } catch (err) {
-        // Skip errors for non-existent log groups
-        if ((err as Error).name !== 'ResourceNotFoundException') {
+          }
+          } catch (err) {
+          // Skip errors for non-existent log groups
+          if ((err as Error).name !== 'ResourceNotFoundException') {
           console.error(`❌ Error querying ${logGroupName}:`, (err as Error).message);
-        }
-      }
+          }
+          }
     }
   }
 }

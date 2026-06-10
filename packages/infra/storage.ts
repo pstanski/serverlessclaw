@@ -56,6 +56,7 @@ export function createStorage() {
   const stagingBucket = new sst.aws.Bucket('StagingBucket', {
     transform: {
       bucket: {
+        eventBridgeEnabled: true,
         lifecycleRules: [
           {
             id: 'expire-rubbish',

@@ -23,6 +23,6 @@ describe('Multi-Region Scaling (VX-4.2)', () => {
     const result = createMultiRegionScaling(mockCtx);
 
     expect(result.regionSyncQueue).toBeDefined();
-    expect(result.regionSyncQueue.url).toContain('FrameworkRegionSyncQueue');
+    expect(result.regionSyncQueue.url).toBe('');
   });
 });

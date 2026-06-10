@@ -114,6 +114,94 @@ export function createDeployer(ctx: DeployerContext) {
       type: 'GITHUB',
       location: `https://github.com/${githubRepo}.git`,
       buildspec: 'buildspec.yml',
+      reportBuildStatus: true,
+    },
+  });
+
+  // Enable automatic triggering on push to main
+  new aws.codebuild.Webhook('DeployerWebhook', {
+    projectName: deployer.name,
+    buildType: 'BUILD',
+    filterGroups: [
+      {
+        filters: [
+          {
+            type: 'EVENT',
+            pattern: 'PUSH',
+          },
+          {
+            type: 'HEAD_REF',
+            pattern: '^refs/heads/main$',
+          },
+        ],
+      },
+    ],
+  });
+
+  // Enable event-driven deployments via S3 asset upload (requested pattern)
+  const s3TriggerRule = new aws.cloudwatch.EventRule('DeployerS3Trigger', {
+    eventPattern: $util.jsonStringify({
+      source: ['aws.s3'],
+      'detail-type': ['Object Created'],
+      detail: {
+        bucket: {
+          name: [stagingBucket.name],
+        },
+        object: {
+          key: [{ prefix: 'staged_' }, { prefix: 'workspaces/' }],
+        },
+      },
+    }),
+  });
+
+  // Role for EventBridge to trigger CodeBuild
+  const triggerRole = new aws.iam.Role('DeployerTriggerRole', {
+    assumeRolePolicy: JSON.stringify({
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Action: 'sts:AssumeRole',
+          Effect: 'Allow',
+          Principal: { Service: 'events.amazonaws.com' },
+        },
+      ],
+    }),
+  });
+
+  new aws.iam.RolePolicy('DeployerTriggerPolicy', {
+    role: triggerRole.name,
+    policy: JSON.stringify({
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Effect: 'Allow',
+          Action: ['codebuild:StartBuild'],
+          Resource: [deployer.arn],
+        },
+      ],
+    }),
+  });
+
+  new aws.cloudwatch.EventTarget('DeployerS3TriggerTarget', {
+    rule: s3TriggerRule.name,
+    arn: deployer.arn,
+    roleArn: triggerRole.arn,
+    inputTransformer: {
+      inputPaths: {
+        key: '$.detail.object.key',
+      },
+      inputTemplate: $util.jsonStringify({
+        environmentVariablesOverride: [
+          {
+            name: 'STAGING_ZIP_KEY',
+            value: '<key>',
+          },
+          {
+            name: 'DEPLOY_REASON',
+            value: 'Event-driven S3 upload trigger',
+          },
+        ],
+      }),
     },
   });
 

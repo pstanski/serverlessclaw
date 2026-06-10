@@ -26,16 +26,14 @@ async function main() {
   } while (lastEvaluatedKey);
 
   // Filter items where userId starts with GAP# or has type == 'GAP'
-  const gaps = items.filter((item) => {
+  const gaps = items.filter(item => {
     const key = item.userId ?? '';
     return key.startsWith('GAP#') || item.type === 'GAP';
   });
 
   console.log(`📊 Found ${gaps.length} GAP records:`);
   for (const gap of gaps) {
-    console.log(
-      `- ID: ${gap.userId} | Status: ${gap.status} | Type: ${gap.type} | Timestamp: ${gap.timestamp}`
-    );
+    console.log(`- ID: ${gap.userId} | Status: ${gap.status} | Type: ${gap.type} | Timestamp: ${gap.timestamp}`);
     if (gap.metadata) {
       console.log(`  Metadata:`, JSON.stringify(gap.metadata));
     }

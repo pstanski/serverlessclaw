@@ -62,9 +62,7 @@ async function main() {
   console.log(`✅ Gap ${targetGapId} seeded in workspace '${NEW_WORKSPACE}'`);
   console.log(`   Gap ID: GAP#${now}`);
   console.log(`   Timestamp: ${now}`);
-  console.log(
-    `\nNext step: dispatch the planner with GAP_ID=GAP#${now} and WORKSPACE=${NEW_WORKSPACE}`
-  );
+  console.log(`\nNext step: dispatch the planner with GAP_ID=GAP#${now} and WORKSPACE=${NEW_WORKSPACE}`);
 }
 
 main().catch((err) => {
