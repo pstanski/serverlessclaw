@@ -25,44 +25,50 @@ describe('Memory Isolation Safeguards', () => {
 
   describe('resolveItemById Isolation', () => {
     it('should strictly isolate GSI search by workspace prefix in FilterExpression', async () => {
-      // Mock direct lookup failure
-      ddbMock.on(QueryCommand).resolvesOnce({ Items: [] });
+      // Mock direct lookup failures for all PK candidates (usually 2 or 3)
+      ddbMock.on(QueryCommand).resolves({ Items: [] });
 
       // Mock GSI search
       await resolveItemById(memory, '42', 'GAP', 'WS1');
 
       const queryCalls = ddbMock.commandCalls(QueryCommand);
-      expect(queryCalls.length).toBeGreaterThanOrEqual(2);
+      // It should try PK candidates first, then fall back to GSI
+      expect(queryCalls.length).toBeGreaterThan(1);
 
-      // Verify second call (GSI) uses WorkspaceTypeIndex with KeyCondition
-      const gsiCall = queryCalls[1].args[0].input;
-      expect(gsiCall.IndexName).toBe('WorkspaceTypeIndex');
-      expect(gsiCall.KeyConditionExpression).toContain('workspaceId = :wsId');
-      expect(gsiCall.ExpressionAttributeValues?.[':wsId']).toBe('WS1');
+      // Find the GSI call that uses WorkspaceTypeIndex
+      const gsiCall = queryCalls.find(
+        (call) => call.args[0].input.IndexName === 'WorkspaceTypeIndex'
+      )?.args[0].input;
+      expect(gsiCall).toBeDefined();
+      expect(gsiCall!.KeyConditionExpression).toContain('workspaceId = :wsId');
+      expect(gsiCall!.ExpressionAttributeValues?.[':wsId']).toBe('WS1');
     });
 
     it('should fall back to raw user search if no workspaceId is provided', async () => {
-      ddbMock.on(QueryCommand).resolvesOnce({ Items: [] });
+      ddbMock.on(QueryCommand).resolves({ Items: [] });
 
       await resolveItemById(memory, '42', 'GAP');
 
       const queryCalls = ddbMock.commandCalls(QueryCommand);
-      const gsiCall = queryCalls[1].args[0].input;
+      const lastCall = queryCalls[queryCalls.length - 1].args[0].input;
       // Should find the global isolation check (attribute_not_exists)
-      expect(gsiCall.FilterExpression).toContain('attribute_not_exists(workspaceId)');
+      expect(lastCall.FilterExpression).toContain('attribute_not_exists(workspaceId)');
     });
 
     it('should ignore injected items from other workspaces in GSI results', async () => {
       // Direct lookup fails
-      ddbMock.on(QueryCommand).resolvesOnce({ Items: [] });
+      ddbMock.on(QueryCommand).resolves({ Items: [] });
 
-      // GSI returns an item from a DIFFERENT workspace
+      // Override the mock for the GSI call (which is getMemoryByTypePaginated)
+      // We need to identify which call is the GSI one.
+      // Or just make all QueryCommands return the same injected item.
       ddbMock.on(QueryCommand).resolves({
         Items: [
           {
             userId: 'WS#OTHER_WS#GAP#42',
             timestamp: 123456789,
             type: 'GAP',
+            workspaceId: 'OTHER_WS',
           },
         ],
       });

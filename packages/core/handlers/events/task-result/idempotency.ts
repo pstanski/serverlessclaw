@@ -15,7 +15,7 @@ export async function checkAndMarkProcessed(
         import('../../../lib/utils/ddb-client'),
       ]);
 
-    const tableName = await getMemoryTableName();
+    const tableName = getMemoryTableName();
     if (!tableName) throw new Error('MemoryTable not configured.');
 
     const db = DynamoDBDocumentClient.from(new DynamoDBClient({}));

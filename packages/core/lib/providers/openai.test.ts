@@ -75,9 +75,15 @@ describe('OpenAIProvider', () => {
     vi.clearAllMocks();
     delete process.env.SST_SECRET_OpenAIApiKey;
     delete process.env.OPENAI_API_KEY;
-    (Resource as unknown as { OpenAIApiKey?: { value?: string } }).OpenAIApiKey = {
-      value: 'sk-resource-key',
+    const mockResource = {
+      OpenAIApiKey: { value: 'sk-resource-key' },
     };
+    (Resource as unknown as { OpenAIApiKey?: { value?: string } }).OpenAIApiKey =
+      mockResource.OpenAIApiKey;
+    Object.defineProperty(globalThis, 'Resource', {
+      get: () => Resource,
+      configurable: true,
+    });
     resetProviderClientCache();
     provider = new OpenAIProvider('gpt-5.4');
   });

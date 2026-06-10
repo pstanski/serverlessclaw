@@ -28,9 +28,15 @@ describe('OpenAIProvider.stream', () => {
     vi.clearAllMocks();
     delete process.env.OPENAI_API_KEY;
     delete process.env.SST_SECRET_OpenAIApiKey;
-    (Resource as unknown as { OpenAIApiKey?: { value?: string } }).OpenAIApiKey = {
-      value: 'sk-stream-test-key',
+    const mockResource = {
+      OpenAIApiKey: { value: 'sk-stream-test-key' },
     };
+    (Resource as unknown as { OpenAIApiKey?: { value?: string } }).OpenAIApiKey =
+      mockResource.OpenAIApiKey;
+    Object.defineProperty(globalThis, 'Resource', {
+      get: () => Resource,
+      configurable: true,
+    });
     (OpenAIProvider as unknown as { _client: unknown; _currentKey: string | null })._client = null;
     (OpenAIProvider as unknown as { _client: unknown; _currentKey: string | null })._currentKey =
       null;

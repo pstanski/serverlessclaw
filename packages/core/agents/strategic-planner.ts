@@ -197,7 +197,7 @@ export async function handler(event: PlannerEvent, _context: Context): Promise<P
           formatResponse: (text) => text,
           tokenBudget: config.tokenBudget,
           costLimit: config.costLimit,
-          skipToolLoading: false,
+          skipToolLoading: true,
           maxTokens: 16000,
         }
       );

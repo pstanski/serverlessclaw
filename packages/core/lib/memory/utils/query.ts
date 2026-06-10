@@ -59,6 +59,7 @@ export async function resolveItemById(
   scope?: string | import('../../types/memory').ContextualScope
 ): Promise<MemoryInsight | null> {
   if (!id) return null;
+  const workspaceId = typeof scope === 'string' ? scope : scope?.workspaceId;
   const normalizedId = normalizeGapId(id);
   const numericMatch = normalizedId.match(/(\d+)$/);
   const numericId = numericMatch ? numericMatch[1] : null;
@@ -82,7 +83,6 @@ export async function resolveItemById(
       });
       if (items.length > 0) {
         const item = items[0];
-        const workspaceId = typeof scope === 'string' ? scope : scope?.workspaceId;
         // Security check: allow if workspace matches OR if the item is global (no workspaceId)
         if (workspaceId && item.workspaceId && item.workspaceId !== workspaceId) {
           logger.error(`[Security] Cross-workspace access blocked for ${pk}`);
@@ -100,7 +100,6 @@ export async function resolveItemById(
         });
         if (zeroItems.length > 0) {
           const item = zeroItems[0];
-          const workspaceId = typeof scope === 'string' ? scope : scope?.workspaceId;
           if (workspaceId && item.workspaceId && item.workspaceId !== workspaceId) {
             continue;
           }
@@ -124,6 +123,11 @@ export async function resolveItemById(
         currentScope
       );
       const target = candidates.find((item) => {
+        // Security check: only allow if item belongs to requested workspace OR it's global
+        if (workspaceId && item.workspaceId && item.workspaceId !== workspaceId) {
+          return false;
+        }
+
         const itemPK = normalizeGapId(item.userId as string);
         const itemTS = (item.timestamp as number | string).toString();
         return (

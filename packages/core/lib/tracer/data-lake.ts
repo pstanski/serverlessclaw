@@ -20,11 +20,7 @@ export async function exportToDataLake(
     const { resolveSSTResourceValue } = await import('../utils/resource-helpers');
 
     // 1. Check if DataLakeBucket is configured
-    const bucketName = await resolveSSTResourceValue(
-      'DataLakeBucket',
-      'name',
-      'DATA_LAKE_BUCKET_NAME'
-    );
+    const bucketName = resolveSSTResourceValue('DataLakeBucket', 'name', 'DATA_LAKE_BUCKET_NAME');
     if (!bucketName) {
       logger.debug('[DataLake] DataLakeBucket not configured, skipping export.');
       return;

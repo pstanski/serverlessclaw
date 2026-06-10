@@ -170,107 +170,161 @@ export class OpenRouterProvider implements IProvider {
     topP?: number,
     stopSequences?: string[]
   ): AsyncIterable<MessageChunk> {
-    const apiKey = resolveProviderApiKey('OpenRouter', 'OpenRouterApiKey', 'OPENROUTER_API_KEY');
-    const baseUrl = OPENROUTER_BASE_URL;
-    const activeModel = model ?? this.model;
+    try {
+      const apiKey = resolveProviderApiKey('OpenRouter', 'OpenRouterApiKey', 'OPENROUTER_API_KEY');
+      const baseUrl = OPENROUTER_BASE_URL;
+      const activeModel = model ?? this.model;
 
-    const capabilities = await this.getCapabilities(activeModel);
-    profile = normalizeProfile(profile, capabilities, activeModel);
+      const capabilities = await this.getCapabilities(activeModel);
+      profile = normalizeProfile(profile, capabilities, activeModel);
 
-    const config = OPENROUTER_REASONING_MAP[profile];
-    const reasoningEffort = capEffort(config.effort, capabilities.maxReasoningEffort);
+      const config = OPENROUTER_REASONING_MAP[profile];
+      const reasoningEffort = capEffort(config.effort, capabilities.maxReasoningEffort);
 
-    const processedMessages = messages.map(convertToOpenRouterMessage);
+      const processedMessages = messages.map(convertToOpenRouterMessage);
 
-    const body: Record<string, unknown> = {
-      model: activeModel,
-      messages: processedMessages,
-      stream: true,
-      route: config.route,
-      reasoning: { effort: reasoningEffort, enabled: config.enabled },
-      ...(responseFormat ? { response_format: responseFormat } : {}),
-      provider: {
-        allow_fallbacks: true,
-        data_collection: 'deny',
-        prompt_cache: true,
-        ...(responseFormat || (tools && tools.length > 0) ? { require_parameters: true } : {}),
-      },
-      ...(temperature !== undefined ? { temperature } : {}),
-      ...(maxTokens !== undefined ? { max_tokens: maxTokens } : {}),
-      ...(topP !== undefined ? { top_p: topP } : {}),
-      ...(stopSequences && stopSequences.length > 0 ? { stop: stopSequences } : {}),
-    };
+      const body: Record<string, unknown> = {
+        model: activeModel,
+        messages: processedMessages,
+        stream: true,
+        route: config.route,
+        reasoning: { effort: reasoningEffort, enabled: config.enabled },
+        ...(responseFormat ? { response_format: responseFormat } : {}),
+        provider: {
+          allow_fallbacks: true,
+          data_collection: 'deny',
+          prompt_cache: true,
+          ...(responseFormat || (tools && tools.length > 0) ? { require_parameters: true } : {}),
+        },
+        ...(temperature !== undefined ? { temperature } : {}),
+        ...(maxTokens !== undefined ? { max_tokens: maxTokens } : {}),
+        ...(topP !== undefined ? { top_p: topP } : {}),
+        ...(stopSequences && stopSequences.length > 0 ? { stop: stopSequences } : {}),
+      };
 
-    applyModelSpecificConfig(body, activeModel, tools, responseFormat);
+      applyModelSpecificConfig(body, activeModel, tools, responseFormat);
 
-    if (tools && tools.length > 0) {
-      body['tools'] = tools.map((tool) => {
-        if (tool.type && tool.type !== OPENROUTER_CONSTANTS.TOOL_TYPES.FUNCTION)
-          return { type: tool.type };
-        return {
-          type: OPENROUTER_CONSTANTS.TOOL_TYPES.FUNCTION,
-          function: { name: tool.name, description: tool.description, parameters: tool.parameters },
-        };
-      });
-    }
-
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-        'HTTP-Referer': PROJECT_REFERER,
-        'X-Title': PROJECT_TITLE,
-        'X-OpenRouter-Caching': 'true',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`OpenRouter Provider error: ${response.status} - ${error}`);
-    }
-
-    if (!response.body) {
-      yield { content: ' (No stream body)' };
-      return;
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let streamDone = false;
-
-    const parseChunk = (line: string): (OpenRouterResponse & { done?: boolean }) | null => {
-      if (!line.startsWith('data: ')) return null;
-      const dataStr = line.slice(6).trim();
-      if (dataStr === '[DONE]') return { done: true };
-      try {
-        return JSON.parse(dataStr) as OpenRouterResponse;
-      } catch {
-        return null;
+      if (tools && tools.length > 0) {
+        body['tools'] = tools.map((tool) => {
+          if (tool.type && tool.type !== OPENROUTER_CONSTANTS.TOOL_TYPES.FUNCTION)
+            return { type: tool.type };
+          return {
+            type: OPENROUTER_CONSTANTS.TOOL_TYPES.FUNCTION,
+            function: {
+              name: tool.name,
+              description: tool.description,
+              parameters: tool.parameters,
+            },
+          };
+        });
       }
-    };
 
-    while (!streamDone) {
-      const { done, value } = await reader.read();
-      if (done) break;
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+          'HTTP-Referer': PROJECT_REFERER,
+          'X-Title': PROJECT_TITLE,
+          'X-OpenRouter-Caching': 'true',
+        },
+        body: JSON.stringify(body),
+      });
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() ?? '';
+      if (!response.ok) {
+        const error = await response.text();
+        logger.error(`OpenRouter Provider error: ${response.status} - ${error}`);
+        yield { content: ' (Streaming failed)' };
+        return;
+      }
 
-      for (const line of lines) {
-        const parsed = parseChunk(line);
-        if (!parsed) continue;
-        if (parsed.done) {
-          streamDone = true;
-          break;
+      if (!response.body) {
+        yield { content: ' (No stream body)' };
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let streamDone = false;
+
+      const parseChunk = (line: string): (OpenRouterResponse & { done?: boolean }) | null => {
+        if (!line.startsWith('data: ')) return null;
+        const dataStr = line.slice(6).trim();
+        if (dataStr === '[DONE]') return { done: true };
+        try {
+          return JSON.parse(dataStr) as OpenRouterResponse;
+        } catch {
+          return null;
         }
+      };
 
-        const choice = parsed.choices?.[0];
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-        if (parsed.usage) {
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          const parsed = parseChunk(line);
+          if (!parsed) continue;
+          if (parsed.done) {
+            streamDone = true;
+            break;
+          }
+
+          const choice = parsed.choices?.[0];
+
+          if (parsed.usage) {
+            yield {
+              usage: {
+                prompt_tokens: parsed.usage.prompt_tokens ?? 0,
+                completion_tokens: parsed.usage.completion_tokens ?? 0,
+                total_tokens: parsed.usage.total_tokens ?? 0,
+              },
+            };
+          }
+
+          if (!choice) continue;
+
+          const delta = choice.delta;
+          if (!delta) continue;
+
+          if (delta.content) yield { content: delta.content };
+
+          if (delta.reasoning_details && Array.isArray(delta.reasoning_details)) {
+            for (const detail of delta.reasoning_details) {
+              if (detail.text) yield { thought: (detail as { text: string }).text };
+            }
+          }
+
+          if (delta.reasoning && typeof delta.reasoning === 'string')
+            yield { thought: delta.reasoning };
+
+          if (delta.tool_calls && Array.isArray(delta.tool_calls)) {
+            for (const toolCall of delta.tool_calls) {
+              yield {
+                tool_calls: [
+                  {
+                    id: toolCall.id ?? '',
+                    type: OPENROUTER_CONSTANTS.TOOL_TYPES.FUNCTION,
+                    function: {
+                      name: toolCall.function?.name ?? '',
+                      arguments: toolCall.function?.arguments ?? '',
+                    },
+                  },
+                ],
+              };
+            }
+          }
+        }
+      }
+
+      if (buffer.trim()) {
+        const parsed = parseChunk(buffer.trim());
+        if (parsed && !parsed.done && parsed.usage) {
           yield {
             usage: {
               prompt_tokens: parsed.usage.prompt_tokens ?? 0,
@@ -279,53 +333,10 @@ export class OpenRouterProvider implements IProvider {
             },
           };
         }
-
-        if (!choice) continue;
-
-        const delta = choice.delta;
-        if (!delta) continue;
-
-        if (delta.content) yield { content: delta.content };
-
-        if (delta.reasoning_details && Array.isArray(delta.reasoning_details)) {
-          for (const detail of delta.reasoning_details) {
-            if (detail.text) yield { thought: (detail as { text: string }).text };
-          }
-        }
-
-        if (delta.reasoning && typeof delta.reasoning === 'string')
-          yield { thought: delta.reasoning };
-
-        if (delta.tool_calls && Array.isArray(delta.tool_calls)) {
-          for (const toolCall of delta.tool_calls) {
-            yield {
-              tool_calls: [
-                {
-                  id: toolCall.id ?? '',
-                  type: OPENROUTER_CONSTANTS.TOOL_TYPES.FUNCTION,
-                  function: {
-                    name: toolCall.function?.name ?? '',
-                    arguments: toolCall.function?.arguments ?? '',
-                  },
-                },
-              ],
-            };
-          }
-        }
       }
-    }
-
-    if (buffer.trim()) {
-      const parsed = parseChunk(buffer.trim());
-      if (parsed && !parsed.done && parsed.usage) {
-        yield {
-          usage: {
-            prompt_tokens: parsed.usage.prompt_tokens ?? 0,
-            completion_tokens: parsed.usage.completion_tokens ?? 0,
-            total_tokens: parsed.usage.total_tokens ?? 0,
-          },
-        };
-      }
+    } catch (error) {
+      logger.error('OpenRouter stream failed:', error);
+      yield { content: ' (Streaming failed)' };
     }
   }
 

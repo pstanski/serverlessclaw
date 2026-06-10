@@ -67,7 +67,7 @@ vi.mock('sst', () => ({
 vi.mock('../../lib/metrics/deploy-stats', () => ({
   getDeployCountToday: vi.fn(),
   incrementDeployCount: vi.fn(),
-  rewardDeployLimit: vi.fn(),
+  rewardDeployLimit: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../../lib/safety/circuit-breaker', () => ({
@@ -167,6 +167,7 @@ describe('Deployment Tools', () => {
         recordFailure: vi.fn(),
       } as any);
       vi.mocked(getDeployCountToday).mockResolvedValue(10);
+      vi.mocked(incrementDeployCount).mockResolvedValue(false);
       ddbMock.on(GetCommand).resolves({ Item: { value: '10' } });
 
       const result = await triggerDeployment.execute({
@@ -632,7 +633,7 @@ describe('Deployment Tools', () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
 
       expect(result).toContain('SUCCESS');
-      expect(result).toContain('files staged for deployment');
+      expect(result).toContain('files staged and uploaded to S3');
     });
 
     it('falls back to provided files when git status fails', async () => {

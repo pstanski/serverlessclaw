@@ -117,6 +117,9 @@ vi.mock('../../lib/memory', () => ({
   },
 }));
 
+const longPlan =
+  '1. Implement the Slack integration module by creating core/tools/slack.ts with sendMessage and searchMessages functions.\\n2. Add the slackApiToken secret to SST config and link it to the relevant lambdas.\\n3. Write unit tests in core/tools/slack.test.ts covering happy path and error cases.\\n4. Register SLACK_SEND and SLACK_SEARCH in the TOOLS enum in core/lib/constants.ts.\\n5. Deploy and run QA verification to confirm messages are delivered correctly to target channels.';
+
 vi.mock('../../handlers/events/shared', () => ({
   wakeupInitiator: vi.fn().mockResolvedValue(undefined),
   getRecursionLimit: vi.fn().mockResolvedValue(15),
@@ -127,7 +130,7 @@ vi.mock('../../handlers/events/shared', () => ({
         options.handlerTitle === 'Strategic Planner'
           ? JSON.stringify({
               status: 'SUCCESS',
-              plan: '1. Implement the Slack integration module by creating core/tools/slack.ts with sendMessage and searchMessages functions.\n2. Add the slackApiToken secret to SST config and link it to the relevant lambdas.\n3. Write unit tests in core/tools/slack.test.ts covering happy path and error cases.\n4. Register SLACK_SEND and SLACK_SEARCH in the TOOLS enum in core/lib/constants.ts.\n5. Deploy and run QA verification to confirm messages are delivered correctly to target channels.',
+              plan: longPlan,
               coveredGapIds: ['GAP#1001'],
             })
           : 'Mock response',
@@ -136,7 +139,7 @@ vi.mock('../../handlers/events/shared', () => ({
         options.handlerTitle === 'Strategic Planner'
           ? {
               status: 'SUCCESS',
-              plan: '1. Implement the Slack integration module...',
+              plan: longPlan,
               coveredGapIds: ['GAP#1001'],
             }
           : null,
@@ -239,7 +242,7 @@ vi.mock('../../lib/agent', () => ({
       yield {
         content: JSON.stringify({
           status: 'SUCCESS',
-          plan: '1. Implement the Slack integration module by creating core/tools/slack.ts with sendMessage and searchMessages functions.\n2. Add the slackApiToken secret to SST config and link it to the relevant lambdas.\n3. Write unit tests in core/tools/slack.test.ts covering happy path and error cases.\n4. Register SLACK_SEND and SLACK_SEARCH in the TOOLS enum in core/lib/constants.ts.\n5. Deploy and run QA verification to confirm messages are delivered correctly to target channels.',
+          plan: longPlan,
           coveredGapIds: ['GAP#1001'],
         }),
       };
@@ -247,7 +250,7 @@ vi.mock('../../lib/agent', () => ({
     process = vi.fn().mockResolvedValue({
       responseText: JSON.stringify({
         status: 'SUCCESS',
-        plan: '1. Implement the Slack integration module by creating core/tools/slack.ts with sendMessage and searchMessages functions.\n2. Add the slackApiToken secret to SST config and link it to the relevant lambdas.\n3. Write unit tests in core/tools/slack.test.ts covering happy path and error cases.\n4. Register SLACK_SEND and SLACK_SEARCH in the TOOLS enum in core/lib/constants.ts.\n5. Deploy and run QA verification to confirm messages are delivered correctly to target channels.',
+        plan: longPlan,
         coveredGapIds: ['GAP#1001'],
       }),
     });
@@ -599,6 +602,21 @@ describe('Council of Agents — Edge Cases', () => {
 
   it('should not dispatch to Council when gapId is missing (reactive mode)', async () => {
     const { handler } = await import('../strategic-planner');
+    const { processEventWithAgent } = await import('../../handlers/events/shared');
+
+    vi.mocked(processEventWithAgent).mockResolvedValueOnce({
+      responseText: JSON.stringify({
+        status: 'SUCCESS',
+        plan: longPlan,
+        coveredGapIds: [],
+      }),
+      attachments: [],
+      parsedData: {
+        status: 'SUCCESS',
+        plan: longPlan,
+        coveredGapIds: [],
+      },
+    });
 
     const event = {
       detail: {

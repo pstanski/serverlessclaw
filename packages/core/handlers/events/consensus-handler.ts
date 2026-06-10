@@ -34,7 +34,7 @@ export async function handleConsensus(
   detailType: string
 ): Promise<void> {
   const docClient = getDocClient();
-  const tableName = await getMemoryTableName();
+  const tableName = getMemoryTableName();
 
   if (!tableName) {
     throw new Error('MemoryTable name is missing from resources.');
