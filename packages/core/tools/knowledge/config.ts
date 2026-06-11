@@ -40,7 +40,7 @@ AGENT_NAME: ${agentName}
 INITIATOR: ${initiatorId}
 TRACE_ID: ${traceId}
   ACTIVE_PROVIDER: ${injectedProvider ?? ddbProvider ?? LLMProvider.MINIMAX + ' (default)'}
-  ACTIVE_MODEL: ${injectedModel ?? ddbModel ?? MiniMaxModel.M2_7 + ' (default)'}
+  ACTIVE_MODEL: ${injectedModel ?? ddbModel ?? MiniMaxModel.M3 + ' (default)'}
 STAGING_BUCKET: ${typedResource.StagingBucket?.name ?? 'N/A'}
     `.trim();
   },

@@ -66,7 +66,7 @@ describe('resolveAgentConfig', () => {
     });
   });
 
-  it('overrides with global config when available', async () => {
+  it('does not override with global config when agent config is provided', async () => {
     (ConfigManager.getRawConfig as any).mockImplementation((key: string) => {
       if (key === CONFIG_KEYS.ACTIVE_PROVIDER) return Promise.resolve('global-provider');
       if (key === CONFIG_KEYS.ACTIVE_MODEL) return Promise.resolve('global-model');
@@ -79,6 +79,22 @@ describe('resolveAgentConfig', () => {
     } as any;
 
     const result = await resolveAgentConfig(agentConfig);
+
+    expect(result).toEqual({
+      activeModel: 'agent-model',
+      activeProvider: 'agent-provider',
+      activeProfile: ReasoningProfile.STANDARD,
+    });
+  });
+
+  it('overrides with global config when agent config is not provided', async () => {
+    (ConfigManager.getRawConfig as any).mockImplementation((key: string) => {
+      if (key === CONFIG_KEYS.ACTIVE_PROVIDER) return Promise.resolve('global-provider');
+      if (key === CONFIG_KEYS.ACTIVE_MODEL) return Promise.resolve('global-model');
+      return Promise.resolve(undefined);
+    });
+
+    const result = await resolveAgentConfig(undefined);
 
     expect(result).toEqual({
       activeModel: 'global-model',
@@ -137,5 +153,23 @@ describe('resolveAgentConfig', () => {
       activeProvider: 'openai',
       activeProfile: ReasoningProfile.STANDARD,
     });
+  });
+
+  it('overrides to gpt-4o for critical agents when global model is gpt-5', async () => {
+    (ConfigManager.getRawConfig as any).mockImplementation((key: string) => {
+      if (key === CONFIG_KEYS.ACTIVE_PROVIDER) return Promise.resolve('openai');
+      if (key === CONFIG_KEYS.ACTIVE_MODEL) return Promise.resolve('gpt-5-mini');
+      return Promise.resolve(undefined);
+    });
+
+    const agents = ['coder', 'strategic-planner', 'researcher', 'qa'];
+    for (const id of agents) {
+      const result = await resolveAgentConfig({ id } as any);
+      expect(result).toEqual({
+        activeModel: 'gpt-4o-mini',
+        activeProvider: 'openai',
+        activeProfile: ReasoningProfile.STANDARD,
+      });
+    }
   });
 });

@@ -214,6 +214,12 @@ For a fully managed experience with auto-scaling, monitoring, and support, check
 | **Resilience**           | Manual Recovery       | Restart Container     | Hardware Watchdog     | **Autonomous Heartbeat + Rollback**      |
 | **Resource Safety**      | App-level Permissions | Sandboxing (Docker)   | Memory Safe (Rust)    | **Cloud IAM + Multi-Agent Council**      |
 
+## 🛡️ Architectural Safety & Case Studies
+
+Autonomous serverless systems require robust guardrails. We document our failures to help the community build more resilient AI.
+
+- **[Case Study: The $10,000 Serverless Meltdown (April 2026)](./docs/governance/POST-MORTEM-APRIL-2026.md)** — A detailed breakdown of an event-driven infinite loop and the multi-layered "Safety Stack" we implemented to prevent recurrence.
+
 ## 🤝 Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](./docs/governance/CONTRIBUTING.md) for guidelines.

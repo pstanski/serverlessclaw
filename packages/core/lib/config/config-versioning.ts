@@ -32,6 +32,11 @@ export class ConfigVersioning {
     description?: string,
     options?: { workspaceId?: string; orgId?: string }
   ): Promise<void> {
+    if (key.includes('mcp_tools_cache_')) {
+      // Skip versioning for large tool caches to avoid DDB item size limits (Anti-Pattern 19)
+      return;
+    }
+
     const version: ConfigVersion = {
       versionId: generateVersionId(key),
       key,

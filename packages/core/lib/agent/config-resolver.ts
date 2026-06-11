@@ -41,7 +41,8 @@ function isModelCompatibleWithProvider(provider: string, model: string): boolean
  */
 export async function resolveAgentConfig(
   agentConfig: IAgentConfig | undefined,
-  requestedProfile?: ReasoningProfile
+  requestedProfile?: ReasoningProfile,
+  options?: { workspaceId?: string; orgId?: string }
 ) {
   let activeModel = agentConfig?.model ?? SYSTEM.DEFAULT_MODEL;
   let activeProvider = agentConfig?.provider ?? SYSTEM.DEFAULT_PROVIDER;
@@ -50,12 +51,30 @@ export async function resolveAgentConfig(
 
   try {
     const globalProvider = (await ConfigManager.getRawConfig(
-      CONFIG_KEYS.ACTIVE_PROVIDER
+      CONFIG_KEYS.ACTIVE_PROVIDER,
+      options
     )) as string;
-    const globalModel = (await ConfigManager.getRawConfig(CONFIG_KEYS.ACTIVE_MODEL)) as string;
+    const globalModel = (await ConfigManager.getRawConfig(
+      CONFIG_KEYS.ACTIVE_MODEL,
+      options
+    )) as string;
 
-    if (globalProvider) activeProvider = globalProvider;
-    if (globalModel) activeModel = globalModel;
+    if (globalProvider && !agentConfig?.provider) activeProvider = globalProvider;
+    if (globalModel && !agentConfig?.model) activeModel = globalModel;
+
+    // Coder, Researcher, QA and Strategic Planner override: reasoning models (gpt-5/o-series) fail to stream structured outputs or timeout under JSON communication mode.
+    if (
+      (agentConfig?.id === 'coder' ||
+        agentConfig?.id === 'strategic-planner' ||
+        agentConfig?.id === 'researcher' ||
+        agentConfig?.id === 'qa') &&
+      (activeModel.includes('gpt-5') ||
+        activeModel.startsWith('o1') ||
+        activeModel.startsWith('o3'))
+    ) {
+      activeModel = OpenAIModel.GPT_4O_MINI;
+      activeProvider = LLMProvider.OPENAI;
+    }
 
     if (!globalProvider && !globalModel && agentConfig) {
       const { AgentRouter } = await import('../routing/AgentRouter');

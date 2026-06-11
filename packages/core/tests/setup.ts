@@ -40,6 +40,7 @@ process.env.STAGING_BUCKET_NAME = 'TestStagingBucket';
 process.env.KNOWLEDGE_BUCKET_NAME = 'TestKnowledgeBucket';
 process.env.DATA_LAKE_BUCKET_NAME = 'TestDataLakeBucket';
 process.env.DEPLOYER_PROJECT_NAME = 'TestDeployer';
+process.env.AWS_REGION = 'us-east-1';
 process.env.OPENAI_API_KEY = 'sk-dummy-test-key';
 
 // Global mock for TokenBudgetEnforcer to ensure tests don't fail due to DDB outages

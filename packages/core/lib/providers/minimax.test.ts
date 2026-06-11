@@ -58,7 +58,7 @@ describe('MiniMaxProvider', () => {
 
     expect(mockCreateMessage).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: 'MiniMax-M2.7', // Default MiniMaxModel.M2_7 value
+        model: 'minimax/minimax-m3', // Default MiniMaxModel.M3 value
         system: 'You are a helpful assistant',
         messages: [{ role: 'user', content: 'Hi' }],
         thinking: {

@@ -3,7 +3,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 // 1. Mock 'sst'
 vi.mock('sst', () => ({
   Resource: {
-    MemoryTable: { name: 'test-memory-table' },
+    MemoryTable: { name: 'TestMemoryTable' },
   },
 }));
 
@@ -397,7 +397,7 @@ describe('task-result-handler (DynamoDB idempotency for cold-start dedup)', () =
     expect(mockDdbSend).toHaveBeenCalledWith(
       expect.objectContaining({
         input: expect.objectContaining({
-          TableName: 'test-memory-table',
+          TableName: 'TestMemoryTable',
           Item: expect.objectContaining({
             userId: 'IDEMPOTENCY#task_result:evt-idempotent-001',
             type: 'IDEMPOTENCY',

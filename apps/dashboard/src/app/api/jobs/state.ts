@@ -19,7 +19,7 @@ export const jobInputNormalizer: JobInputNormalizer = new Proxy({} as JobInputNo
 /**
  * @deprecated Use PluginManager.register() to register a custom job input normalizer.
  */
-export function setJobInputNormalizer(_normalizer: JobInputNormalizer): void {
+export function setJobInputNormalizer(): void {
   logger.warn(
     '[Jobs API] setJobInputNormalizer is deprecated. Register via PluginManager instead.'
   );

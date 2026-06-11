@@ -240,6 +240,7 @@ describe('Gap Operations', () => {
       ddbMock
         .on(QueryCommand)
         .resolvesOnce({ Items: [] }) // Direct lookup PK/SK
+        .resolvesOnce({ Items: [] }) // Direct lookup with timestamp 0
         .resolves({
           Items: [
             {
@@ -260,10 +261,11 @@ describe('Gap Operations', () => {
       const queryCalls = ddbMock.commandCalls(QueryCommand);
       expect(queryCalls.length).toBeGreaterThanOrEqual(2);
       expect(count).toBe(3);
-      // Verify standardized mapping (first is direct lookup with #ts, second is GSI with #tp)
-      expect(queryCalls[1].args[0].input.ExpressionAttributeNames).toEqual(
-        expect.objectContaining({ '#tp': 'type' })
+      // Find the GSI call (it should have #tp: 'type')
+      const gsiCall = queryCalls.find(
+        (c) => c.args[0].input.ExpressionAttributeNames?.['#tp'] === 'type'
       );
+      expect(gsiCall).toBeDefined();
     });
 
     it('should return 0 when gap is not found in any status', async () => {

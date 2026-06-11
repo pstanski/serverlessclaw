@@ -1,4 +1,9 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+
+const { mockAddMessage } = vi.hoisted(() => ({
+  mockAddMessage: vi.fn().mockResolvedValue(true),
+}));
+
 import { handler } from './maintenance';
 import { TrustManager } from '../lib/safety/trust-manager';
 
@@ -11,6 +16,7 @@ vi.mock('../lib/safety/trust-manager', () => ({
 vi.mock('../lib/registry/AgentRegistry', () => ({
   AgentRegistry: {
     getAllConfigs: vi.fn().mockResolvedValue({}),
+    getAgentConfig: vi.fn().mockResolvedValue({}),
   },
 }));
 
@@ -32,9 +38,12 @@ vi.mock('../lib/logger', () => ({
   },
 }));
 
-vi.mock('../lib/memory', () => ({
+vi.mock('../lib/memory/dynamo-memory', () => ({
   DynamoMemory: vi.fn().mockImplementation(function () {
-    return {};
+    return {
+      addMessage: mockAddMessage,
+      findStaleCollaborations: vi.fn().mockResolvedValue([]),
+    };
   }),
 }));
 
@@ -48,8 +57,12 @@ vi.mock('../lib/safety/evolution-scheduler', () => ({
 
 vi.mock('../lib/maintenance/metabolism', () => ({
   MetabolismService: {
-    runMetabolismAudit: vi.fn().mockResolvedValue({}),
+    runMetabolismAudit: vi.fn().mockResolvedValue([]),
   },
+}));
+
+vi.mock('../lib/utils/typed-emit', () => ({
+  emitTypedEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('maintenance handler', () => {

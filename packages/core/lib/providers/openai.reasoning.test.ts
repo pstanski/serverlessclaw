@@ -29,7 +29,15 @@ describe('OpenAIProvider.stream reasoning and prefixed events', () => {
     vi.clearAllMocks();
     delete process.env.OPENAI_API_KEY;
     delete process.env.SST_SECRET_OpenAIApiKey;
-    (Resource as any).OpenAIApiKey = { value: 'sk-stream-test-key' };
+    const mockResource = {
+      OpenAIApiKey: { value: 'sk-stream-test-key' },
+      App: { name: 'test-app', stage: 'test-stage' },
+    };
+    (Resource as any).OpenAIApiKey = mockResource.OpenAIApiKey;
+    Object.defineProperty(globalThis, 'Resource', {
+      get: () => Resource,
+      configurable: true,
+    });
     (OpenAIProvider as any)._client = null;
     (OpenAIProvider as any)._currentKey = null;
     provider = new OpenAIProvider();

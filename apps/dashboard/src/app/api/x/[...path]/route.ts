@@ -9,29 +9,30 @@ import { logger } from '@claw/core/lib/logger';
  * Example: if a plugin registers 'my-plugin/action', it will be available at /api/x/my-plugin/action
  */
 
-type RouteContext = { params: Promise<{ path: string[] }> };
-
-export async function GET(req: NextRequest, { params }: RouteContext) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const resolvedParams = await params;
   return handleRequest(req, resolvedParams.path);
 }
 
-export async function POST(req: NextRequest, { params }: RouteContext) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const resolvedParams = await params;
   return handleRequest(req, resolvedParams.path);
 }
 
-export async function PUT(req: NextRequest, { params }: RouteContext) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const resolvedParams = await params;
   return handleRequest(req, resolvedParams.path);
 }
 
-export async function PATCH(req: NextRequest, { params }: RouteContext) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const resolvedParams = await params;
   return handleRequest(req, resolvedParams.path);
 }
 
-export async function DELETE(req: NextRequest, { params }: RouteContext) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
   const resolvedParams = await params;
   return handleRequest(req, resolvedParams.path);
 }

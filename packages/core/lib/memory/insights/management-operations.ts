@@ -15,7 +15,7 @@ export async function setPreference(
   metadata?: Partial<InsightMetadata> & { tags?: string[] },
   scope?: string | ContextualScope
 ): Promise<string> {
-  const timestamp = String(Date.now());
+  const timestamp = Date.now();
   const pk = base.getScopedUserId(entityId, scope);
   const workspaceId = resolveScopeId(scope);
 
@@ -30,12 +30,12 @@ export async function setPreference(
     tags: normalizeTags(['preference', ...(metadata?.tags ?? [])]),
     content,
     expiresAt: metadataObj.expiresAt,
-    createdAt: parseInt(timestamp, 10),
+    createdAt: timestamp,
     metadata: metadataObj,
     workspaceId,
   });
 
-  return timestamp;
+  return String(timestamp);
 }
 
 /**
@@ -49,7 +49,7 @@ export async function addMemory(
   metadata?: Partial<InsightMetadata> & { orgId?: string; tags?: string[] },
   scope?: string | ContextualScope
 ): Promise<number | string> {
-  const timestamp = String(Date.now());
+  const timestamp = Date.now();
   const pk = base.getScopedUserId(scopeId, scope);
   const workspaceId = resolveScopeId(scope);
 
@@ -72,9 +72,10 @@ export async function addMemory(
 
   if (existing.length > 0) {
     const similar = existing[0];
+    const similarTimestamp = similar.timestamp as string | number;
     logger.info(`[Memory] Deduplicated similar content for ${pk}`);
-    await recordMemoryHit(base, pk, String(similar.timestamp), scope);
-    return similar.timestamp as string;
+    await recordMemoryHit(base, pk, similarTimestamp, scope);
+    return similarTimestamp;
   }
 
   const metadataObj = createMetadata(
@@ -92,7 +93,7 @@ export async function addMemory(
     tags: normalizeTags(metadata?.tags),
     content: sanitizedContent,
     expiresAt: metadataObj.expiresAt,
-    createdAt: parseInt(timestamp, 10),
+    createdAt: timestamp,
     metadata: metadataObj,
     workspaceId,
   });
@@ -124,7 +125,7 @@ export async function recordMemoryHit(
 
   try {
     await base.updateItem({
-      Key: { userId: pk, timestamp },
+      Key: { userId: pk, timestamp: Number(timestamp) },
       UpdateExpression:
         'SET metadata.hitCount = if_not_exists(metadata.hitCount, :zero) + :inc, metadata.lastAccessed = :now',
       ExpressionAttributeValues: {
@@ -149,7 +150,7 @@ export async function addLesson(
   metadata?: Partial<InsightMetadata>,
   scope?: string | ContextualScope
 ): Promise<void> {
-  const timestamp = String(Date.now());
+  const timestamp = Date.now();
   const pk = base.getScopedUserId(`USER#${userId}`, scope);
   const workspaceId = resolveScopeId(scope);
 
@@ -165,7 +166,7 @@ export async function addLesson(
     tags: normalizeTags(['lesson']),
     content,
     expiresAt: metadataObj.expiresAt,
-    createdAt: parseInt(timestamp, 10),
+    createdAt: timestamp,
     metadata: metadataObj,
     workspaceId,
   });
@@ -179,7 +180,7 @@ export async function addGlobalLesson(
   lesson: string,
   metadata?: Partial<InsightMetadata>
 ): Promise<number | string> {
-  const timestamp = String(Date.now());
+  const timestamp = Date.now();
   const pk = base.getScopedUserId('SYSTEM#GLOBAL');
 
   const metadataObj = createMetadata(
@@ -194,7 +195,7 @@ export async function addGlobalLesson(
     tags: normalizeTags(['global', 'lesson']),
     content: lesson,
     expiresAt: metadataObj.expiresAt,
-    createdAt: parseInt(timestamp, 10),
+    createdAt: timestamp,
     metadata: metadataObj,
   });
 

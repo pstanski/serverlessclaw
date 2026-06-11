@@ -22,6 +22,12 @@ describe('ConfigManager', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.restoreAllMocks();
+    delete process.env.CONFIG_TABLE_NAME;
+    Object.defineProperty(globalThis, 'Resource', {
+      value: { ConfigTable: { name: 'mock-table' } },
+      configurable: true,
+    });
+    vi.restoreAllMocks();
     docClientMock = {
       send: vi.fn().mockResolvedValue({}),
     };
@@ -30,6 +36,10 @@ describe('ConfigManager', () => {
 
   it('should safely return undefined when ConfigTable is not linked', async () => {
     vi.spyOn(Resource as any, 'ConfigTable', 'get').mockReturnValue(undefined);
+    Object.defineProperty(globalThis, 'Resource', {
+      value: {},
+      configurable: true,
+    });
     const value = await ConfigManager.getRawConfig('any_key');
     expect(value).toBeUndefined();
     expect(docClientMock.send).not.toHaveBeenCalled();
@@ -37,6 +47,10 @@ describe('ConfigManager', () => {
 
   it('should safely return undefined when getTypedConfig is called and ConfigTable is not linked', async () => {
     vi.spyOn(Resource as any, 'ConfigTable', 'get').mockReturnValue(undefined);
+    Object.defineProperty(globalThis, 'Resource', {
+      value: {},
+      configurable: true,
+    });
     const value = await ConfigManager.getTypedConfig('any_key', 'fallback_value');
     expect(value).toBe('fallback_value');
     expect(docClientMock.send).not.toHaveBeenCalled();
@@ -44,12 +58,20 @@ describe('ConfigManager', () => {
 
   it('should safely return undefined when saveRawConfig is called and ConfigTable is not linked', async () => {
     vi.spyOn(Resource as any, 'ConfigTable', 'get').mockReturnValue(undefined);
+    Object.defineProperty(globalThis, 'Resource', {
+      value: {},
+      configurable: true,
+    });
     await expect(ConfigManager.saveRawConfig('any_key', 'value')).resolves.toBeUndefined();
     expect(docClientMock.send).not.toHaveBeenCalled();
   });
 
   it('should safely return undefined when deleteConfig is called and ConfigTable is not linked', async () => {
     vi.spyOn(Resource as any, 'ConfigTable', 'get').mockReturnValue(undefined);
+    Object.defineProperty(globalThis, 'Resource', {
+      value: {},
+      configurable: true,
+    });
     await expect(ConfigManager.deleteConfig('any_key')).resolves.toBeUndefined();
     expect(docClientMock.send).not.toHaveBeenCalled();
   });
@@ -58,6 +80,12 @@ describe('ConfigManager', () => {
     // Mock Resource to throw when accessed
     vi.spyOn(Resource as any, 'ConfigTable', 'get').mockImplementation(() => {
       throw new Error('SST Linkage Error');
+    });
+    Object.defineProperty(globalThis, 'Resource', {
+      get: () => {
+        throw new Error('SST Linkage Error');
+      },
+      configurable: true,
     });
 
     const value = await ConfigManager.resolveTableName();
@@ -70,6 +98,12 @@ describe('ConfigManager.saveRawConfig versioning', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.restoreAllMocks();
+    delete process.env.CONFIG_TABLE_NAME;
+    Object.defineProperty(globalThis, 'Resource', {
+      value: { ConfigTable: { name: 'mock-table' } },
+      configurable: true,
+    });
     vi.restoreAllMocks();
     vi.spyOn(Resource as any, 'ConfigTable', 'get').mockReturnValue({ name: 'mock-table' });
 
@@ -121,6 +155,12 @@ describe('ConfigManager Caching', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.restoreAllMocks();
+    delete process.env.CONFIG_TABLE_NAME;
+    Object.defineProperty(globalThis, 'Resource', {
+      value: { ConfigTable: { name: 'mock-table' } },
+      configurable: true,
+    });
+    vi.restoreAllMocks();
     vi.spyOn(Resource as any, 'ConfigTable', 'get').mockReturnValue({ name: 'mock-table' });
     docClientMock = {
       send: vi.fn(),
@@ -167,6 +207,12 @@ describe('ConfigManager.getAgentOverrideConfig', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.restoreAllMocks();
+    delete process.env.CONFIG_TABLE_NAME;
+    Object.defineProperty(globalThis, 'Resource', {
+      value: { ConfigTable: { name: 'mock-table' } },
+      configurable: true,
+    });
+    vi.restoreAllMocks();
     // @ts-expect-error - accessing private field for testing
     ConfigManager.configCache.clear();
   });
@@ -205,6 +251,12 @@ describe('ConfigManager atomic operations', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.restoreAllMocks();
+    delete process.env.CONFIG_TABLE_NAME;
+    Object.defineProperty(globalThis, 'Resource', {
+      value: { ConfigTable: { name: 'mock-table' } },
+      configurable: true,
+    });
     vi.restoreAllMocks();
     vi.spyOn(Resource as any, 'ConfigTable', 'get').mockReturnValue({ name: 'mock-table' });
     docClientMock = {

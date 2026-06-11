@@ -44,6 +44,10 @@ describe('checkAndMarkIdempotent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     delete process.env.MEMORY_TABLE_NAME;
+    Object.defineProperty(globalThis, 'Resource', {
+      value: { MemoryTable: { name: 'test-memory-table' } },
+      configurable: true,
+    });
   });
 
   it('uses Resource.MemoryTable.name when env var is absent', async () => {

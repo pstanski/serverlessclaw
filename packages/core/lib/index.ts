@@ -4,6 +4,7 @@
 export * from './agent';
 export * from './types';
 export * from './logger';
+export * from './edge/offline-buffer';
 export * from './constants';
 export * from './mcp';
 export * from './memory';

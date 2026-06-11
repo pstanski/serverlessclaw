@@ -6,6 +6,8 @@ import {
   ReasoningProfile,
   SafetyTier,
   EvolutionMode,
+  LLMProvider,
+  OpenAIModel,
 } from './types/index';
 import { AgentRole } from './session/identity';
 import {
@@ -103,6 +105,8 @@ export const BACKBONE_REGISTRY: Record<string, IAgentConfig> = {
     roles: [AgentRole.OPERATOR],
     ...BACKBONE_LLM_DEFAULTS,
     ...BACKBONE_LLM_CONFIG,
+    model: OpenAIModel.GPT_4O_MINI,
+    provider: LLMProvider.OPENAI,
     reasoningProfile: ReasoningProfile.DEEP,
     defaultCommunicationMode: 'json',
     safetyTier: SafetyTier.LOCAL,

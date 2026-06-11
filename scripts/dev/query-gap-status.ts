@@ -23,21 +23,22 @@ async function main() {
 
   console.log(`🔍 Scanning MemoryTable (${tableName}) for references to ${gapId}...`);
 
-  const items: any[] = [];
-  let lastEvaluatedKey: any = undefined;
+  const items: unknown[] = [];
+  let lastEvaluatedKey: Record<string, unknown> | undefined = undefined;
   do {
     const result = await docClient.send(
       new ScanCommand({
         TableName: tableName,
-        ExclusiveStartKey: lastEvaluatedKey,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ExclusiveStartKey: lastEvaluatedKey as Record<string, any> | undefined,
       })
     );
     if (result.Items) {
       items.push(...result.Items);
     }
-    lastEvaluatedKey = result.LastEvaluatedKey;
+    lastEvaluatedKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;
   } while (lastEvaluatedKey);
-  const related = items.filter((item) => {
+  const related = (items as Record<string, unknown>[]).filter((item) => {
     const str = JSON.stringify(item);
     return str.includes(gapId);
   });
@@ -49,17 +50,32 @@ async function main() {
     console.log(`🔹 Key: ${item.userId} | Timestamp: ${item.timestamp}`);
     console.log(`🔹 Type: ${item.type} | Status: ${item.status ?? 'N/A'}`);
     if (item.content) {
-      const displayContent =
-        typeof item.content === 'string' && item.content.startsWith('{')
-          ? JSON.stringify(JSON.parse(item.content), null, 2)
-          : item.content;
+      let displayContent = item.content;
+      if (typeof item.content === 'string' && item.content.trim().startsWith('{')) {
+        try {
+          displayContent = JSON.stringify(JSON.parse(item.content), null, 2);
+        } catch {
+          // Leave displayContent as is if it fails to parse
+        }
+      }
+      if (typeof displayContent === 'string' && displayContent.length > 300) {
+        displayContent = displayContent.slice(0, 300) + '... (truncated)';
+      }
       console.log(`🔹 Content:`, displayContent);
     }
     if (item.value) {
-      console.log(`🔹 Value:`, JSON.stringify(item.value, null, 2));
+      let displayValue = JSON.stringify(item.value, null, 2);
+      if (displayValue.length > 300) {
+        displayValue = displayValue.slice(0, 300) + '... (truncated)';
+      }
+      console.log(`🔹 Value:`, displayValue);
     }
     if (item.metadata) {
-      console.log(`🔹 Metadata:`, JSON.stringify(item.metadata, null, 2));
+      let displayMeta = JSON.stringify(item.metadata, null, 2);
+      if (displayMeta.length > 300) {
+        displayMeta = displayMeta.slice(0, 300) + '... (truncated)';
+      }
+      console.log(`🔹 Metadata:`, displayMeta);
     }
   }
 }

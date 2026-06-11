@@ -23,6 +23,7 @@ export async function getSystemTools(): Promise<Record<string, ITool>> {
     ui,
     workflow,
     nativeFs,
+    info,
   ] = await Promise.all([
     import('./governance'),
     import('./git'),
@@ -34,6 +35,7 @@ export async function getSystemTools(): Promise<Record<string, ITool>> {
     import('./ui'),
     import('./workflow'),
     import('./fs'),
+    import('./info'),
   ]);
 
   Object.assign(systemTools, {
@@ -48,6 +50,7 @@ export async function getSystemTools(): Promise<Record<string, ITool>> {
     ...ui,
     ...workflow,
     ...nativeFs,
+    ...info,
   });
 
   return systemTools;

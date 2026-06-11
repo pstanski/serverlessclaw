@@ -1,5 +1,8 @@
 'use client';
-import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { TranslationsContext, Locale } from '@claw/ui';
+export type { Locale };
+import { useTranslations as useSharedTranslations } from '@claw/ui';
 import en from '../../../messages/en.json';
 import cn from '../../../messages/cn.json';
 import extEn from 'virtual-messages-en';
@@ -8,21 +11,21 @@ import { CONFIG_KEYS } from '@claw/core/lib/constants';
 import { logger } from '@claw/core/lib/logger';
 
 export type Messages = typeof en;
-export type Locale = 'en' | 'cn';
 export type TranslationKey = keyof Messages;
 
 const mergedEn = { ...en, ...extEn };
 const mergedCn = { ...cn, ...extCn };
 
-interface TranslationsContextType {
-  t: (key: string) => string;
-  locale: Locale;
-  setLocale: (locale: Locale) => void;
-  formatDate: (date: Date | number, options?: Intl.DateTimeFormatOptions) => string;
-  formatTime: (date: Date | number, options?: Intl.DateTimeFormatOptions) => string;
+if (typeof window !== 'undefined') {
+  logger.info(
+    `[i18n] Merged translations. Keys count: en=${Object.keys(mergedEn).length}, cn=${Object.keys(mergedCn).length}`
+  );
+  if (extEn && Object.keys(extEn).length > 0) {
+    logger.info(`[i18n] Extension translations detected: ${Object.keys(extEn).join(', ')}`);
+  } else {
+    logger.warn('[i18n] No extension translations found in extEn');
+  }
 }
-
-const TranslationsContext = createContext<TranslationsContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'clawcenter_locale';
 
@@ -115,23 +118,4 @@ export const TranslationsProvider: React.FC<{
 /**
  * Hook to access translation functions and current locale.
  */
-export const useTranslations = () => {
-  const context = useContext(TranslationsContext);
-  if (!context) {
-    // Return a default context for tests or cases where provider is missing
-    return {
-      t: (key: string) => key,
-      locale: 'en' as Locale,
-      setLocale: async () => {},
-      formatDate: (date: Date | number, options?: Intl.DateTimeFormatOptions) => {
-        const d = typeof date === 'number' ? new Date(date) : date;
-        return d.toLocaleDateString('en-US', options);
-      },
-      formatTime: (date: Date | number, options?: Intl.DateTimeFormatOptions) => {
-        const d = typeof date === 'number' ? new Date(date) : date;
-        return d.toLocaleTimeString('en-US', options);
-      },
-    };
-  }
-  return context;
-};
+export { useSharedTranslations as useTranslations };

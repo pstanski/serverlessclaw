@@ -65,7 +65,7 @@ describe('TokenTracker', () => {
       expect(cmd.input.Item?.userId).toBe('TOKEN#agent-1');
       expect(cmd.input.Item?.inputTokens).toBe(100);
       expect(cmd.input.Item?.success).toBe(true);
-      expect(cmd.input.TableName).toBe('MemoryTable');
+      expect(cmd.input.TableName).toBe('TestMemoryTable');
     });
 
     it('should not throw on DynamoDB error', async () => {

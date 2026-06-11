@@ -3,6 +3,7 @@
 
 import React, { Suspense, use } from 'react';
 import { useExtensions } from '../../../../components/Providers/ExtensionProvider';
+import { useUser } from '../../../../components/Providers/UserProvider';
 
 /**
  * Generic Extension Host
@@ -17,6 +18,13 @@ interface ExtensionPageProps {
 export default function ExtensionHostPage({ params }: ExtensionPageProps) {
   const { type } = use(params);
   const { dynamicComponents } = useExtensions();
+  const { isAdmin, loading } = useUser();
+
+  if (loading) {
+    return (
+      <div className="p-8 text-white/20 font-mono animate-pulse">Verifying authorization...</div>
+    );
+  }
 
   // Retrieve the component from the central extension registry
   const Component = dynamicComponents.get(type);
@@ -39,7 +47,7 @@ export default function ExtensionHostPage({ params }: ExtensionPageProps) {
           <div className="p-8 text-white/20 font-mono animate-pulse">Initializing extension...</div>
         }
       >
-        <Component component={{ type }} />
+        <Component component={{ type }} isAdmin={isAdmin} />
       </Suspense>
     </div>
   );

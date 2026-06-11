@@ -66,8 +66,27 @@ export function createAgents(
 
   const basePermissions = [
     {
-      actions: ['cloudwatch:PutMetricData', 'iot:Publish'],
+      actions: ['cloudwatch:PutMetricData', 'iot:Publish', 'events:PutEvents'],
       resources: ['*'],
+    },
+    {
+      actions: [
+        'dynamodb:GetItem',
+        'dynamodb:PutItem',
+        'dynamodb:UpdateItem',
+        'dynamodb:DeleteItem',
+        'dynamodb:Query',
+        'dynamodb:Scan',
+        'dynamodb:BatchWriteItem',
+        'dynamodb:BatchGetItem',
+      ],
+      resources: [
+        memoryTable.arn,
+        traceTable.arn,
+        configTable.arn,
+        $util.interpolate`${memoryTable.arn}/index/*`,
+        $util.interpolate`${traceTable.arn}/index/*`,
+      ],
     },
     {
       actions: ['lambda:GetFunction', 'lambda:UpdateFunctionCode'],

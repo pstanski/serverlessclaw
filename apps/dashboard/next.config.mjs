@@ -16,20 +16,20 @@ if (process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS) {
   const rawPath = process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS;
   let fullPath = '';
 
-  if (path.isAbsolute(rawPath)) {
-    fullPath = rawPath;
-  } else if (rawPath.includes('src/extensions/project') || process.env.SST_RESOURCE_App) {
-    // SST build environment
+  if (rawPath.includes('src/extensions/project') || process.env.SST_RESOURCE_App) {
+    // SST build environment or internal project extension
     fullPath = path.resolve(__dirname, './src/extensions/project/index.tsx');
   } else {
-    // local development
-    fullPath = path.resolve(__dirname, '../../../', rawPath);
+    // Resolve via node resolution (for installed packages) or workspace relative
+    try {
+      fullPath = require.resolve(rawPath);
+    } catch {
+      fullPath = path.resolve(__dirname, '../../', rawPath);
+    }
   }
 
-  // Ensure absolute path is correctly formatted for the bridge file
-  const importPath = fullPath.includes('src/extensions/project')
-    ? './project/index'
-    : fullPath.replace(/\.tsx?$/, '');
+  // Ensure path is correctly formatted for the bridge file
+  const importPath = fullPath.includes('src/extensions/project') ? './project/index' : rawPath; // Use the raw package name for cleaner imports
 
   // Overwrite the active extension file to point to the desired workspace extension
   const activePath = path.resolve(__dirname, './src/extensions/active.tsx');
@@ -87,8 +87,7 @@ const nextConfig = {
     '@serverlessclaw/hooks',
     '@claw/core',
     '@claw/ui',
-    '@goldex/core',
-    '@goldex/dashboard',
+    '@claw/hooks',
     ...(process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS
       ? [
           process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS.split('/')[0],

@@ -28,7 +28,7 @@ export const SYSTEM_CONFIG_METADATA: Record<string, ConfigOptionMetadata> = {
     description: 'The specific model ID used for system-wide reasoning.',
     implication:
       'Advanced models improve quality and reasoning depth; smaller models reduce cost and latency.',
-    default: MiniMaxModel.M2_7,
+    default: MiniMaxModel.M3,
   },
   deploy_limit: {
     label: 'Daily Deploy Limit',

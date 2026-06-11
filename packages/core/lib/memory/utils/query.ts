@@ -59,6 +59,7 @@ export async function resolveItemById(
   scope?: string | import('../../types/memory').ContextualScope
 ): Promise<MemoryInsight | null> {
   if (!id) return null;
+  const workspaceId = typeof scope === 'string' ? scope : scope?.workspaceId;
   const normalizedId = normalizeGapId(id);
   const numericMatch = normalizedId.match(/(\d+)$/);
   const numericId = numericMatch ? numericMatch[1] : null;
@@ -67,39 +68,78 @@ export async function resolveItemById(
   const targetSK = type === 'GAP' ? getGapTimestamp(normalizedId) : Number(numericId ?? 0);
   const scopedPK = base.getScopedUserId(targetPK, scope);
 
-  try {
-    const items = await base.queryItems({
-      KeyConditionExpression: 'userId = :pk AND #ts = :sk',
-      ExpressionAttributeNames: { '#ts': 'timestamp' },
-      ExpressionAttributeValues: { ':pk': scopedPK, ':sk': targetSK },
-    });
-    if (items.length > 0) {
-      const item = items[0];
-      const workspaceId = typeof scope === 'string' ? scope : scope?.workspaceId;
-      if (workspaceId && item.workspaceId !== workspaceId) {
-        logger.error(`[Security] Cross-workspace access blocked for ${scopedPK}`);
-        return null;
+  // Try direct lookups in order of likelihood
+  const pkCandidates = [scopedPK];
+  if (scopedPK !== targetPK) pkCandidates.push(targetPK);
+  if (type === 'GAP' && !pkCandidates.includes(`GAP#${normalizedId}`))
+    pkCandidates.push(`GAP#${normalizedId}`);
+
+  for (const pk of pkCandidates) {
+    try {
+      const items = await base.queryItems({
+        KeyConditionExpression: 'userId = :pk AND #ts = :sk',
+        ExpressionAttributeNames: { '#ts': 'timestamp' },
+        ExpressionAttributeValues: { ':pk': pk, ':sk': targetSK },
+      });
+      if (items.length > 0) {
+        const item = items[0];
+        // Security check: allow if workspace matches OR if the item is global (no workspaceId)
+        if (workspaceId && item.workspaceId && item.workspaceId !== workspaceId) {
+          logger.error(`[Security] Cross-workspace access blocked for ${pk}`);
+          continue; // Try next candidate instead of returning null
+        }
+        return mapToInsight(item, type);
       }
-      return mapToInsight(item, type);
+
+      // Try with timestamp 0 if it's a gap and the derived timestamp failed
+      if (type === 'GAP' && targetSK !== 0) {
+        const zeroItems = await base.queryItems({
+          KeyConditionExpression: 'userId = :pk AND #ts = :sk',
+          ExpressionAttributeNames: { '#ts': 'timestamp' },
+          ExpressionAttributeValues: { ':pk': pk, ':sk': 0 },
+        });
+        if (zeroItems.length > 0) {
+          const item = zeroItems[0];
+          if (workspaceId && item.workspaceId && item.workspaceId !== workspaceId) {
+            continue;
+          }
+          return mapToInsight(item, type);
+        }
+      }
+    } catch (err) {
+      logger.debug(`[resolveItemById] Direct lookup failed for ${pk}`, { err });
     }
-  } catch (err) {
-    logger.debug(`[resolveItemById] Direct lookup failed for ${scopedPK}`, { err });
   }
 
-  try {
-    const { items: candidates } = await getMemoryByTypePaginated(base, type, 200, undefined, scope);
-    const target = candidates.find((item) => {
-      const itemPK = normalizeGapId(item.userId as string);
-      const itemTS = (item.timestamp as number | string).toString();
-      return (
-        itemPK === normalizedId ||
-        itemPK.endsWith(`#${numericId}`) ||
-        (numericId && itemTS === numericId)
+  // GSI Fallback: Try with scope first, then global if it fails
+  const scopesToTry = [scope, undefined];
+  for (const currentScope of scopesToTry) {
+    try {
+      const { items: candidates } = await getMemoryByTypePaginated(
+        base,
+        type,
+        200,
+        undefined,
+        currentScope
       );
-    });
-    if (target) return mapToInsight(target, type);
-  } catch (error) {
-    logger.error(`[resolveItemById] GSI fallback failed:`, error);
+      const target = candidates.find((item) => {
+        // Security check: only allow if item belongs to requested workspace OR it's global
+        if (workspaceId && item.workspaceId && item.workspaceId !== workspaceId) {
+          return false;
+        }
+
+        const itemPK = normalizeGapId(item.userId as string);
+        const itemTS = (item.timestamp as number | string).toString();
+        return (
+          itemPK === normalizedId ||
+          itemPK.endsWith(`#${numericId}`) ||
+          (numericId && itemTS === numericId)
+        );
+      });
+      if (target) return mapToInsight(target, type);
+    } catch (error) {
+      logger.error(`[resolveItemById] GSI fallback failed:`, error);
+    }
   }
   return null;
 }

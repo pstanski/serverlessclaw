@@ -43,7 +43,7 @@ export async function recordFailurePattern(
   metadata?: Partial<InsightMetadata> & { orgId?: string; tags?: string[] },
   scope?: string | ContextualScope
 ): Promise<string | number> {
-  const timestamp = String(Date.now());
+  const timestamp = Date.now();
   const content = JSON.stringify({ planHash, planContent, gapIds, failureReason });
   const pk = base.getScopedUserId('SYSTEM#GLOBAL', scope);
   const workspaceId = resolveScopeId(scope);
@@ -51,11 +51,11 @@ export async function recordFailurePattern(
   const { putWithCollisionRetry } = await import('../utils/atomic');
   await putWithCollisionRetry(base as unknown as import('../base').BaseMemoryProvider, {
     userId: pk,
-    timestamp: parseInt(timestamp, 10),
+    timestamp,
     type: 'MEMORY:FAILURE_PATTERN',
     tags: normalizeTags(['failed_plan', ...(metadata?.tags ?? [])]),
     content,
-    createdAt: parseInt(timestamp, 10),
+    createdAt: timestamp,
     metadata: createMetadata(metadata, timestamp),
     workspaceId,
   });

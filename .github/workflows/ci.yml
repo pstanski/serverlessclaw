@@ -30,6 +30,7 @@ jobs:
         run: pnpm install
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
       - name: Install Providers & Generate Types
         run: pnpm exec sst install

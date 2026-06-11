@@ -29,9 +29,9 @@ import { OpenRouterResponse } from './openrouter-types';
 export class OpenRouterProvider implements IProvider {
   /**
    * Initializes the OpenRouter provider.
-   * @param model The model ID to use (defaults to Gemini 3 Flash).
+   * @param model The model ID to use (defaults to Nemotron Content Safety).
    */
-  constructor(private model: string = OpenRouterModel.GEMINI_3_FLASH) {}
+  constructor(private model: string = OpenRouterModel.NEMOTRON_CONTENT_SAFETY) {}
 
   /**
    * Performs a non-streaming chat completion call.
@@ -170,51 +170,55 @@ export class OpenRouterProvider implements IProvider {
     topP?: number,
     stopSequences?: string[]
   ): AsyncIterable<MessageChunk> {
-    const apiKey = resolveProviderApiKey('OpenRouter', 'OpenRouterApiKey', 'OPENROUTER_API_KEY');
-    const baseUrl = OPENROUTER_BASE_URL;
-    const activeModel = model ?? this.model;
-
-    const capabilities = await this.getCapabilities(activeModel);
-    profile = normalizeProfile(profile, capabilities, activeModel);
-
-    const config = OPENROUTER_REASONING_MAP[profile];
-    const reasoningEffort = capEffort(config.effort, capabilities.maxReasoningEffort);
-
-    const processedMessages = messages.map(convertToOpenRouterMessage);
-
-    const body: Record<string, unknown> = {
-      model: activeModel,
-      messages: processedMessages,
-      stream: true,
-      route: config.route,
-      reasoning: { effort: reasoningEffort, enabled: config.enabled },
-      ...(responseFormat ? { response_format: responseFormat } : {}),
-      provider: {
-        allow_fallbacks: true,
-        data_collection: 'deny',
-        prompt_cache: true,
-        ...(responseFormat || (tools && tools.length > 0) ? { require_parameters: true } : {}),
-      },
-      ...(temperature !== undefined ? { temperature } : {}),
-      ...(maxTokens !== undefined ? { max_tokens: maxTokens } : {}),
-      ...(topP !== undefined ? { top_p: topP } : {}),
-      ...(stopSequences && stopSequences.length > 0 ? { stop: stopSequences } : {}),
-    };
-
-    applyModelSpecificConfig(body, activeModel, tools, responseFormat);
-
-    if (tools && tools.length > 0) {
-      body['tools'] = tools.map((tool) => {
-        if (tool.type && tool.type !== OPENROUTER_CONSTANTS.TOOL_TYPES.FUNCTION)
-          return { type: tool.type };
-        return {
-          type: OPENROUTER_CONSTANTS.TOOL_TYPES.FUNCTION,
-          function: { name: tool.name, description: tool.description, parameters: tool.parameters },
-        };
-      });
-    }
-
     try {
+      const apiKey = resolveProviderApiKey('OpenRouter', 'OpenRouterApiKey', 'OPENROUTER_API_KEY');
+      const baseUrl = OPENROUTER_BASE_URL;
+      const activeModel = model ?? this.model;
+
+      const capabilities = await this.getCapabilities(activeModel);
+      profile = normalizeProfile(profile, capabilities, activeModel);
+
+      const config = OPENROUTER_REASONING_MAP[profile];
+      const reasoningEffort = capEffort(config.effort, capabilities.maxReasoningEffort);
+
+      const processedMessages = messages.map(convertToOpenRouterMessage);
+
+      const body: Record<string, unknown> = {
+        model: activeModel,
+        messages: processedMessages,
+        stream: true,
+        route: config.route,
+        reasoning: { effort: reasoningEffort, enabled: config.enabled },
+        ...(responseFormat ? { response_format: responseFormat } : {}),
+        provider: {
+          allow_fallbacks: true,
+          data_collection: 'deny',
+          prompt_cache: true,
+          ...(responseFormat || (tools && tools.length > 0) ? { require_parameters: true } : {}),
+        },
+        ...(temperature !== undefined ? { temperature } : {}),
+        ...(maxTokens !== undefined ? { max_tokens: maxTokens } : {}),
+        ...(topP !== undefined ? { top_p: topP } : {}),
+        ...(stopSequences && stopSequences.length > 0 ? { stop: stopSequences } : {}),
+      };
+
+      applyModelSpecificConfig(body, activeModel, tools, responseFormat);
+
+      if (tools && tools.length > 0) {
+        body['tools'] = tools.map((tool) => {
+          if (tool.type && tool.type !== OPENROUTER_CONSTANTS.TOOL_TYPES.FUNCTION)
+            return { type: tool.type };
+          return {
+            type: OPENROUTER_CONSTANTS.TOOL_TYPES.FUNCTION,
+            function: {
+              name: tool.name,
+              description: tool.description,
+              parameters: tool.parameters,
+            },
+          };
+        });
+      }
+
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -229,7 +233,9 @@ export class OpenRouterProvider implements IProvider {
 
       if (!response.ok) {
         const error = await response.text();
-        throw new Error(`OpenRouter Provider error: ${response.status} - ${error}`);
+        logger.error(`OpenRouter Provider error: ${response.status} - ${error}`);
+        yield { content: ' (Streaming failed)' };
+        return;
       }
 
       if (!response.body) {
@@ -328,8 +334,8 @@ export class OpenRouterProvider implements IProvider {
           };
         }
       }
-    } catch (err) {
-      logger.error('OpenRouter streaming failed:', err);
+    } catch (error) {
+      logger.error('OpenRouter stream failed:', error);
       yield { content: ' (Streaming failed)' };
     }
   }

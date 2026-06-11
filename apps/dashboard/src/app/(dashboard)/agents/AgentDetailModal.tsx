@@ -45,11 +45,15 @@ const PROVIDERS = {
   },
   [LLMProvider.MINIMAX]: {
     label: 'MiniMax (Native)',
-    models: [MiniMaxModel.M2_7, MiniMaxModel.M2_7_HIGHSPEED],
+    models: [MiniMaxModel.M3, MiniMaxModel.M2_7, MiniMaxModel.M2_7_HIGHSPEED],
   },
   [LLMProvider.OPENROUTER]: {
     label: 'OpenRouter (Aggregator)',
-    models: [OpenRouterModel.GLM_5, OpenRouterModel.GEMINI_3_FLASH],
+    models: [
+      OpenRouterModel.NEMOTRON_CONTENT_SAFETY,
+      OpenRouterModel.GLM_5,
+      OpenRouterModel.GEMINI_3_FLASH,
+    ],
   },
 };
 

@@ -16,7 +16,8 @@ export function createMultiRegionScaling(ctx: SharedContext) {
     // We attach a tag to signify this API is part of the global cluster
   }
 
-  // Define cross-region sync queues if needed (Mock logic for Phase 4)
+  /* 
+  // Disable unused sync queue to save SQS requests/costs (AWS Free Tier protection)
   const regionSyncQueue = new sst.aws.Queue('FrameworkRegionSyncQueue', {
     transform: {
       queue: {
@@ -26,8 +27,9 @@ export function createMultiRegionScaling(ctx: SharedContext) {
       },
     },
   });
+  */
 
   return {
-    regionSyncQueue,
+    regionSyncQueue: { url: '' }, // Return mock URL to avoid breaking sst.config.ts outputs
   };
 }

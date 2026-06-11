@@ -61,17 +61,19 @@ export const stageChanges = {
           .map((f) => f.trim())
           .filter(Boolean);
         gitFiles.forEach((f) => allFilesToStage.add(f));
-      } catch (_e) {
-        logger.warn('System git failed, falling back to isomorphic-git for statusMatrix', _e);
+      } catch (e) {
+        logger.warn('System git failed, falling back to isomorphic-git for statusMatrix', e);
         try {
           const matrix = await git.statusMatrix({ fs: nodefs, dir: process.cwd() });
           // statusMatrix returns [filepath, head, workdir, stage]
           // head=1, workdir=2 means modified
           // head=0, workdir=2 means untracked
           const modified = matrix
-            .filter((row: any[]) => (row[2] as number) === 2 && (row[1] as number) !== 2) // Modified or Untracked
-            .map((row) => row[0]);
-          modified.forEach((f) => allFilesToStage.add(f));
+            .filter(
+              (row: (string | number)[]) => (row[2] as number) === 2 && (row[1] as number) !== 2
+            ) // Modified or Untracked
+            .map((row: (string | number)[]) => row[0] as string);
+          modified.forEach((f: string) => allFilesToStage.add(f));
         } catch (matrixError) {
           logger.error('isomorphic-git statusMatrix failed:', matrixError);
         }
@@ -112,8 +114,10 @@ export const stageChanges = {
                 Body: fileBuffer,
               })
             );
+
+            // Event-driven: S3 PutObject now triggers CodeBuild via EventBridge rule.
             resolve(
-              `SUCCESS: ${finalFiles.length} files staged for deployment. (DoD Verified) Staging Key: ${zipKey}`
+              `SUCCESS: ${finalFiles.length} files staged and uploaded to S3. (DoD Verified) A CodeBuild deployment has been triggered automatically. Staging Key: ${zipKey}`
             );
           } catch (error) {
             resolve(`FAILED_TO_UPLOAD: ${formatErrorMessage(error)}`);
@@ -198,8 +202,8 @@ export const generatePatch = {
               timeout: 30000,
             });
           }
-        } catch (_e) {
-          logger.warn('[generatePatch] System git diff failed:', _e);
+        } catch (e) {
+          logger.warn('[generatePatch] System git diff failed:', e);
         }
       }
 
@@ -213,8 +217,8 @@ export const generatePatch = {
           if (changes.length > 0) {
             return `FAILED_TO_GENERATE_DIFF: System 'git' is missing in this environment. Detected ${changes.length} changed files: ${changes.map((c) => c[0]).join(', ')}. PLEASE USE 'stageChanges' instead, or manually construct the patch if you can.`;
           }
-        } catch (_e) {
-          logger.error('[generatePatch] Isomorphic-git statusMatrix failed:', _e);
+        } catch (e) {
+          logger.error('[generatePatch] Isomorphic-git statusMatrix failed:', e);
         }
       }
 
@@ -332,9 +336,14 @@ export const triggerDeployment = {
               Body: fileBuffer,
             })
           );
+
+          // Event-driven: S3 PutObject triggers CodeBuild via EventBridge rule.
+          // No need to call StartBuild manually when patch is uploaded.
+          return `SUCCESS: Deployment assets uploaded to S3. The CodeBuild project will be triggered automatically. Staging Key: ${effectiveStagingKey}. Reasoning: ${reason}`;
         }
       } catch (error) {
-        logger.error('[Deployment] Failed to stage patch for build:', error);
+        logger.error('[Deployment] Failed to stage patch for event-driven build:', error);
+        return `FAILED_TO_STAGE_PATCH: ${formatErrorMessage(error)}`;
       } finally {
         await unlink(patchFilePath).catch(() => {});
         await unlink(zipPath).catch(() => {});
@@ -362,24 +371,28 @@ export const triggerDeployment = {
       let buildProject = process.env.DEPLOYER_PROJECT_NAME;
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         configTable = (Resource as any).ConfigTable?.name;
       } catch {
-        /* ignore */
+        // ignore
       }
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         memoryTable = (Resource as any).MemoryTable?.name;
       } catch {
-        /* ignore */
+        // ignore
       }
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         buildProject = (Resource as any).Deployer?.name;
       } catch {
-        /* ignore */
+        // ignore
       }
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         buildProject = buildProject || (Resource as any).SelfDeployProject?.name;
       } catch {
-        /* ignore */
+        // ignore
       }
 
       if (!configTable) {
@@ -521,6 +534,7 @@ export const triggerDeployment = {
         // 1. Commit and push changes directly to GitHub
         try {
           const repo = process.env.GITHUB_REPO || 'serverlessclaw/serverlessclaw';
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const token = (Resource as any).GitHubToken?.value || process.env.GITHUB_TOKEN;
           if (token) {
             logger.info(`[Deployment Bypass] Attempting direct Git push to ${repo} main branch...`);
@@ -727,6 +741,7 @@ export const triggerInfraRebuild = {
 
       let buildProject = process.env.DEPLOYER_PROJECT_NAME;
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const typedResource = Resource as any;
         buildProject =
           typedResource.SelfDeployProject?.name || typedResource.Deployer?.name || buildProject;

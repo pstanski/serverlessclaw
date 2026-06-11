@@ -176,6 +176,13 @@ describe('Cognitive Health Probes', () => {
       // Ensure CI env vars don't shadow the sst mock
       vi.stubEnv('STAGING_BUCKET_NAME', '');
       vi.stubEnv('KNOWLEDGE_BUCKET_NAME', '');
+      Object.defineProperty(globalThis, 'Resource', {
+        value: {
+          StagingBucket: { name: 'test-bucket' },
+          KnowledgeBucket: { name: 'test-knowledge-bucket' },
+        },
+        configurable: true,
+      });
       (mockDB.send as any).mockResolvedValue({});
       (mockS3.send as any).mockResolvedValueOnce({});
       (mockIot.send as any).mockResolvedValueOnce({});

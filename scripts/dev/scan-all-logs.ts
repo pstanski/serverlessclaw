@@ -1,8 +1,4 @@
-import {
-  CloudWatchLogsClient,
-  DescribeLogGroupsCommand,
-  FilterLogEventsCommand,
-} from '@aws-sdk/client-cloudwatch-logs';
+import { CloudWatchLogsClient, DescribeLogGroupsCommand, FilterLogEventsCommand } from '@aws-sdk/client-cloudwatch-logs';
 
 async function main() {
   const region = process.env.AWS_REGION || 'ap-southeast-2';
@@ -13,16 +9,14 @@ async function main() {
     '/aws/lambda/serverlessclaw-prod-',
     '/aws/lambda/serverlesscla-prod-',
     '/aws/lambda/serverles-prod-',
-    '/aws/lambda/serve-prod-',
+    '/aws/lambda/serve-prod-'
   ];
-
-  const logGroups: any[] = [];
+  
+  const logGroups: unknown[] = [];
   for (const prefix of prefixes) {
-    const describeRes = await client.send(
-      new DescribeLogGroupsCommand({
-        logGroupNamePrefix: prefix,
-      })
-    );
+    const describeRes = await client.send(new DescribeLogGroupsCommand({
+      logGroupNamePrefix: prefix
+    }));
     if (describeRes.logGroups) {
       logGroups.push(...describeRes.logGroups);
     }
@@ -31,7 +25,7 @@ async function main() {
 
   const startTime = Date.now() - 2 * 60 * 60 * 1000; // 2 hours ago
 
-  for (const group of logGroups) {
+  for (const group of logGroups as { logGroupName?: string }[]) {
     const logGroupName = group.logGroupName!;
     try {
       const response = await client.send(
@@ -50,9 +44,9 @@ async function main() {
           console.log(`  🕒 [${date}] ${event.message?.trim().slice(0, 300)}`);
         }
       }
-    } catch (err: any) {
-      if (err.name !== 'ResourceNotFoundException') {
-        console.error(`❌ Error querying ${logGroupName}:`, err.message);
+    } catch (err) {
+      if ((err as Error).name !== 'ResourceNotFoundException') {
+        console.error(`❌ Error querying ${logGroupName}:`, (err as Error).message);
       }
     }
   }

@@ -30,45 +30,53 @@ export function resolveSSTResourceValue(
         return parsed[property];
       }
     } catch {
+      // If not JSON, only return if looking for name/value and it's a direct match
       if (property === 'name' || property === 'value') return ionValue;
     }
   }
 
-  // 2. Try globalResource (for tests and specialized environments)
+  // 3. Try globalResource (for tests and specialized environments)
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const globalResource = (globalThis as any).Resource;
-    if (globalResource && globalResource[resourceName] && globalResource[resourceName][property]) {
-      return globalResource[resourceName][property];
-    }
-  } catch {
-    // ignore (e.g. SST Resource proxy throwing "links not active")
-  }
-
-  // 3. Try traditional Resource access
-  // We use a require inside the function to avoid module load time crashes.
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const sst = require('sst');
-    const Resource = sst.Resource || sst.default?.Resource || sst;
-    if (Resource && (Resource as any)[resourceName] && (Resource as any)[resourceName][property]) {
-      return (Resource as any)[resourceName][property];
+    if (globalResource && globalResource[resourceName]) {
+      const val = globalResource[resourceName][property];
+      if (val !== undefined) return val;
+      // If resource exists but property doesn't, don't fall back to fuzzy env
+      return defaultValue;
     }
   } catch {
     // ignore
   }
 
-  // 4. Try explicit override env var (e.g. OPENAI_API_KEY)
-  if (fallbackEnvVar && process.env[fallbackEnvVar]) {
-    return process.env[fallbackEnvVar]!;
+  // 4. Try traditional Resource access
+  // We use a require inside the function to avoid module load time crashes.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const sst = require('sst');
+    const Resource = sst.Resource || sst.default?.Resource || sst;
+    if (Resource && (Resource as any)[resourceName]) {
+      const val = (Resource as any)[resourceName][property];
+      if (val !== undefined) return val;
+      return defaultValue;
+    }
+  } catch {
+    // ignore
   }
 
   // 5. Fuzzy Env Match (Robust Fallback)
-  const fuzzyPrefix = resourceName.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+  // Only if no explicit Resource object was found
+  const snakeCase = resourceName
+    .replace(/([a-z])([A-Z])/g, '$1_$2')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '_');
   const fuzzyProp = property.toUpperCase();
   const fuzzyMatch = Object.keys(process.env).find(
-    (k) => k.includes(fuzzyPrefix) && k.includes(fuzzyProp)
+    (k) => k.includes(snakeCase) && k.includes(fuzzyProp)
   );
-  if (fuzzyMatch) return process.env[fuzzyMatch];
+  if (fuzzyMatch && process.env[fuzzyMatch]) {
+    return process.env[fuzzyMatch];
+  }
 
   return defaultValue;
 }
@@ -98,7 +106,9 @@ export function getAppInfo(): { name: string; stage: string } {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { Resource } = require('sst');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (Resource && (Resource as any).App) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return { name: (Resource as any).App.name, stage: (Resource as any).App.stage };
     }
   } catch {
