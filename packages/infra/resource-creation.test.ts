@@ -179,6 +179,7 @@ vi.stubGlobal('aws', {
   },
   codebuild: {
     Project: vi.fn(MockProject as any),
+    Webhook: vi.fn(),
   },
   cloudwatch: {
     EventRule: vi.fn(MockEventRule as any),
