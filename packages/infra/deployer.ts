@@ -118,7 +118,7 @@ export function createDeployer(ctx: DeployerContext) {
     },
   });
 
-  // Enable automatic triggering on push to main
+  /* Temporarily disabled to unblock deployment without GitHub token linkage
   new aws.codebuild.Webhook('DeployerWebhook', {
     projectName: deployer.name,
     buildType: 'BUILD',
@@ -137,6 +137,7 @@ export function createDeployer(ctx: DeployerContext) {
       },
     ],
   });
+  */
 
   // Enable event-driven deployments via S3 asset upload (requested pattern)
   const s3TriggerRule = new aws.cloudwatch.EventRule('DeployerS3Trigger', {
