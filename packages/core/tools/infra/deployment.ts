@@ -282,7 +282,7 @@ export const triggerDeployment = {
     const { StartBuildCommand, CodeBuildClient } = await import('@aws-sdk/client-codebuild');
 
     const codebuild = new CodeBuildClient({});
-    const db = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+    const db = DynamoDBDocumentClient.from(new DynamoDBClient({})) as any;
     const cb = getCircuitBreaker('circuit_breaker_state', workspaceId);
 
     let effectiveStagingKey = providedStagingKey;

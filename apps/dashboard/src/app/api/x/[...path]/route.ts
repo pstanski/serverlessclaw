@@ -6,7 +6,7 @@ import { logger } from '@claw/core/lib/logger';
  * Dynamic API Gateway for Plugin-registered routes.
  *
  * Routes registered via PluginManager.dashboard.apiRoutes are accessible here.
- * Example: if a plugin registers 'goldex/simulate', it will be available at /api/x/goldex/simulate
+ * Example: if a plugin registers 'my-plugin/action', it will be available at /api/x/my-plugin/action
  */
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {

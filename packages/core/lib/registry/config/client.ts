@@ -8,7 +8,7 @@ let injectedDocClient: DynamoDBDocumentClient | undefined;
  * Returns the effective docClient (either injected or default).
  * Lazily initializes the default client to reduce static context budget.
  */
-export function getDocClient(): DynamoDBDocumentClient {
+export function getDocClient(): any {
   if (injectedDocClient) return injectedDocClient;
 
   if (!defaultDocClient) {

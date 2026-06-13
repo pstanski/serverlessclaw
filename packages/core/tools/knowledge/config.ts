@@ -60,7 +60,8 @@ export const listSystemConfigs = {
         return 'ConfigTable not linked. Unable to list configurations.';
       }
 
-      const { Items } = await defaultDocClient!.send(
+      const docClient: any = defaultDocClient;
+      const { Items } = await docClient.send(
         new ScanCommand({
           TableName: ConfigTable.name,
         })
