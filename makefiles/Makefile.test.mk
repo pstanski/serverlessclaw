@@ -224,8 +224,13 @@ test-component: ## Run component tests (via Turbo)
 	@$(call log_step,Running component tests via Turbo...)
 	@$(PNPM) exec turbo run test -- --reporter=verbose '**/*.test.tsx'
 
-test-e2e: ## Bypassed: Run E2E tests with Playwright (local dev server)
-	@$(call log_warning,Bypassing test-e2e to unblock release)
+test-e2e: ## Run E2E tests with Playwright (local dev server)
+	@if [ "$(SKIP_E2E)" = "true" ] || [ "$$SKIP_E2E" = "true" ]; then \
+		$(call log_warning,Skipping local E2E tests due to SKIP_E2E=true); \
+	else \
+		$(call log_step,Running E2E tests (Isolated environment)...); \
+		unset npm_config_prefix && CI=true PLAYWRIGHT=true node ./node_modules/@playwright/test/cli.js test $(if $(PW_SHARD),--shard=$(PW_SHARD),); \
+	fi
 
 test-e2e-deployed: ## Run E2E tests against deployed URL. Usage: make test-e2e-deployed URL=https://...
 	@$(call log_step,Running E2E tests against deployed URL...)
