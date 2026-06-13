@@ -15,7 +15,8 @@ import { logger } from '@claw/core/lib/logger';
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const { userId, password } = await req.json();
-    const isDev = process.env.NODE_ENV !== 'production';
+    const stage = process.env.SST_STAGE || '';
+    const isDev = process.env.NODE_ENV !== 'production' || (!!stage && stage !== 'prod');
 
     // Debug SST Resources
     const sstKeys = Object.keys(process.env).filter((k) => k.startsWith('SST_RESOURCE_'));

@@ -74,6 +74,7 @@ export function createDashboard(
       IOT_ENDPOINT: ctx.realtime?.endpoint || '',
       IOT_AUTHORIZER: ctx.realtime?.authorizer || '',
       DASHBOARD_PASSWORD: process.env.DASHBOARD_PASSWORD || '',
+      SST_STAGE: $app.stage,
       JOBS_CONFIG_PATH: 'apps/dashboard/jobs.config.json',
       AWS_PROFILE: '', // Clear profile to avoid conflict warning as SST injects static credentials
       NEXT_PUBLIC_PRIMARY_COLOR:
