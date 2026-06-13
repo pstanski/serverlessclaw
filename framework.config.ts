@@ -27,9 +27,9 @@ export const frameworkConfig: IFrameworkConfig = {
   brand: {
     name: process.env.NEXT_PUBLIC_APP_NAME || 'ClawCenter',
     shortName: process.env.NEXT_PUBLIC_APP_SHORT_NAME || 'Claw',
-    logo: process.env.NEXT_PUBLIC_APP_LOGO || '/icon.png',
+    logo: process.env.NEXT_PUBLIC_APP_LOGO || '',
     logoBanner: process.env.NEXT_PUBLIC_APP_LOGO_BANNER || '',
-    favicon: '/favicon.ico',
+    favicon: process.env.NEXT_PUBLIC_APP_FAVICON || '/favicon.ico',
   },
   theme: {
     defaultMode: 'dark',

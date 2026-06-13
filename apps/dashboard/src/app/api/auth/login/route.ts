@@ -78,14 +78,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
         // Auto-provision test users with specific roles in local dev
         if (isDev) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const rawUserOps = (identityManager as any).userOps;
           if (finalUserId === 'dashboard-user' || finalUserId === 'admin-user') {
-            await identityManager.updateUserRole(finalUserId, UserRole.ADMIN, finalUserId);
+            await rawUserOps.updateUser(finalUserId, { role: UserRole.ADMIN });
           } else if (finalUserId === 'owner-user') {
-            await identityManager.updateUserRole(finalUserId, UserRole.OWNER, finalUserId);
+            await rawUserOps.updateUser(finalUserId, { role: UserRole.OWNER });
           } else if (finalUserId === 'member-user') {
-            await identityManager.updateUserRole(finalUserId, UserRole.MEMBER, finalUserId);
+            await rawUserOps.updateUser(finalUserId, { role: UserRole.MEMBER });
           } else if (finalUserId === 'viewer-user') {
-            await identityManager.updateUserRole(finalUserId, UserRole.VIEWER, finalUserId);
+            await rawUserOps.updateUser(finalUserId, { role: UserRole.VIEWER });
           }
 
           // Auto-join default workspace for test users
@@ -97,7 +99,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           authResult.user?.role !== UserRole.ADMIN &&
           authResult.user?.role !== UserRole.OWNER
         ) {
-          await identityManager.updateUserRole(finalUserId, UserRole.ADMIN, 'superadmin');
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const rawUserOps = (identityManager as any).userOps;
+          await rawUserOps.updateUser(finalUserId, { role: UserRole.ADMIN });
         }
       } catch (err) {
         logger.error(`[Auth:Login] Failed to register session for ${finalUserId}:`, err);

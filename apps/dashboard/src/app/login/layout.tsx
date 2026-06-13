@@ -6,15 +6,20 @@ import { CONFIG_KEYS } from '@claw/core/lib/constants';
 import { ThemeProvider } from '@/components/Providers/ThemeProvider';
 import { ExtensionProvider } from '@/components/Providers/ExtensionProvider';
 
-export const metadata: Metadata = {
-  title: `${process.env.NEXT_PUBLIC_APP_TITLE || 'ClawCenter'} | Authentication`,
-  description: 'Secure access to the Command & Control Hub',
-  icons: {
-    icon: '/icon.png',
-    shortcut: '/favicon.ico',
-    apple: '/icon.png',
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const appTitle = process.env.NEXT_PUBLIC_APP_TITLE || 'ClawCenter';
+  const favicon = process.env.NEXT_PUBLIC_APP_FAVICON || '/favicon.ico';
+
+  return {
+    title: `${appTitle} | Authentication`,
+    description: 'Secure access to the Command & Control Hub',
+    icons: {
+      icon: favicon,
+      shortcut: favicon,
+      apple: favicon,
+    },
+  };
+}
 
 export const dynamic = 'force-dynamic';
 

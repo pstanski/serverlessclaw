@@ -28,11 +28,16 @@ interface SessionMetadata {
   updatedAt: number;
 }
 
+import { redirect } from 'next/navigation';
+
 /**
  * MissionDashboard — The new Command & Control center for Serverless Claw.
  * Provides a high-level overview of active missions, system health, and quick actions.
  */
 export default function MissionDashboard() {
+  // For VoltX Showcase: Redirect root to Mission Control immediately
+  redirect('/extension/voltx-mission-control');
+
   const { activeWorkspaceId } = useTenant();
   const { t, formatDate, formatTime } = useTranslations();
   const [recentSessions, setRecentSessions] = useState<SessionMetadata[]>([]);

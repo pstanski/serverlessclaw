@@ -60,7 +60,7 @@ export const API_ROUTES = {
 
 export const UI_STRINGS = {
   DASHBOARD_TITLE: 'DASHBOARD_TITLE',
-  APP_LOGO: process.env.NEXT_PUBLIC_APP_LOGO || '/icon.png',
+  APP_LOGO: process.env.NEXT_PUBLIC_APP_LOGO || '',
   APP_LOGO_BANNER: process.env.NEXT_PUBLIC_APP_LOGO_BANNER || '',
   MISSING_MESSAGE: 'Missing message',
   API_CHAT_ERROR: 'API Chat Error:',

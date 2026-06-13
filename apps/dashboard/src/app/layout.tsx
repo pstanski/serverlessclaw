@@ -2,6 +2,24 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import '../globals.css';
 import { ConfigManager } from '@claw/core/lib/registry/config';
 import { CONFIG_KEYS } from '@claw/core/lib/constants';
+import { Metadata } from 'next';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const appTitle = process.env.NEXT_PUBLIC_APP_TITLE || 'ClawCenter';
+  const favicon = process.env.NEXT_PUBLIC_APP_FAVICON || '/favicon.ico';
+
+  return {
+    title: {
+      template: `%s | ${appTitle}`,
+      default: appTitle,
+    },
+    icons: {
+      icon: favicon,
+      shortcut: favicon,
+      apple: favicon,
+    },
+  };
+}
 
 const inter = Inter({
   variable: '--font-inter',
@@ -34,7 +52,10 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <head>
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex bg-background text-foreground font-mono text-base antialiased"
+      >
         <style>{`
           :root {
             --brand-primary: ${process.env.NEXT_PUBLIC_PRIMARY_COLOR || '#008f5a'};
@@ -45,11 +66,6 @@ export default async function RootLayout({
             --cyber-blue: ${process.env.NEXT_PUBLIC_ACCENT_COLOR_DARK || '#00e0ff'};
           }
         `}</style>
-      </head>
-      <body
-        suppressHydrationWarning
-        className="min-h-full flex bg-background text-foreground font-mono text-base antialiased"
-      >
         {children}
       </body>
     </html>

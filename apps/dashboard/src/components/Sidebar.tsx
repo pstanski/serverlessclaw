@@ -11,15 +11,7 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
-  Users,
-  Brain,
-  Wrench,
-  Server,
   Database,
-  Calendar,
-  BrainCircuit,
-  Building2,
-  Vote,
   Sun,
   Moon,
   Keyboard,
@@ -101,6 +93,16 @@ export default function Sidebar() {
 
   const rawNavItems = [
     { label: t('OPERATIONS'), type: 'header' },
+    ...sidebarExtensions
+      .filter((e) => !e.section || e.section === 'OPERATIONS')
+      .map((e) => ({
+        ...e,
+        label: t(e.label),
+        subtitle: e.subtitle ? t(e.subtitle) : undefined,
+        activePaths: [e.href],
+      })),
+
+    { label: t('INTELLIGENCE'), type: 'header' },
     {
       href: ROUTES.CHAT,
       label: t('CHAT_DIRECT'),
@@ -116,65 +118,6 @@ export default function Sidebar() {
       activePaths: [ROUTES.TRACE, '/trace'],
       requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.MEMBER, UserRole.VIEWER],
     },
-    {
-      href: ROUTES.PIPELINE,
-      label: t('EVOLUTION_PIPELINE'),
-      subtitle: t('PIPELINE_SUBTITLE'),
-      icon: Server,
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.MEMBER],
-    },
-    {
-      href: ROUTES.SCHEDULING,
-      label: t('SCHEDULING'),
-      subtitle: t('SCHEDULING_SUBTITLE'),
-      icon: Calendar,
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.MEMBER],
-    },
-    {
-      href: ROUTES.COLLABORATION,
-      label: t('CONSENSUS'),
-      subtitle: t('COLLABORATION_SUBTITLE'),
-      icon: Vote,
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.MEMBER],
-    },
-    ...sidebarExtensions
-      .filter((e) => !e.section || e.section === 'OPERATIONS')
-      .map((e) => ({
-        ...e,
-        label: t(e.label),
-        subtitle: e.subtitle ? t(e.subtitle) : undefined,
-        activePaths: [e.href],
-      })),
-
-    { label: t('INTELLIGENCE'), type: 'header' },
-    {
-      href: ROUTES.AGENTS,
-      label: t('AGENTS'),
-      subtitle: t('AGENTS_SUBTITLE'),
-      icon: Users,
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.MEMBER],
-    },
-    {
-      href: ROUTES.TUNING,
-      label: t('TUNING'),
-      subtitle: t('TUNING_SUBTITLE'),
-      icon: Database,
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.MEMBER],
-    },
-    {
-      href: ROUTES.MEMORY,
-      label: t('MEMORY_RESERVE'),
-      subtitle: t('MEMORY_SUBTITLE'),
-      icon: Brain,
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.MEMBER],
-    },
-    {
-      href: ROUTES.CAPABILITIES,
-      label: t('CAPABILITIES'),
-      subtitle: t('CAPABILITIES_SUBTITLE'),
-      icon: Wrench,
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.MEMBER],
-    },
     ...sidebarExtensions
       .filter((e) => e.section === 'INTELLIGENCE')
       .map((e) => ({
@@ -184,44 +127,7 @@ export default function Sidebar() {
         activePaths: [e.href],
       })),
 
-    { label: t('OBSERVABILITY'), type: 'header' },
-    {
-      href: ROUTES.OBSERVABILITY,
-      label: t('OBSERVABILITY'),
-      subtitle: t('SYSPULSE_SUBTITLE'),
-      icon: BrainCircuit,
-      activePaths: [
-        ROUTES.OBSERVABILITY,
-        ROUTES.SYSTEM_PULSE,
-        ROUTES.RESILIENCE,
-        ROUTES.COGNITIVE_HEALTH,
-        ROUTES.LOCKS,
-      ],
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER],
-    },
-
     { label: t('GOVERNANCE'), type: 'header' },
-    {
-      href: ROUTES.SECURITY,
-      label: t('SECURITY_MANIFEST'),
-      subtitle: t('SECURITY_SUBTITLE'),
-      icon: Lock,
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER],
-    },
-    {
-      href: ROUTES.WORKSPACES,
-      label: t('WORKSPACES'),
-      subtitle: t('WORKSPACES_SUBTITLE'),
-      icon: Building2,
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER],
-    },
-    {
-      href: '/users',
-      label: t('USERS'),
-      subtitle: t('USERS_SUBTITLE'),
-      icon: Users,
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER],
-    },
     {
       href: ROUTES.SETTINGS,
       label: t('CONFIG'),
@@ -252,15 +158,22 @@ export default function Sidebar() {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 border-b border-border bg-background/80 backdrop-blur-md z-40 px-6 flex items-center justify-between gap-4">
         <Link href={ROUTES.HOME} className="flex items-center gap-3 group min-w-0 flex-1">
-          <div className="relative w-8 h-8 shrink-0 rounded-sm overflow-hidden group-hover:scale-105 transition-transform">
-            <Image
-              src={UI_STRINGS.APP_LOGO}
-              alt={`${rawTitle} Logo`}
-              width={32}
-              height={32}
-              className="object-contain"
-            />
-          </div>
+          {UI_STRINGS.APP_LOGO ? (
+            <div className="relative w-8 h-8 shrink-0 rounded-sm overflow-hidden group-hover:scale-105 transition-transform">
+              <Image
+                src={UI_STRINGS.APP_LOGO}
+                alt={`${rawTitle} Logo`}
+                width={32}
+                height={32}
+                className="object-contain"
+                unoptimized
+              />
+            </div>
+          ) : (
+            <div className="w-8 h-8 bg-cyber-green/10 rounded-sm flex items-center justify-center text-cyber-green border border-cyber-green/30">
+              <Lock size={16} />
+            </div>
+          )}
           <Typography variant="h3" weight="black" className="text-lg tracking-tighter truncate">
             {displayTitle}
           </Typography>
@@ -295,15 +208,22 @@ export default function Sidebar() {
           className={`flex items-center justify-between gap-3 mb-6 ${isCollapsed ? 'flex-col' : 'px-2'} pt-4`}
         >
           <Link href={ROUTES.HOME} className="flex items-center gap-3 group min-w-0 flex-1">
-            <div className="relative w-8 h-8 shrink-0 rounded-sm overflow-hidden group-hover:scale-105 transition-transform">
-              <Image
-                src={UI_STRINGS.APP_LOGO}
-                alt={`${rawTitle} Logo`}
-                width={32}
-                height={32}
-                className="object-contain"
-              />
-            </div>
+            {UI_STRINGS.APP_LOGO ? (
+              <div className="relative w-8 h-8 shrink-0 rounded-sm overflow-hidden group-hover:scale-105 transition-transform">
+                <Image
+                  src={UI_STRINGS.APP_LOGO}
+                  alt={`${rawTitle} Logo`}
+                  width={32}
+                  height={32}
+                  className="object-contain"
+                  unoptimized
+                />
+              </div>
+            ) : (
+              <div className="w-8 h-8 bg-cyber-green/10 rounded-sm flex items-center justify-center text-cyber-green border border-cyber-green/30">
+                <Lock size={16} />
+              </div>
+            )}
             {!isCollapsed && (
               <Typography
                 variant="h2"
