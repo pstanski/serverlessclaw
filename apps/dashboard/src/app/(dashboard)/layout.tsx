@@ -23,10 +23,15 @@ const mergedCn = { ...cn, ...extCn };
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata() {
-  const initialLocale = (await ConfigManager.getTypedConfig<string>(
-    CONFIG_KEYS.ACTIVE_LOCALE,
-    'cn'
-  )) as 'en' | 'cn';
+  let initialLocale: 'en' | 'cn' = 'cn';
+  try {
+    initialLocale = (await ConfigManager.getTypedConfig<string>(
+      CONFIG_KEYS.ACTIVE_LOCALE,
+      'cn'
+    )) as 'en' | 'cn';
+  } catch (err) {
+    console.error('[RootLayout generateMetadata] Failed to fetch initial locale:', err);
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const messages = (initialLocale === 'cn' ? mergedCn : mergedEn) as any;
