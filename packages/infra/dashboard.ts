@@ -21,6 +21,7 @@ export function createDashboard(
       logo?: string;
       logoBanner?: string;
       favicon?: string;
+      homeRedirect?: string;
     };
   } = {}
 ): { dashboard: sst.aws.Nextjs } {
@@ -86,6 +87,8 @@ export function createDashboard(
       NEXT_PUBLIC_APP_TITLE: options.theme?.appTitle || process.env.NEXT_PUBLIC_APP_TITLE || '',
       NEXT_PUBLIC_APP_LOGO: options.theme?.logo || process.env.NEXT_PUBLIC_APP_LOGO || '',
       NEXT_PUBLIC_APP_FAVICON: options.theme?.favicon || process.env.NEXT_PUBLIC_APP_FAVICON || '',
+      NEXT_PUBLIC_HOME_REDIRECT:
+        options.theme?.homeRedirect || process.env.NEXT_PUBLIC_HOME_REDIRECT || '',
       NEXT_PUBLIC_APP_LOGO_BANNER:
         options.theme?.logoBanner || process.env.NEXT_PUBLIC_APP_LOGO_BANNER || '',
       ...(options.extensionSource

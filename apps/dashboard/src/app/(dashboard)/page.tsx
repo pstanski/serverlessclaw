@@ -35,8 +35,11 @@ import { redirect } from 'next/navigation';
  * Provides a high-level overview of active missions, system health, and quick actions.
  */
 export default function MissionDashboard() {
-  // For VoltX Showcase: Redirect root to Mission Control immediately
-  redirect('/extension/voltx-mission-control');
+  // Allow products to define their own landing page redirect via env var
+  const homeRedirect = process.env.NEXT_PUBLIC_HOME_REDIRECT;
+  if (homeRedirect) {
+    redirect(homeRedirect);
+  }
 
   const { activeWorkspaceId } = useTenant();
   const { t, formatDate, formatTime } = useTranslations();
