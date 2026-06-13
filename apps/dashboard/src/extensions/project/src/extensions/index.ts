@@ -24,7 +24,7 @@ export function init({ registerSidebar, registerComponent }: any) {
     href: '/extension/nexus-devices-view',
     icon: Server,
     section: 'OPERATIONS',
-    requiredRoles: ['admin', 'owner', 'member'],
+    requiredRoles: ['admin', 'owner', 'member', 'viewer'],
   });
 
   console.log('[VoltX-Extension] Initialized Energy Domain modules.');

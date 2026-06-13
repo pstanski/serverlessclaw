@@ -12,13 +12,13 @@ describe('VoltX UI Extension', () => {
     expect(registerSidebar).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'voltx-mission-control',
-        label: 'Mission Control',
+        label: 'MISSION_CONTROL',
       })
     );
     expect(registerSidebar).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'voltx-grid',
-        label: 'Energy Grid',
+        label: 'ENERGY_GRID',
       })
     );
 

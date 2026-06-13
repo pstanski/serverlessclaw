@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from '@/components/Providers/TranslationsProvider';
 import { EnergyFlowVisualizer } from '../EnergyFlowVisualizer';
 import { FinancialSettlement } from '../FinancialSettlement';
 import { DRSimulator } from './DRSimulator';
@@ -31,6 +32,7 @@ const getWorkspaceId = () => {
  * High-fidelity Command & Control center for complex operations.
  */
 export default function MissionControl({ isAdmin = false }: { isAdmin?: boolean }) {
+  const { t } = useTranslations();
   const [soc, setSoc] = React.useState(65.4);
   const [price, setPrice] = React.useState(0.82);
   const [savings, setSavings] = React.useState(18.2);
@@ -117,32 +119,33 @@ export default function MissionControl({ isAdmin = false }: { isAdmin?: boolean 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div>
           <h1 className="text-2xl font-black tracking-tighter text-white uppercase italic text-shadow-glow">
-            Enerlink <span className="text-cyan-400">Nexus</span> OS
+            {t('ENERLINK_NEXUS_OS')}
           </h1>
           <p className="text-slate-500 text-xs mt-1 uppercase tracking-widest font-mono">
-            VPP Dispatch: <span className="text-emerald-400 animate-pulse">Active</span> / Tier:
+            {t('VPP_DISPATCH')}:{' '}
+            <span className="text-emerald-400 animate-pulse">{t('ACTIVE')}</span> / Tier:
             SME_OPTIMIZED
           </p>
         </div>
 
         <div className="flex gap-8">
           <GlobalMetric
-            label="Active Assets"
+            label={t('ACTIVE_ASSETS')}
             value="47 Sites"
             icon={<Users className="w-4 h-4 text-cyan-400" />}
           />
           <GlobalMetric
-            label="Monthly Savings"
+            label={t('MONTHLY_SAVINGS')}
             value="+¥2.1M"
             icon={<DollarSign className="w-4 h-4 text-emerald-400" />}
           />
           <GlobalMetric
-            label="Carbon Reduction"
+            label={t('CARBON_REDUCTION')}
             value="-12.4%"
             icon={<Leaf className="w-4 h-4 text-lime-400" />}
           />
           <GlobalMetric
-            label="Grid Uptime"
+            label={t('GRID_UPTIME')}
             value="99.97%"
             icon={<ShieldCheck className="w-4 h-4 text-amber-400" />}
           />
@@ -153,30 +156,30 @@ export default function MissionControl({ isAdmin = false }: { isAdmin?: boolean 
       <div className="grid grid-cols-12 gap-6">
         {/* Left Column: Resource Status & Simulation */}
         <div className="col-span-12 lg:col-span-3 space-y-6">
-          <SectionContainer title="VPP Asset Portfolio" icon={<Activity className="w-4 h-4" />}>
+          <SectionContainer title={t('ASSET_PORTFOLIO')} icon={<Activity className="w-4 h-4" />}>
             <div className="grid grid-cols-1 gap-4">
               <MetricBox
-                label="Total Capacity"
+                label={t('TOTAL_CAPACITY')}
                 value={Math.round(totalCapacity / 1000).toString()}
-                unit="MW"
+                unit={t('UNIT_MW')}
                 color="cyan"
               />
               <MetricBox
-                label="Solar PV"
+                label={t('SOLAR_PV')}
                 value={Math.round(solarCapacity / 1000).toString()}
-                unit="MW"
+                unit={t('UNIT_MW')}
                 color="emerald"
               />
               <MetricBox
-                label="Energy Storage"
+                label={t('ENERGY_STORAGE')}
                 value={Math.round(storageCapacity / 1000).toString()}
-                unit="MW"
+                unit={t('UNIT_MW')}
                 color="amber"
               />
               <MetricBox
-                label="Flexible Load"
+                label={t('FLEXIBLE_LOAD')}
                 value={Math.round(loadCapacity / 1000).toString()}
-                unit="MW"
+                unit={t('UNIT_MW')}
                 color="slate"
               />
             </div>
@@ -191,7 +194,7 @@ export default function MissionControl({ isAdmin = false }: { isAdmin?: boolean 
 
           <div className="grid grid-cols-2 gap-6">
             <SectionContainer
-              title="Battery State of Charge"
+              title={t('BATTERY_SOC')}
               icon={<Battery className="w-4 h-4 text-emerald-400" />}
             >
               <div className="flex items-center gap-6 py-2">
@@ -223,31 +226,36 @@ export default function MissionControl({ isAdmin = false }: { isAdmin?: boolean 
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-[10px] text-slate-500 uppercase">Available Energy</div>
+                  <div className="text-[10px] text-slate-500 uppercase">
+                    {t('AVAILABLE_ENERGY')}
+                  </div>
                   <div className="text-sm font-bold text-white">
-                    {((storageCapacity * (soc / 100)) / 1000).toFixed(1)} MWh
+                    {((storageCapacity * (soc / 100)) / 1000).toFixed(1)} {t('UNIT_MWh')}
                   </div>
                   <div className="text-[10px] text-emerald-400 uppercase mt-2 italic">
-                    Charging: {chargingPower.toFixed(2)}MW
+                    {t('CHARGING')}: {chargingPower.toFixed(2)}
+                    {t('UNIT_MW')}
                   </div>
                 </div>
               </div>
             </SectionContainer>
 
             <SectionContainer
-              title="Environmental Impact"
+              title={t('ENVIRONMENTAL_IMPACT')}
               icon={<Leaf className="w-4 h-4 text-lime-400" />}
             >
               <div className="space-y-4 py-2">
                 <div>
-                  <div className="text-[10px] text-slate-500 uppercase">Carbon Reduced (Today)</div>
+                  <div className="text-[10px] text-slate-500 uppercase">
+                    {t('CARBON_REDUCED_TODAY')}
+                  </div>
                   <div className="text-lg font-black text-lime-400">12.3 Tons CO₂</div>
                 </div>
                 <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
                   <div className="h-full bg-lime-500 w-[70%]" />
                 </div>
                 <div className="text-[9px] text-slate-400 italic font-mono">
-                  Target: 18.0 Tons / Day
+                  {t('TARGET')}: 18.0 Tons / Day
                 </div>
               </div>
             </SectionContainer>
@@ -258,42 +266,49 @@ export default function MissionControl({ isAdmin = false }: { isAdmin?: boolean 
 
         {/* Right Column: AI & Stats */}
         <div className="col-span-12 lg:col-span-3 space-y-6">
-          <SectionContainer title="Real-time Optimization" icon={<Zap className="w-4 h-4" />}>
+          <SectionContainer title={t('REALTIME_OPTIMIZATION')} icon={<Zap className="w-4 h-4" />}>
             <div className="space-y-4 text-xs font-mono">
               <div className="flex justify-between border-b border-slate-800 pb-2">
-                <span className="text-slate-500">Current Grid Price</span>
+                <span className="text-slate-500">{t('CURRENT_GRID_PRICE')}</span>
                 <span className="text-white font-black">¥{price.toFixed(2)}/kWh</span>
               </div>
               <div className="flex justify-between border-b border-slate-800 pb-2">
-                <span className="text-slate-500">Dispatch Status</span>
+                <span className="text-slate-500">{t('DISPATCH_STATUS')}</span>
                 <span className="text-emerald-400 font-bold uppercase italic">
-                  Active — Charging
+                  {t('ACTIVE')} — {t('CHARGING')}
                 </span>
               </div>
               <div className="flex justify-between border-b border-slate-800 pb-2">
-                <span className="text-slate-500">AI Savings Today</span>
-                <span className="text-white font-black">+{savings}% vs baseline</span>
+                <span className="text-slate-500">{t('AI_SAVINGS_TODAY')}</span>
+                <span className="text-white font-black">
+                  +{savings}% {t('VS_BASELINE')}
+                </span>
               </div>
               <div className="flex justify-between border-b border-slate-800 pb-2">
-                <span className="text-slate-500">RL Model Version</span>
+                <span className="text-slate-500">{t('RL_MODEL_VERSION')}</span>
                 <span className="text-cyan-400 font-bold">v3.2-PROD</span>
               </div>
             </div>
           </SectionContainer>
 
           <SectionContainer
-            title="AI Prediction Trends"
+            title={t('AI_PREDICTION_TRENDS')}
             icon={<TrendingUp className="w-4 h-4 text-cyan-400" />}
           >
             <div className="space-y-6">
-              <AccuracyGauge label="Load Prediction Accuracy" value={97.5} color="cyan" />
-              <AccuracyGauge label="Price Prediction Variance" value={0.5} color="emerald" invert />
-              <AccuracyGauge label="Fault Self-Diagnosis" value={99.2} color="indigo" />
+              <AccuracyGauge label={t('LOAD_PREDICTION_ACCURACY')} value={97.5} color="cyan" />
+              <AccuracyGauge
+                label={t('PRICE_PREDICTION_VARIANCE')}
+                value={0.5}
+                color="emerald"
+                invert
+              />
+              <AccuracyGauge label={t('FAULT_SELF_DIAGNOSIS')} value={99.2} color="indigo" />
             </div>
           </SectionContainer>
 
           <SectionContainer
-            title="Benefit Statistics"
+            title={t('BENEFIT_STATISTICS')}
             icon={<Zap className="w-5 h-5 text-[#00d9ff]" />}
           >
             <div className="h-[200px] flex items-end justify-between gap-1 px-2">

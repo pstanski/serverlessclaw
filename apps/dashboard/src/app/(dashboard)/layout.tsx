@@ -41,9 +41,9 @@ export async function generateMetadata() {
     title: `${appTitle} | ${messages.LAYOUT_NEURAL_HUB}`,
     description: messages.LAYOUT_DESCRIPTION,
     icons: {
-      icon: '/icon.png',
-      shortcut: '/favicon.ico',
-      apple: '/icon.png',
+      icon: process.env.NEXT_PUBLIC_APP_FAVICON || '/favicon.ico',
+      shortcut: process.env.NEXT_PUBLIC_APP_FAVICON || '/favicon.ico',
+      apple: process.env.NEXT_PUBLIC_APP_FAVICON || '/favicon.ico',
     },
   };
 }

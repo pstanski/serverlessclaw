@@ -47,8 +47,8 @@ export function init({
   // 1. Register Mission Control (Primary Operational View)
   registerSidebar({
     id: 'voltx-mission-control',
-    label: 'Mission Control',
-    subtitle: 'Strategic Command & Control',
+    label: 'MISSION_CONTROL',
+    subtitle: 'STRATEGIC_COMMAND',
     href: '/extension/voltx-mission-control',
     icon: Shield,
     section: 'OPERATIONS',
@@ -58,22 +58,23 @@ export function init({
   // 2. Register Site Management Sidebar
   registerSidebar({
     id: 'voltx-sites',
-    label: 'Site Management',
-    subtitle: 'VPP Fleet Config',
+    label: 'SITE_MANAGEMENT',
+    subtitle: 'VPP_FLEET_CONFIG',
     href: '/extension/voltx-asset-management',
     icon: Home,
     section: 'OPERATIONS',
-    requiredRoles: ['admin', 'owner', 'member'],
+    requiredRoles: ['admin', 'owner', 'member', 'viewer'],
   });
 
   // 3. Register Energy Sidebar Item (Detailed Grid View)
   registerSidebar({
     id: 'voltx-grid',
-    label: 'Energy Grid',
-    subtitle: 'Real-time performance',
+    label: 'ENERGY_GRID',
+    subtitle: 'REALTIME_PERFORMANCE',
     href: '/extension/voltx-grid-status',
     icon: Activity,
     section: 'OPERATIONS',
+    requiredRoles: ['admin', 'owner', 'member', 'viewer'],
   });
 
   // 4. Register Dashboard Components

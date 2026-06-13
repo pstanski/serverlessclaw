@@ -5,7 +5,7 @@ import { logger } from '@claw/core/lib/logger';
 
 const PUBLIC_PATHS = ['/', '/login', '/api/auth/login', '/api/auth/logout'];
 
-const PUBLIC_PATH_PREFIXES = ['/_next', '/static', '/favicon', '/icon', '/robots.txt'];
+const PUBLIC_PATH_PREFIXES = ['/_next', '/static', '/favicon', '/icon', '/robots.txt', '/branding'];
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) {
