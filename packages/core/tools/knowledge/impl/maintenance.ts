@@ -23,7 +23,7 @@ export const deleteTraces = {
       const tableName = (Resource as unknown as Record<string, { name?: string }>).TraceTable?.name;
       if (!tableName) return 'FAILED: TraceTable not linked.';
 
-      const docClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+      const docClient = DynamoDBDocumentClient.from(new DynamoDBClient({})) as any;
 
       if (traceId === 'all') {
         const MAX_DELETE_LIMIT = 500;
@@ -41,7 +41,7 @@ export const deleteTraces = {
               await docClient.send(
                 new BatchWriteCommand({
                   RequestItems: {
-                    [tableName]: batch.map((item) => ({
+                    [tableName]: batch.map((item: any) => ({
                       DeleteRequest: { Key: { traceId: item.traceId, nodeId: item.nodeId } },
                     })),
                   },
@@ -71,7 +71,7 @@ export const deleteTraces = {
         await docClient.send(
           new BatchWriteCommand({
             RequestItems: {
-              [tableName]: batch.map((item) => ({
+              [tableName]: batch.map((item: any) => ({
                 DeleteRequest: { Key: { traceId: item.traceId, nodeId: item.nodeId } },
               })),
             },
