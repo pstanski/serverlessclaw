@@ -49,7 +49,7 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
 
   const fetchSites = React.useCallback(async () => {
     try {
-      setLoading(true);
+      Promise.resolve().then(() => setLoading(true));
       const res = await fetch(`/api/x/voltx/sites?workspaceId=${workspaceId}`);
       const data = await res.json();
       if (data.sites) {
