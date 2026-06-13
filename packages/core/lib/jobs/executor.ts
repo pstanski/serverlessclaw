@@ -16,6 +16,81 @@ export class JobExecutorService {
   static async startLocalJob(workspaceId: string, spec: JobSpec, run: JobRun): Promise<void> {
     const store = JobStore.getInstance();
 
+    if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
+      logger.info(
+        `[JobExecutor] Deployed serverless environment detected. Simulating job ${run.jobId}`
+      );
+
+      run.status = 'RUNNING';
+      run.startedAt = new Date().toISOString();
+      await store.updateJobRun(workspaceId, run, {
+        status: 'RUNNING',
+        startedAt: run.startedAt,
+      });
+
+      const statusTopic = `workspaces/${workspaceId}/jobs/${run.jobId}/status`;
+      const logTopic = `workspaces/${workspaceId}/jobs/${run.jobId}/logs`;
+
+      await publishToRealtime(statusTopic, { status: 'RUNNING' }).catch((err) => {
+        logger.error(`[JobExecutor] Mock status publish failed:`, err);
+      });
+
+      const publishLog = async (text: string) => {
+        await publishToRealtime(logTopic, { text }).catch(() => {});
+      };
+
+      let finalMetrics: Record<string, unknown> = {};
+      const { PluginManager } = await import('../plugin-manager');
+      const simulator = PluginManager.getJobSimulator(spec.jobType);
+
+      if (simulator) {
+        try {
+          finalMetrics = await simulator(workspaceId, run, publishLog);
+        } catch (simErr) {
+          logger.error(`[JobExecutor] Simulator execution failed:`, simErr);
+          await publishLog(
+            `[Simulator Error] ${simErr instanceof Error ? simErr.message : String(simErr)}\n`
+          );
+          run.status = 'FAILED';
+          run.completedAt = new Date().toISOString();
+          await store.updateJobRun(workspaceId, run, {
+            status: 'FAILED',
+            completedAt: run.completedAt,
+          });
+          await publishToRealtime(statusTopic, { status: 'FAILED', metrics: run.metrics }).catch(
+            () => {}
+          );
+          return;
+        }
+      } else {
+        // Fallback generic simulator
+        await publishLog(`[Simulator] Starting mock execution for ${spec.jobType}...\n`);
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        await publishLog(`[Simulator] Completed mock execution.\n`);
+      }
+
+      run.status = 'COMPLETED';
+      run.completedAt = new Date().toISOString();
+      run.metrics = {
+        ...run.metrics,
+        ...finalMetrics,
+      };
+
+      await store.updateJobRun(workspaceId, run, {
+        status: 'COMPLETED',
+        completedAt: run.completedAt,
+        metrics: run.metrics,
+      });
+
+      await publishToRealtime(statusTopic, { status: 'COMPLETED', metrics: run.metrics }).catch(
+        (err) => {
+          logger.error(`[JobExecutor] Mock status publish failed:`, err);
+        }
+      );
+
+      return;
+    }
+
     // 1. Resolve the command with inputs applied
     const rawCmd = spec.executor.command;
     const formattedCmd = this.injectInputs(rawCmd, run.inputsApplied);

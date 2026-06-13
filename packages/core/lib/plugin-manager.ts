@@ -39,6 +39,14 @@ export interface ClawPlugin {
   webhooks?: Record<string, WebhookConfig>;
   approvalPolicies?: Record<string, ApprovalPolicy>;
   dashboard?: DashboardExtension;
+  jobSimulators?: Record<
+    string,
+    (
+      workspaceId: string,
+      run: any,
+      publishLog: (text: string) => Promise<void>
+    ) => Promise<Record<string, unknown>>
+  >;
   sidebarExtensions?: unknown[];
   layoutExtensions?: unknown[];
   onInit?: () => Promise<void>;
@@ -164,6 +172,23 @@ export class PluginManager {
     for (const plugin of this.plugins.values()) {
       if (plugin.dashboard?.jobInputNormalizer) {
         return plugin.dashboard.jobInputNormalizer;
+      }
+    }
+    return undefined;
+  }
+
+  static getJobSimulator(
+    jobType: string
+  ):
+    | ((
+        workspaceId: string,
+        run: any,
+        publishLog: (text: string) => Promise<void>
+      ) => Promise<Record<string, unknown>>)
+    | undefined {
+    for (const plugin of this.plugins.values()) {
+      if (plugin.jobSimulators && plugin.jobSimulators[jobType]) {
+        return plugin.jobSimulators[jobType];
       }
     }
     return undefined;
