@@ -16,7 +16,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const { userId, password } = await req.json();
     const stage = process.env.SST_STAGE || '';
-    const isDev = process.env.NODE_ENV !== 'production' || (!!stage && stage !== 'prod');
+    const nodeEnv = process.env.NODE_ENV || '';
+    const isDev = nodeEnv !== 'production' || (!!stage && stage !== 'prod');
+
+    logger.info(
+      `[Auth:Login] Login attempt for ${userId}. stage=${stage}, nodeEnv=${nodeEnv}, isDev=${isDev}`
+    );
 
     // Debug SST Resources
     const sstKeys = Object.keys(process.env).filter((k) => k.startsWith('SST_RESOURCE_'));
