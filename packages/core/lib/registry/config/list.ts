@@ -50,7 +50,7 @@ export class ConfigManagerList extends ConfigManagerBase {
               ExpressionAttributeNames: { '#val': 'value' },
             })
           )
-          .catch((e) => logger.debug(`List capping failed for ${effectiveKey}:`, e));
+          .catch((e: any) => logger.debug(`List capping failed for ${effectiveKey}:`, e));
       }
     } catch (e) {
       logger.error(`Failed to append to list ${effectiveKey} in DDB:`, e);
