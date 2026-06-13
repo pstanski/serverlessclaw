@@ -63,7 +63,7 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
   }, [workspaceId]);
 
   React.useEffect(() => {
-    // eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchSites();
   }, [fetchSites]);
 
