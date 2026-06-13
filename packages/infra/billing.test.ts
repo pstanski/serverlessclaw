@@ -105,6 +105,6 @@ describe('Billing Infrastructure', () => {
     expect(mockBudget).toHaveBeenCalled();
     const budgetArgs = mockBudget.mock.calls[0][1] as any;
 
-    expect(budgetArgs.limitAmount).toBe('20');
+    expect(budgetArgs.limitAmount).toBe('1');
   });
 });

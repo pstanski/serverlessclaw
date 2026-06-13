@@ -44,3 +44,4 @@ yarn-error.log*
 next-env.d.ts
 /src/extensions/hub/*
 !/src/extensions/hub/index.ts
+/src/extensions/active.tsx

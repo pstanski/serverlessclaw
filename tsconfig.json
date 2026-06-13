@@ -16,11 +16,6 @@
       "@serverlessclaw/core/*": ["./packages/core/*"]
     }
   },
-  "include": [
-    "../declarations.d.ts",
-    "packages/core/**/*.ts",
-    "packages/infra/**/*.ts",
-    "sst-env.d.ts"
-  ],
+  "include": ["packages/core/**/*.ts", "packages/infra/**/*.ts", "sst-env.d.ts"],
   "exclude": ["node_modules", "apps/dashboard/src", ".sst", "../.sst"]
 }

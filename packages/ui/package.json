@@ -9,8 +9,8 @@
     "lucide-react": ">=0.284.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
-    "typescript": "^5.0.0",
+    "@types/react": "^19.1.0",
+    "typescript": "^6.0.0",
     "tailwindcss": "^4"
   }
 }

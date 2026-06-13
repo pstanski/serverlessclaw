@@ -47,6 +47,11 @@ if (process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS) {
   if (fs.existsSync(path.join(extensionDir, 'jobs.config.json'))) {
     jobsConfigPath = path.join(extensionDir, 'jobs.config.json');
   }
+} else {
+  // If not configured, write the default project index stub to prevent typescript / next compile errors
+  const activePath = path.resolve(__dirname, './src/extensions/active.tsx');
+  const activeContent = `import * as ext from './project/index';\nexport const init = ext.init;\nexport const initServer = (ext as { initServer?: () => void }).initServer;\n`;
+  fs.writeFileSync(activePath, activeContent);
 }
 
 // 2. Manually load .env.local to guarantee environment variables are available during early config evaluation
@@ -157,13 +162,6 @@ const nextConfig = {
       '**/makefiles/**',
       '**/scripts/**',
       '**/e2e/**',
-      // Exclude other apps and irrelevant packages
-      '**/apps/voltx-landing/**',
-      '**/packages/voltx-core/**',
-      '**/packages/voltx-ui/**',
-      '**/packages/voltx-integration/**',
-      '**/packages/vpp-agents/**',
-      '**/packages/vpp-source/**',
       // Next.js specific exclusions
       '**/node_modules/next/dist/compiled/webpack/**',
       '**/node_modules/next/dist/compiled/terser/**',

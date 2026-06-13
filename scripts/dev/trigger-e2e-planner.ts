@@ -23,8 +23,7 @@ async function main() {
     traceId: `trace-e2e-${Date.now()}`,
     workspaceId,
     agentId: 'strategic-planner',
-    task:
-      'Add a `version` field to the output of the `checkAgentHealth` tool. The version should be a static string identifying the tool schema version (e.g., "1.1.0"). This is a tiny enhancement to verify the full self-evolution loop end-to-end.',
+    task: 'Add a `version` field to the output of the `checkAgentHealth` tool. The version should be a static string identifying the tool schema version (e.g., "1.1.0"). This is a tiny enhancement to verify the full self-evolution loop end-to-end.',
     userRole: 'owner',
     gapId,
     metadata: {
