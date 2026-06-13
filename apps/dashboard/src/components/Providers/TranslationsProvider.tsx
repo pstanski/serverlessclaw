@@ -13,17 +13,22 @@ import { logger } from '@claw/core/lib/logger';
 export type Messages = typeof en;
 export type TranslationKey = keyof Messages;
 
-const mergedEn = { ...en, ...extEn };
-const mergedCn = { ...cn, ...extCn };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const actualExtEn = ((extEn as any)?.default || extEn || {}) as Record<string, string>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const actualExtCn = ((extCn as any)?.default || extCn || {}) as Record<string, string>;
+
+const mergedEn = { ...en, ...actualExtEn };
+const mergedCn = { ...cn, ...actualExtCn };
 
 if (typeof window !== 'undefined') {
   logger.info(
     `[i18n] Merged translations. Keys count: en=${Object.keys(mergedEn).length}, cn=${Object.keys(mergedCn).length}`
   );
-  if (extEn && Object.keys(extEn).length > 0) {
-    logger.info(`[i18n] Extension translations detected: ${Object.keys(extEn).join(', ')}`);
+  if (actualExtEn && Object.keys(actualExtEn).length > 0) {
+    logger.info(`[i18n] Extension translations detected: ${Object.keys(actualExtEn).length} keys`);
   } else {
-    logger.warn('[i18n] No extension translations found in extEn');
+    logger.warn('[i18n] No extension translations found');
   }
 }
 
