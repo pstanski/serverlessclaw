@@ -72,6 +72,19 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/x/voltx/sites/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        fetchSites();
+      }
+    } catch (e) {
+      console.error('Failed to delete site:', e);
+    }
+  };
+
   const getIcon = (type?: DER_TYPE) => {
     switch (type) {
       case DER_TYPE.SOLAR:
@@ -148,7 +161,10 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
                 </div>
               </div>
               {!readOnly && (
-                <button className="p-2 text-slate-600 hover:text-rose-500 transition-colors">
+                <button
+                  onClick={() => handleDelete(site.id)}
+                  className="p-2 text-slate-600 hover:text-rose-500 transition-colors"
+                >
                   <Trash2 className="w-4 h-4" />
                 </button>
               )}
@@ -172,7 +188,9 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
                           {getIcon(asset.type)}
                         </div>
                         <div>
-                          <div className="text-xs font-bold text-slate-300">Unit {asset.id.slice(0, 4)}</div>
+                          <div className="text-xs font-bold text-slate-300">
+                            Unit {asset.id.slice(0, 4)}
+                          </div>
                           <div className="text-[9px] text-slate-600 uppercase font-black">
                             {asset.type}
                           </div>
