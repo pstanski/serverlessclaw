@@ -135,5 +135,21 @@
   "IN": "IN",
   "OUT": "OUT",
   "CHG": "CHG",
-  "DIS": "DIS"
+  "DIS": "DIS",
+  "BATTERY_DEGRADATION": "Battery Health & Degradation",
+  "EFC_TODAY": "EFC Today",
+  "EFC_TOTAL": "Total EFC",
+  "CALENDAR_AGING": "Calendar Aging",
+  "CYCLE_AGING": "Cycle Aging",
+  "PROJECTED_EOL": "Projected EOL",
+  "EV_FLEET_STATUS": "EV Fleet Hub",
+  "CHARGERS_ACTIVE": "Active Piles",
+  "DAILY_DEMAND_MET": "Daily Demand Met",
+  "V2G_DISPATCH": "V2G Dispatch",
+  "MARKET_BIDDING_LEDGER": "Market Bidding Ledger",
+  "ACTIVE_BIDDING_STRATEGY": "Bidding Strategy",
+  "VALUE_AT_RISK": "Value at Risk",
+  "ACTIVE_BIDS": "Active Bids",
+  "AI_AGENT_COMMAND_TRACE": "AI Orchestration Command Trace",
+  "STRATEGY_COMPARATOR": "Strategy Comparator Matrix"
 }

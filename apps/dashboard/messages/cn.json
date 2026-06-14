@@ -795,5 +795,21 @@
   "IN": "输入",
   "OUT": "输出",
   "CHG": "充电",
-  "DIS": "放电"
+  "DIS": "放电",
+  "BATTERY_DEGRADATION": "电池健康与衰减分析",
+  "EFC_TODAY": "今日循环次数 (EFC)",
+  "EFC_TOTAL": "累计循环次数",
+  "CALENDAR_AGING": "日历寿命衰减",
+  "CYCLE_AGING": "循环寿命损耗",
+  "PROJECTED_EOL": "预估剩余寿命",
+  "EV_FLEET_STATUS": "电动汽车 (EV) 充电站",
+  "CHARGERS_ACTIVE": "活跃充电桩",
+  "DAILY_DEMAND_MET": "今日充电量完成率",
+  "V2G_DISPATCH": "V2G 双向放电",
+  "MARKET_BIDDING_LEDGER": "电力市场竞价台账",
+  "ACTIVE_BIDDING_STRATEGY": "竞价策略模式",
+  "VALUE_AT_RISK": "在险价值 (VaR)",
+  "ACTIVE_BIDS": "当前竞价列表",
+  "AI_AGENT_COMMAND_TRACE": "AI 编排决策追踪",
+  "STRATEGY_COMPARATOR": "多场景调度策略对比矩阵"
 }
