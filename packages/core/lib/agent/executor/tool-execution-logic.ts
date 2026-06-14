@@ -182,6 +182,7 @@ export async function executeSingleToolCall(
 
   // Add context args
   args.userId = args.userId ?? execContext.userId;
+  args.userRole = args.userRole ?? execContext.userRole;
   args.sessionId = args.sessionId ?? execContext.sessionId;
   args.workspaceId = args.workspaceId ?? execContext.workspaceId;
   args.traceId = args.traceId ?? execContext.traceId;

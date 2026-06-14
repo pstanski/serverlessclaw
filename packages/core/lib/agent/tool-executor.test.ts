@@ -487,7 +487,7 @@ describe('ToolExecutor', () => {
       expect(messages[0].content).toContain('Unauthorized');
     });
 
-    it('injects userId and sessionId from execContext when not in args', async () => {
+    it('injects userId, userRole and sessionId from execContext when not in args', async () => {
       const executeFn = vi.fn().mockResolvedValue('done');
       const tool = createTool({ execute: executeFn });
       const messages: any[] = [];
@@ -498,12 +498,17 @@ describe('ToolExecutor', () => {
         [tool],
         messages,
         attachments,
-        createExecContext({ userId: 'user-ctx', sessionId: 'session-ctx' }),
+        createExecContext({
+          userId: 'user-ctx',
+          userRole: 'VIEWER',
+          sessionId: 'session-ctx',
+        }),
         tracer
       );
 
       const calledArgs = executeFn.mock.calls[0][0];
       expect(calledArgs.userId).toBe('user-ctx');
+      expect(calledArgs.userRole).toBe('VIEWER');
       expect(calledArgs.sessionId).toBe('session-ctx');
     });
 
