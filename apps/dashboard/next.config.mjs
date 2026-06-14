@@ -50,7 +50,7 @@ if (process.env.NEXT_PUBLIC_ACTIVE_EXTENSIONS) {
 } else {
   // If not configured, write the default project index stub to prevent typescript / next compile errors
   const activePath = path.resolve(__dirname, './src/extensions/active.tsx');
-  const activeContent = `import * as ext from './project/index';\nexport const init = ext.init;\nexport const initServer = (ext as { initServer?: () => void }).initServer;\n`;
+  const activeContent = `import * as ext from './index';\nexport const init = ext.init;\nexport const initServer = (ext as { initServer?: () => void }).initServer;\n`;
   fs.writeFileSync(activePath, activeContent);
 }
 
