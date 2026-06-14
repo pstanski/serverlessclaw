@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, TrendingUp, CheckCircle2, Receipt } from 'lucide-react';
 import { useTranslations } from '@/components/Providers/TranslationsProvider';
 
@@ -23,34 +23,43 @@ interface SettlementData {
  */
 export const FinancialSettlement: React.FC = () => {
   const { t } = useTranslations();
-  const [data] = useState<SettlementData>(() => ({
-    totalRevenue: 3450200.5,
-    pendingSettlement: 12500.0,
-    lastSettlementDate: new Date().toISOString().split('T')[0],
-    transactions: [
-      {
-        id: 'TXN-VPP-782',
-        date: new Date().toISOString().split('T')[0],
-        amount: 4500.0,
-        status: 'COMPLETED',
-        description: t('DESC_FREQ_RESPONSE'),
-      },
-      {
-        id: 'TXN-VPP-781',
-        date: new Date().toISOString().split('T')[0],
-        amount: 8000.0,
-        status: 'PENDING',
-        description: t('DESC_ARBITRAGE'),
-      },
-      {
-        id: 'TXN-VPP-779',
-        date: '2026-05-13',
-        amount: 12400.0,
-        status: 'COMPLETED',
-        description: `${t('DESC_DR_EVENT')} #04`,
-      },
-    ],
-  }));
+  const [data, setData] = useState<SettlementData>({
+    totalRevenue: 0,
+    pendingSettlement: 0,
+    lastSettlementDate: '-',
+    transactions: [],
+  });
+
+  useEffect(() => {
+    setData({
+      totalRevenue: 3450200.5,
+      pendingSettlement: 12500.0,
+      lastSettlementDate: new Date().toISOString().split('T')[0],
+      transactions: [
+        {
+          id: 'TXN-VPP-782',
+          date: new Date().toISOString().split('T')[0],
+          amount: 4500.0,
+          status: 'COMPLETED',
+          description: t('DESC_FREQ_RESPONSE'),
+        },
+        {
+          id: 'TXN-VPP-781',
+          date: new Date().toISOString().split('T')[0],
+          amount: 8000.0,
+          status: 'PENDING',
+          description: t('DESC_ARBITRAGE'),
+        },
+        {
+          id: 'TXN-VPP-779',
+          date: '2026-05-13',
+          amount: 12400.0,
+          status: 'COMPLETED',
+          description: `${t('DESC_DR_EVENT')} #04`,
+        },
+      ],
+    });
+  }, [t]);
 
   return (
     <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">

@@ -43,11 +43,13 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
   const [localSites, setLocalSites] = useState<VppSite[]>([]);
+  const [, setLoading] = useState(true);
 
   const workspaceId = getWorkspaceId();
 
   const fetchSites = React.useCallback(async () => {
     try {
+      Promise.resolve().then(() => setLoading(true));
       const res = await fetch(`/api/x/voltx/sites?workspaceId=${workspaceId}`);
       const data = await res.json();
       if (data.sites) {
@@ -55,11 +57,12 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
       }
     } catch (e) {
       console.error('Failed to fetch VPP sites:', e);
+    } finally {
+      setLoading(false);
     }
   }, [workspaceId]);
 
   React.useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchSites();
   }, [fetchSites]);
 
