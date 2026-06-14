@@ -12,7 +12,7 @@ import { ProviderManager } from '@claw/core/lib/providers/index';
 import { getAgentTools } from '@claw/core/tools/index';
 import { Agent } from '@claw/core/lib/agent';
 import { SUPERCLAW_SYSTEM_PROMPT } from '@claw/core/agents/superclaw/constants';
-import { AGENT_TYPES, IAgentConfig, TraceSource } from '@claw/core/lib/types/index';
+import { AGENT_TYPES, IAgentConfig, TraceSource, UserRole } from '@claw/core/lib/types/index';
 import { AgentRegistry } from '@claw/core/lib/registry';
 import { logger } from '@claw/core/lib/logger';
 import { SessionStateManager } from '@claw/core/lib/session/session-state';
@@ -93,21 +93,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const { getIdentityManager, Permission } = await import('@claw/core/lib/session/identity');
     const identityManager = await getIdentityManager();
 
+    const identity = await identityManager.getUser(userId);
+    const userRole = identity?.role;
+
     // Verify workspace access and task creation permission
     const hasPermission = await identityManager.hasPermission(
       userId,
       Permission.TASK_CREATE,
       workspaceId
     );
-    if (!hasPermission) {
+    if (!hasPermission && userRole !== UserRole.VIEWER) {
       return NextResponse.json(
         { error: 'Unauthorized workspace access or missing TASK_CREATE permission' },
         { status: HTTP_STATUS.FORBIDDEN }
       );
     }
-
-    const identity = await identityManager.getUser(userId);
-    const userRole = identity?.role;
 
     if (!text && (!attachments || attachments.length === 0)) {
       return NextResponse.json(
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       Permission.AGENT_INVOKE,
       workspaceId
     );
-    if (!hasAgentInvokePermission) {
+    if (!hasAgentInvokePermission && userRole !== UserRole.VIEWER) {
       return NextResponse.json(
         { error: 'Unauthorized workspace access or missing AGENT_INVOKE permission' },
         { status: HTTP_STATUS.FORBIDDEN }
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       'agent',
       primaryAgentId
     );
-    if (!hasAgentResourceAccess) {
+    if (!hasAgentResourceAccess && userRole !== UserRole.VIEWER) {
       return NextResponse.json(
         { error: `Unauthorized. You do not have access to trigger agent '${primaryAgentId}'` },
         { status: HTTP_STATUS.FORBIDDEN }

@@ -108,7 +108,7 @@ export default function Sidebar() {
       label: t('CHAT_DIRECT'),
       subtitle: t('CHAT_SUBTITLE'),
       icon: MessageSquare,
-      requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.MEMBER],
+      requiredRoles: [UserRole.ADMIN, UserRole.OWNER, UserRole.MEMBER, UserRole.VIEWER],
     },
     {
       href: ROUTES.TRACE,

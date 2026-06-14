@@ -122,6 +122,12 @@ vi.mock('@claw/core/lib/types/index', () => ({
   TraceSource: { DASHBOARD: 'dashboard' },
   MessageRole: { ASSISTANT: 'assistant' },
   AGENT_TYPES: { SUPERCLAW: 'superclaw' },
+  UserRole: {
+    OWNER: 'owner',
+    ADMIN: 'admin',
+    MEMBER: 'member',
+    VIEWER: 'viewer',
+  },
 }));
 
 vi.mock('next/cache', () => ({ revalidatePath: mockRevalidatePath }));
@@ -323,6 +329,26 @@ describe('Dashboard API: POST /api/chat', () => {
     expect(data.error).toBe(
       "Unauthorized. You do not have access to trigger agent 'restricted-agent'"
     );
+  });
+
+  it('allows user with viewer role to chat even if lacking permissions and resource access', async () => {
+    async function* testStream() {
+      yield { content: 'Hello viewer', messageId: 'm-viewer' };
+    }
+    mockStream.mockReturnValue(testStream());
+
+    mockGetIdentityManager.mockResolvedValueOnce({
+      getUser: vi.fn().mockResolvedValue({ role: 'viewer' }),
+      hasPermission: vi.fn().mockResolvedValue(false), // ordinarily fails TASK_CREATE and AGENT_INVOKE
+      hasResourceAccess: vi.fn().mockResolvedValue(false), // ordinarily fails resource access
+    });
+
+    const req = makeRequest({ text: 'Hi', sessionId: 's-viewer' });
+    const res = await (POST as any)(req);
+    const data = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(data.reply).toBe('Hello viewer');
   });
 });
 

@@ -57,18 +57,23 @@ export default function GridStatus({ component }: GridStatusProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Current Load" value={`${load} MW`} icon={<Zap />} color="cyan" />
-        <StatCard title="Frequency" value={`${freq} Hz`} icon={<Activity />} color="emerald" />
-        <StatCard title="Market Revenue" value="+¥42,850" icon={<TrendingUp />} color="amber" />
-        <StatCard title="Grid Stability" value="99.98%" icon={<ShieldCheck />} color="blue" />
+        <StatCard title={t('CURRENT_LOAD')} value={`${load} MW`} icon={<Zap />} color="cyan" />
+        <StatCard title={t('FREQUENCY')} value={`${freq} Hz`} icon={<Activity />} color="emerald" />
+        <StatCard
+          title={t('MARKET_REVENUE')}
+          value="+¥42,850"
+          icon={<TrendingUp />}
+          color="amber"
+        />
+        <StatCard title={t('GRID_STABILITY')} value="99.98%" icon={<ShieldCheck />} color="blue" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <div className="lg:col-span-2 p-6 bg-slate-900/60 border border-slate-800 rounded-2xl relative overflow-hidden group">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
           <h3 className="text-white font-black uppercase tracking-widest mb-6 relative z-10 flex justify-between">
-            Regional Dispatch Heatmap
-            <span className="text-cyan-400 text-xs">LIVE</span>
+            {t('REGIONAL_DISPATCH_HEATMAP')}
+            <span className="text-cyan-400 text-xs">{t('LIVE')}</span>
           </h3>
           <div className="h-[300px] relative z-10 flex items-center justify-center border border-dashed border-slate-700/50 rounded-xl bg-slate-950/30">
             {/* Abstract visualization of grid nodes */}
@@ -119,25 +124,25 @@ export default function GridStatus({ component }: GridStatusProps) {
 
         <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl relative overflow-hidden">
           <h3 className="text-white font-black uppercase tracking-widest mb-6 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-400" /> Recent Events
+            <AlertTriangle className="w-4 h-4 text-amber-400" /> {t('RECENT_EVENTS')}
           </h3>
           <div className="space-y-4">
             {[
               {
                 time: '10:42 AM',
-                event: 'Frequency drop detected',
+                event: t('EVENT_FREQ_DROP'),
                 region: 'GD-South',
                 severity: 'low',
               },
               {
                 time: '09:15 AM',
-                event: 'Automated DR Triggered',
+                event: t('EVENT_AUTO_DR'),
                 region: 'ZJ-East',
                 severity: 'high',
               },
               {
                 time: '08:30 AM',
-                event: 'Peak load warning',
+                event: t('EVENT_PEAK_LOAD'),
                 region: 'JS-North',
                 severity: 'medium',
               },
@@ -157,7 +162,7 @@ export default function GridStatus({ component }: GridStatusProps) {
                           : 'bg-cyan-500/20 text-cyan-400'
                     }`}
                   >
-                    {evt.severity}
+                    {t(`SEVERITY_${evt.severity.toUpperCase()}`)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-[10px] text-slate-500 uppercase font-bold tracking-widest">

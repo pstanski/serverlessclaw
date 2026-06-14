@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Zap, Battery, Home, ArrowRightLeft } from 'lucide-react';
+import { useTranslations } from '@/components/Providers/TranslationsProvider';
 
 interface FlowData {
   solar: number;
@@ -15,6 +16,7 @@ interface FlowData {
  * High-fidelity representation of real-time power distribution.
  */
 export const EnergyFlowVisualizer: React.FC = () => {
+  const { t } = useTranslations();
   const [data, setData] = useState<FlowData>({
     solar: 45.2,
     grid: -12.5,
@@ -39,39 +41,39 @@ export const EnergyFlowVisualizer: React.FC = () => {
     <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-          <ArrowRightLeft className="w-4 h-4" /> Live Dispatch Flow
+          <ArrowRightLeft className="w-4 h-4" /> {t('LIVE_DISPATCH_FLOW')}
         </h3>
         <span className="text-[10px] font-mono text-emerald-400 animate-pulse uppercase">
-          Realtime Telemetry
+          {t('REALTIME_TELEMETRY')}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <FlowCard
-          label="Solar Generation"
+          label={t('SOLAR_GENERATION')}
           value={data.solar}
           unit="kW"
           icon={<Zap className="w-4 h-4 text-amber-400" />}
           color="amber"
         />
         <FlowCard
-          label="Grid Interaction"
+          label={t('GRID_INTERACTION')}
           value={Math.abs(data.grid)}
           unit="kW"
           icon={<ArrowRightLeft className="w-4 h-4 text-cyan-400" />}
           color="cyan"
-          suffix={data.grid > 0 ? '(IN)' : '(OUT)'}
+          suffix={data.grid > 0 ? `(${t('IN')})` : `(${t('OUT')})`}
         />
         <FlowCard
-          label="Battery State"
+          label={t('BATTERY_STATE')}
           value={data.battery}
           unit="kW"
           icon={<Battery className="w-4 h-4 text-emerald-400" />}
           color="emerald"
-          suffix={data.battery > 0 ? '(CHG)' : '(DIS)'}
+          suffix={data.battery > 0 ? `(${t('CHG')})` : `(${t('DIS')})`}
         />
         <FlowCard
-          label="Facility Load"
+          label={t('FACILITY_LOAD')}
           value={data.load}
           unit="kW"
           icon={<Home className="w-4 h-4 text-purple-400" />}

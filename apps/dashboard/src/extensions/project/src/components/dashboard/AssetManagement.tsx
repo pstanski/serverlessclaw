@@ -43,13 +43,11 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
   const [localSites, setLocalSites] = useState<VppSite[]>([]);
-  const [, setLoading] = useState(true);
 
   const workspaceId = getWorkspaceId();
 
   const fetchSites = React.useCallback(async () => {
     try {
-      Promise.resolve().then(() => setLoading(true));
       const res = await fetch(`/api/x/voltx/sites?workspaceId=${workspaceId}`);
       const data = await res.json();
       if (data.sites) {
@@ -57,8 +55,6 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
       }
     } catch (e) {
       console.error('Failed to fetch VPP sites:', e);
-    } finally {
-      setLoading(false);
     }
   }, [workspaceId]);
 
@@ -132,7 +128,7 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
             <MapPin className="w-6 h-6 text-cyan-400" /> {t('ASSET_TOPOLOGY')}
           </h2>
           <p className="text-slate-500 text-[10px] uppercase tracking-[0.2em] font-bold mt-1">
-            Fleet Orchestration & Node Management
+            {t('FLEET_ORCHESTRATION_DESC')}
           </p>
         </div>
         {!readOnly && (
@@ -155,7 +151,7 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
               <div className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md border border-cyan-500/30 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.2)]">
                 <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
                 <span className="text-[10px] font-black text-cyan-400 tracking-widest uppercase italic">
-                  Global Fleet Active
+                  {t('GLOBAL_FLEET_ACTIVE')}
                 </span>
               </div>
             </div>
@@ -170,12 +166,14 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
           <div className="absolute bottom-4 left-6 flex gap-6">
             <div className="space-y-1">
               <div className="text-[8px] text-slate-500 uppercase tracking-widest">
-                Active Regions
+                {t('ACTIVE_REGIONS')}
               </div>
               <div className="text-xs font-black text-white italic">SHENZHEN / HANGZHOU</div>
             </div>
             <div className="space-y-1">
-              <div className="text-[8px] text-slate-500 uppercase tracking-widest">Avg Latency</div>
+              <div className="text-[8px] text-slate-500 uppercase tracking-widest">
+                {t('AVG_LATENCY')}
+              </div>
               <div className="text-xs font-black text-emerald-400 italic font-mono">14.2ms</div>
             </div>
           </div>
@@ -183,18 +181,18 @@ export const AssetManagement: React.FC<AssetManagementProps> = ({
 
         <div className="space-y-4">
           <StatMiniBox
-            label="Total Fleet Capacity"
+            label={t('TOTAL_FLEET_CAPACITY')}
             value="48.2 MW"
             icon={<TrendingUp className="text-cyan-400" />}
           />
           <StatMiniBox
-            label="System Health"
-            value="NOMINAL"
+            label={t('SYSTEM_HEALTH')}
+            value={t('STATUS_NOMINAL')}
             icon={<ShieldCheck className="text-emerald-400" />}
           />
           <StatMiniBox
-            label="Cloud Uplink"
-            value="STABLE"
+            label={t('CLOUD_UPLINK')}
+            value={t('STATUS_STABLE')}
             icon={<Activity className="text-blue-400" />}
           />
         </div>

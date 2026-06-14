@@ -123,15 +123,15 @@ export default function MissionControl({ isAdmin = false }: { isAdmin?: boolean 
           </h1>
           <p className="text-slate-500 text-xs mt-1 uppercase tracking-widest font-mono">
             {t('VPP_DISPATCH')}:{' '}
-            <span className="text-emerald-400 animate-pulse">{t('ACTIVE')}</span> / Tier:
-            SME_OPTIMIZED
+            <span className="text-emerald-400 animate-pulse">{t('ACTIVE')}</span> / {t('TIER')}:
+            {t('SME_OPTIMIZED')}
           </p>
         </div>
 
         <div className="flex gap-8">
           <GlobalMetric
             label={t('ACTIVE_ASSETS')}
-            value="47 Sites"
+            value={`47 ${t('UNIT_SITES')}`}
             icon={<Users className="w-4 h-4 text-cyan-400" />}
           />
           <GlobalMetric
@@ -249,7 +249,7 @@ export default function MissionControl({ isAdmin = false }: { isAdmin?: boolean 
                   <div className="text-[10px] text-slate-500 uppercase">
                     {t('CARBON_REDUCED_TODAY')}
                   </div>
-                  <div className="text-lg font-black text-lime-400">12.3 Tons CO₂</div>
+                  <div className="text-lg font-black text-lime-400">12.3 {t('TONS_CO2')}</div>
                 </div>
                 <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
                   <div className="h-full bg-lime-500 w-[70%]" />
@@ -321,10 +321,10 @@ export default function MissionControl({ isAdmin = false }: { isAdmin?: boolean 
               ))}
             </div>
             <div className="flex justify-between mt-2 px-1 text-[10px] text-slate-500 font-mono">
-              <span>MON</span>
-              <span>WED</span>
-              <span>FRI</span>
-              <span>SUN</span>
+              <span>{t('MON')}</span>
+              <span>{t('WED')}</span>
+              <span>{t('FRI')}</span>
+              <span>{t('SUN')}</span>
             </div>
           </SectionContainer>
         </div>
